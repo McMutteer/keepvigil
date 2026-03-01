@@ -45,11 +45,13 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
   - Maximum 10 minutes per PR execution
   - Maximum 20 test plan items per PR (soft limit, warn above)
 - **Conventions:**
+  - **MANDATORY:** Invoke `/protocol` before starting ANY section implementation
   - Monorepo structure: `packages/` for shared code
   - Commit style: Conventional Commits (`feat:`, `fix:`, `chore:`)
   - Branch naming: `feat/section-N-name`, `fix/description`
   - Testing: Vitest for unit/integration tests
-  - Use `/protocol` skill for branching and PRs
+  - Each section = feature branch → PR → CodeRabbit review → user merges
+  - Agents NEVER commit directly to `main` or merge PRs
 - **Non-Goals:**
   - No multi-platform (GitHub only in v1)
   - No self-hosted option in v1

@@ -19,6 +19,24 @@ Silent. Reliable. Nocturnal. Precise. Trustworthy.
 ### What We Are Not
 We are not "Playwright with a wrapper." We are not another CI check that nobody reads. We are not a QA platform that requires onboarding, training, or test authoring. We require zero workflow change — the test plan already exists. We just make it real.
 
+## Development Workflow
+
+**MANDATORY: Use `/protocol` before starting ANY implementation work.**
+
+Every master plan section follows this flow:
+1. `git checkout main && git pull origin main`
+2. `git checkout -b feat/section-N-description`
+3. Code with incremental commits: `feat(scope): description`
+4. Quality gates: `pnpm build && pnpm test && pnpm lint && pnpm typecheck`
+5. `git push -u origin feat/section-N-description`
+6. `gh pr create` with standard format
+7. Wait for CodeRabbit review, address feedback
+8. User merges — agents NEVER merge to main
+
+**Branch naming:** `feat/section-N-short-name` (e.g., `feat/section-2-github-app`)
+**Commit style:** Conventional Commits — `feat(parser): extract checkbox items from markdown`
+**Language:** Conversations in Spanish, code/commits/PRs in English
+
 ## Toolbox
 
 This project has access to a global skills ecosystem. Skills are Claude Code slash commands that provide specialized capabilities.
@@ -26,7 +44,7 @@ This project has access to a global skills ecosystem. Skills are Claude Code sla
 **Skills repo:** `McMutteer/claude-skills` (synced to `~/.claude/skills/`)
 
 Use `/skill-name` to invoke. Key skills:
-- `/protocol` — Standard development workflow (branching, commits, PRs)
+- `/protocol` — **INVOKE FIRST** before any implementation task
 - `/infisical` — Secrets and environment variable management
 - `/master-plan` — Plan large features as autonomous sections
 - `/exposition` — Generate a communication skill for this service
