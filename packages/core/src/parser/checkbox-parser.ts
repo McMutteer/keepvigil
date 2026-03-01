@@ -50,10 +50,11 @@ export function parseCheckboxItems(sectionBody: string): TestPlanItem[] {
       const continuationText = line.trim();
       prev.text += ` ${continuationText}`;
 
-      // Re-extract hints from the updated full text
+      // Re-extract hints from the updated full text, preserving isManual from first line
+      const wasManual = prev.hints.isManual;
       const { cleanedText, hints } = extractHints(prev.text);
       prev.text = cleanedText;
-      prev.hints = hints;
+      prev.hints = { ...hints, isManual: wasManual || hints.isManual };
     }
   }
 

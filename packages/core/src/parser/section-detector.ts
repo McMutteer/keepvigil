@@ -61,12 +61,23 @@ export function extractTestPlanSection(markdown: string): DetectedSection | null
   // Find the section boundary: next heading of same or higher level (fewer #), or EOF
   let endIndex = lines.length;
   for (let i = headingIndex + 1; i < lines.length; i++) {
-    const match = lines[i].match(/^(#{1,6})\s+/);
-    if (match) {
-      const level = match[1].length;
-      // For regular headings: same or higher level ends the section
-      // For bold headings (level 0): any heading ends the section
-      if (headingLevel === 0 || level <= headingLevel) {
+    const line = lines[i];
+    const hashMatch = line.match(/^(#{1,6})\s+/);
+    const isBoldHeading = /^\*\*.+\*\*\s*$/.test(line);
+
+    // For bold "Test Plan" heading: any heading style terminates the section
+    if (headingLevel === 0) {
+      if (hashMatch || isBoldHeading) {
+        endIndex = i;
+        break;
+      }
+      continue;
+    }
+
+    // For regular headings: same or higher-level hash heading ends the section
+    if (hashMatch) {
+      const level = hashMatch[1].length;
+      if (level <= headingLevel) {
         endIndex = i;
         break;
       }

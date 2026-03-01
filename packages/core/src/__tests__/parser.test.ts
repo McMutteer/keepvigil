@@ -108,6 +108,13 @@ describe("parseTestPlan", () => {
     expect(result.sectionTitle).toBe("**Test Plan**");
   });
 
+  it("stops bold-heading section at next bold heading", () => {
+    const md = "**Test Plan**\n\n- [ ] Item in plan\n\n**Notes**\n\nThis should not appear.\n- [ ] Not in plan\n";
+    const result = parseTestPlan(md);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].text).toBe("Item in plan");
+  });
+
   // --- Section boundary ---
 
   it("stops at next heading of same level", () => {
@@ -154,6 +161,15 @@ describe("parseTestPlan", () => {
     const multiLine = result.items.find((item) => item.text.includes("Stripe session"));
     expect(multiLine).toBeDefined();
     expect(multiLine!.text).toContain("201 with session URL");
+  });
+
+  it("preserves isManual on multi-line Manual: items", () => {
+    const md = "## Test Plan\n\n- [ ] Manual: Check the email template\n  looks correct on mobile\n";
+    const result = parseTestPlan(md);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].hints.isManual).toBe(true);
+    expect(result.items[0].text).toContain("looks correct on mobile");
+    expect(result.items[0].text).not.toMatch(/^Manual:/i);
   });
 
   // --- Nested checkboxes ---
