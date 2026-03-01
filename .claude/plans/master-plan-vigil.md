@@ -4,6 +4,8 @@
 | Date | Change |
 |------|--------|
 | 2026-03-01 | Initial plan created |
+| 2026-03-01 | Section 10 Phase A complete (infrastructure foundation deployed during baptism) |
+| 2026-03-01 | Section 1 complete (project bootstrap — pnpm monorepo, TypeScript, Vitest, ESLint, Drizzle, Docker) |
 
 ## Agent Onboarding
 **If you are an agent starting a new session, read these files in order:**
@@ -58,7 +60,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 
 | # | Section | Depends On | Complexity | Confidence | Status |
 |---|---------|------------|------------|------------|--------|
-| 1 | Project Bootstrap | None | Low | GREEN | Pending |
+| 1 | Project Bootstrap | None | Low | GREEN | Complete |
 | 2 | GitHub App Core | 1 | Medium | GREEN | Pending |
 | 3 | Test Plan Parser | 1 | Medium | GREEN | Pending |
 | 4 | Item Classifier | 3 | Medium | YELLOW | Pending |
@@ -67,10 +69,10 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | 7 | Browser Test Executor | 3, 4 | High | YELLOW | Pending |
 | 8 | Result Reporter | 2, 5 | Medium | GREEN | Pending |
 | 9 | Orchestrator | 2, 3, 4, 5, 6, 7, 8 | High | YELLOW | Pending |
-| 10 | Deployment & Infrastructure | 9 | Medium | GREEN | Pending |
+| 10 | Deployment & Infrastructure | 9 | Medium | GREEN | Partial (Phase A done) |
 
 **Last updated:** 2026-03-01
-**Sections complete:** 0 / 10
+**Sections complete:** 1 / 10
 
 ## Key Decisions
 
@@ -108,7 +110,7 @@ Section 1 (Bootstrap) ───────────────────�
 
 ## Section 1: Project Bootstrap
 
-**Status:** Pending
+**Status:** Complete
 **Depends on:** None
 **Estimated complexity:** Low
 **Confidence:** GREEN
@@ -177,6 +179,12 @@ Monorepo with three main packages:
 - Application logic — this is just project structure and tooling
 - GitHub App registration — that's Section 2
 - Any business logic
+
+### Operational Notes
+- **tsup + composite tsconfig conflict:** tsup DTS generation fails with `composite: true` tsconfig (TS6307 error). Solution: create a separate `tsconfig.build.json` without `composite` for each package, keep `composite: true` in the main `tsconfig.json` for project references/IDE support.
+- **pnpm esbuild builds:** pnpm 10 blocks build scripts by default. Add `"pnpm": { "onlyBuiltDependencies": ["esbuild"] }` to root package.json.
+- **pg ESM import:** `import pg from "pg"; const { Pool } = pg;` — pg is CJS, needs destructuring from default import in ESM context.
+- **Docker not required for bootstrap:** `drizzle-kit generate` works without a running database. Migrations can be applied later when Docker is available.
 
 ---
 
@@ -702,37 +710,53 @@ The orchestrator is the brain — it connects the GitHub App, parser, classifier
 
 ## Section 10: Deployment & Infrastructure
 
-**Status:** Pending
+**Status:** Partial (Phase A complete)
 **Depends on:** Section 9
 **Estimated complexity:** Medium
 **Confidence:** GREEN
 **Relevant skills:** `/dokploy`, `/infisical`, `/vercel`
 
 ### Context
-Deploy Vigil to production on the user's Dokploy infrastructure. Configure DNS, SSL, Docker containers, database, Redis, and the GitHub App's webhook endpoint. Make it accessible at keepvigil.dev.
+Deploy Vigil to production on the user's Dokploy infrastructure. This section has two phases: infrastructure foundation (completed during baptism) and production deployment (after all code is built).
 
 ### Architecture
-- Docker Compose deployment on Dokploy (Contabo server)
+- Docker Compose deployment on Dokploy (Contabo server at 161.97.97.243)
 - Services: Vigil App, Redis, PostgreSQL, Playwright container
-- Domain: keepvigil.dev → Dokploy server IP
-- SSL: Automatic via Dokploy/Traefik
+- Domain: keepvigil.dev → 161.97.97.243
+- SSL: Let's Encrypt via Traefik file-based routing
 - Secrets: Managed via Infisical
+- Routing: File-based Traefik config at `/etc/dokploy/traefik/dynamic/keepvigil.yml` on the server
 
-### Implementation Steps
-1. Configure DNS — point keepvigil.dev A record to Dokploy server
-2. Create Dokploy application — Docker Compose deployment
-3. Configure production Docker Compose — multi-service with health checks
-4. Set up PostgreSQL — production database with backups
-5. Set up Redis — production instance for BullMQ
-6. Configure secrets in Infisical — GitHub App credentials, Anthropic API key, database URL
-7. Register GitHub App for production — webhook URL at `https://keepvigil.dev/webhook`
-8. Configure Playwright container — browsers installed, sandboxed
-9. Set up health monitoring — `/health` endpoint checks
-10. Test end-to-end — install App on a test repo, open a PR, verify pipeline
+### Phase A — Infrastructure Foundation (COMPLETE ✓)
+
+Completed 2026-03-01 during baptism. Do NOT redo these steps.
+
+- [x] DNS configured in Vercel: `keepvigil.dev` A → 161.97.97.243, `www` CNAME → keepvigil.dev, `api` A → 161.97.97.243
+- [x] Dokploy project created: "Vigil" (ID: `iI3cqVLay6bqsqfl9gTCV`), Org: Nqual5
+- [x] Dokploy compose service created (ID: `66cDXwWE7--R5KQqdo9It`, sourceType: raw)
+- [x] Traefik file-based routing configured at `/etc/dokploy/traefik/dynamic/keepvigil.yml`
+- [x] SSL: Let's Encrypt certificates auto-provisioned via Traefik certresolver
+- [x] Placeholder container running: `keepvigil-0p1rgp-vigil-1` on port 3200
+- [x] Health endpoint responding at `https://keepvigil.dev/health`
+- [x] Both `https://keepvigil.dev` and `https://api.keepvigil.dev` verified live
+
+### Phase B — Production Deployment (PENDING)
+
+Implementation steps after Sections 1-9 are complete:
+
+1. Update Dokploy raw compose — replace placeholder with production multi-service config (Vigil App + Redis + PostgreSQL + Playwright)
+2. Configure production environment — update Traefik config if ports change
+3. Set up PostgreSQL — production database with volume persistence and backups
+4. Set up Redis — production instance for BullMQ with persistence
+5. Configure secrets in Infisical — create `keepvigil` project with: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `REDIS_URL`
+6. Register GitHub App for production — webhook URL at `https://keepvigil.dev/webhook`, permissions: `checks:write`, `pull_requests:read`, `contents:read`
+7. Configure Playwright container — browsers installed, sandboxed, shared volume with app
+8. Run database migrations — Drizzle ORM push to production PostgreSQL
+9. End-to-end smoke test — install App on a test repo, open a PR, verify full pipeline
 
 ### Acceptance Criteria
-- [ ] `keepvigil.dev` resolves to the server
-- [ ] HTTPS works with valid SSL certificate
+- [x] `keepvigil.dev` resolves to the server (Phase A)
+- [x] HTTPS works with valid SSL certificate (Phase A)
 - [ ] GitHub App webhook endpoint responds at `https://keepvigil.dev/webhook`
 - [ ] All services healthy: app, Redis, PostgreSQL, Playwright
 - [ ] GitHub App installable from marketplace/settings
@@ -742,22 +766,32 @@ Deploy Vigil to production on the user's Dokploy infrastructure. Configure DNS, 
 ### Files to Create/Modify
 | Action | File | Purpose |
 |--------|------|---------|
-| Modify | `docker-compose.yml` | Production services config |
-| Create | `docker-compose.prod.yml` | Production overrides |
+| Modify | `docker-compose.yml` | Production multi-service config |
 | Create | `.github/workflows/deploy.yml` | CI/CD pipeline |
-| Modify | `.env.example` | Production env vars |
+| Modify | `.env.example` | Production env vars template |
 
 ### Verification Gate
+- [x] DNS resolves correctly (Phase A)
+- [x] SSL certificate valid (Phase A)
 - [ ] All acceptance criteria met
 - [ ] End-to-end test on real GitHub PR
-- [ ] Health checks pass
-- [ ] SSL certificate valid
+- [ ] All service health checks pass
 - [ ] No secrets in code or logs
+
+### Operational Notes
+Lessons learned during Phase A deployment:
+- **Traefik routing is FILE-BASED on nqual5-services**, NOT Docker labels. All existing routers use `@file` provider. Config goes in `/etc/dokploy/traefik/dynamic/`
+- **Dokploy Nqual5 org has no GitHub OAuth** — `githubId: null`. Must use `sourceType: "raw"` with inline compose YAML
+- **SSH key**: `~/.ssh/id_ed25519_nqual5_services` (NOT `id_ed25519_dokploy`)
+- **Alpine busybox sh doesn't support heredocs** — use `node -e '...'` for inline scripts in Dockerfiles
+- **Container name**: `keepvigil-0p1rgp-vigil-1` — Dokploy generates `{appName}-{service}-{replica}` format
 
 ### Anti-Patterns
 - Do NOT expose PostgreSQL or Redis ports to the internet
-- Do NOT store secrets in docker-compose.yml
+- Do NOT store secrets in docker-compose.yml — use Infisical
 - Do NOT skip health checks — every service needs one
+- Do NOT use Docker labels for Traefik routing — use file-based config on this server
+- Do NOT try to use `sourceType: github` on Nqual5 Dokploy — no GitHub OAuth configured
 
 ### NOT in Scope
 - Auto-scaling (single server is fine for launch)

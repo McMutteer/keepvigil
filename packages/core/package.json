@@ -1,0 +1,35 @@
+{
+  "name": "@vigil/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./db": {
+      "import": "./dist/db/index.js",
+      "types": "./dist/db/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/types.ts src/db/index.ts --format esm --dts --tsconfig tsconfig.build.json",
+    "dev": "tsup src/index.ts src/types.ts src/db/index.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "tsup": "^8.0.0",
+    "typescript": "~5.8.0"
+  }
+}
