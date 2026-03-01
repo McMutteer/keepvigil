@@ -6,6 +6,7 @@
 | 2026-03-01 | Initial plan created |
 | 2026-03-01 | Section 10 Phase A complete (infrastructure foundation deployed during baptism) |
 | 2026-03-01 | Section 1 complete (project bootstrap — pnpm monorepo, TypeScript, Vitest, ESLint, Drizzle, Docker) |
+| 2026-03-01 | Section 2 complete (GitHub App Core — Probot 14, webhooks, Check Runs, BullMQ queue, PR #1) |
 
 ## Agent Onboarding
 **If you are an agent starting a new session, read these files in order:**
@@ -63,7 +64,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | # | Section | Depends On | Complexity | Confidence | Status |
 |---|---------|------------|------------|------------|--------|
 | 1 | Project Bootstrap | None | Low | GREEN | Complete |
-| 2 | GitHub App Core | 1 | Medium | GREEN | Pending |
+| 2 | GitHub App Core | 1 | Medium | GREEN | Complete |
 | 3 | Test Plan Parser | 1 | Medium | GREEN | Pending |
 | 4 | Item Classifier | 3 | Medium | YELLOW | Pending |
 | 5 | Shell Executor | 3, 4 | Low | GREEN | Pending |
@@ -74,7 +75,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | 10 | Deployment & Infrastructure | 9 | Medium | GREEN | Partial (Phase A done) |
 
 **Last updated:** 2026-03-01
-**Sections complete:** 1 / 10
+**Sections complete:** 2 / 10
 
 ## Key Decisions
 
@@ -192,10 +193,17 @@ Monorepo with three main packages:
 
 ## Section 2: GitHub App Core
 
-**Status:** Pending
+**Status:** Complete
 **Depends on:** Section 1
 **Estimated complexity:** Medium
 **Confidence:** GREEN
+
+### Operational Notes
+- Used Probot 14.x (not 13.x as originally planned) — native ESM, same API
+- Server uses `node:http` directly instead of Probot's built-in Server class (avoids Express bundle)
+- `hasTestPlan()` is a simple regex gate; full parser deferred to Section 3
+- BullMQ jobs configured with 3 retries, exponential backoff
+- CodeRabbit review addressed: port validation, graceful shutdown, double-init guard, fail-fast on missing DB, accountType refresh on upsert
 
 ### Context
 Build the GitHub App that receives webhooks when PRs are opened/updated. This is the entry point — it listens for PR events and kicks off the test plan verification pipeline. Uses Probot framework for simplified GitHub App development.
