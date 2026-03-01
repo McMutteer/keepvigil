@@ -1,0 +1,29 @@
+services:
+  vigil:
+    build: .
+    ports:
+      - "3200:3200"
+    environment:
+      - NODE_ENV=production
+      - PORT=3200
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keepvigil.rule=Host(`keepvigil.dev`)"
+      - "traefik.http.routers.keepvigil.entrypoints=websecure"
+      - "traefik.http.routers.keepvigil.tls.certresolver=letsencrypt"
+      - "traefik.http.services.keepvigil.loadbalancer.server.port=3200"
+      - "traefik.http.routers.keepvigil-http.rule=Host(`keepvigil.dev`)"
+      - "traefik.http.routers.keepvigil-http.entrypoints=web"
+      - "traefik.http.routers.keepvigil-http.middlewares=redirect-to-https@docker"
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
