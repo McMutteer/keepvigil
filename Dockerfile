@@ -33,5 +33,4 @@ EXPOSE 3200
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD wget --spider -q http://localhost:3200/health || exit 1
 
-# Temporary placeholder server until Section 2 provides real entrypoint
-CMD ["node", "-e", "import('node:http').then(({createServer})=>{createServer((req,res)=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({status:'ok',service:'vigil',version:'0.1.0',timestamp:new Date().toISOString()}));}).listen(process.env.PORT||3200,()=>console.log('Vigil running on port '+(process.env.PORT||3200)));})"]
+CMD ["node", "packages/github/dist/server.js"]
