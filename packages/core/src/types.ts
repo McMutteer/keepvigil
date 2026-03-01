@@ -6,11 +6,39 @@ export interface HealthCheck {
   timestamp: string;
 }
 
-/** Parsed test plan item from a PR description (Section 3) */
+/** Hints extracted from a test plan item for the classifier (Section 4) */
+export interface TestPlanHints {
+  /** "Manual:" prefix was detected */
+  isManual: boolean;
+  /** Inline code blocks extracted (e.g., `npm run build`) */
+  codeBlocks: string[];
+  /** HTTP/HTTPS URLs found in the item text */
+  urls: string[];
+}
+
+/** Parsed test plan item from a PR description */
 export interface TestPlanItem {
+  /** Sequential identifier: "tp-0", "tp-1", ... */
   id: string;
+  /** Cleaned text without checkbox syntax or "Manual:" prefix */
   text: string;
+  /** Whether the checkbox was checked ([x] or [X]) */
   checked: boolean;
+  /** Original markdown line(s) */
+  raw: string;
+  /** Nesting level (0 = top-level, 1 = one indent, etc.) */
+  indent: number;
+  /** Extracted hints for the classifier */
+  hints: TestPlanHints;
+}
+
+/** Result of parsing a full test plan section from a PR description */
+export interface ParsedTestPlan {
+  /** Extracted test plan items */
+  items: TestPlanItem[];
+  /** The actual heading text found (e.g., "## Test Plan") */
+  sectionTitle: string;
+  /** The entire test plan section as raw markdown */
   raw: string;
 }
 
