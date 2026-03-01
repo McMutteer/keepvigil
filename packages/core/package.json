@@ -17,11 +17,15 @@
     "./types": {
       "import": "./dist/types.js",
       "types": "./dist/types.d.ts"
+    },
+    "./queue": {
+      "import": "./dist/queue.js",
+      "types": "./dist/queue.d.ts"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/types.ts src/db/index.ts --format esm --dts --tsconfig tsconfig.build.json",
-    "dev": "tsup src/index.ts src/types.ts src/db/index.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
+    "build": "tsup src/index.ts src/types.ts src/db/index.ts src/queue.ts --format esm --dts --tsconfig tsconfig.build.json",
+    "dev": "tsup src/index.ts src/types.ts src/db/index.ts src/queue.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.0",

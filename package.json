@@ -25,7 +25,7 @@
   },
   "packageManager": "pnpm@10.30.3",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": ["esbuild", "msgpackr-extract"]
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

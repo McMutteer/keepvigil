@@ -12,13 +12,20 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --tsconfig tsconfig.build.json",
-    "dev": "tsup src/index.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
+    "build": "tsup src/index.ts src/server.ts --format esm --dts --tsconfig tsconfig.build.json",
+    "dev": "tsup src/index.ts src/server.ts --format esm --dts --tsconfig tsconfig.build.json --watch",
+    "start": "node dist/server.js"
   },
   "dependencies": {
-    "@vigil/core": "workspace:*"
+    "@vigil/core": "workspace:*",
+    "bullmq": "^5.70.1",
+    "ioredis": "^5.10.0",
+    "probot": "^14.2.4",
+    "drizzle-orm": "^0.44.0",
+    "pg": "^8.13.0"
   },
   "devDependencies": {
+    "@types/pg": "^8.11.0",
     "tsup": "^8.0.0",
     "typescript": "~5.8.0"
   }
