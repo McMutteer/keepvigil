@@ -21,8 +21,7 @@ describe("parseTestPlan", () => {
   });
 
   it("returns empty result for undefined-like input", () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = parseTestPlan(null as any);
+    const result = parseTestPlan(null as unknown as string);
     expect(result.items).toEqual([]);
   });
 
