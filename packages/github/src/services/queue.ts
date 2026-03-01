@@ -6,6 +6,9 @@ let verifyQueue: Queue<VerifyTestPlanJob> | null = null;
 
 /** Initialize the BullMQ queue with a Redis connection URL */
 export function initQueue(redisUrl: string): void {
+  if (verifyQueue) {
+    throw new Error("Queue already initialized — call closeQueue() first to reinitialize");
+  }
   const url = new URL(redisUrl);
   verifyQueue = new Queue<VerifyTestPlanJob>(QUEUE_NAMES.VERIFY_TEST_PLAN, {
     connection: {

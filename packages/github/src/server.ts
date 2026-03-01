@@ -59,7 +59,9 @@ async function main(): Promise<void> {
   // Graceful shutdown
   const shutdown = async () => {
     probot.log.info("Shutting down...");
-    server.close();
+    await new Promise<void>((resolve, reject) => {
+      server.close((err) => (err ? reject(err) : resolve()));
+    });
     await closeQueue();
     process.exit(0);
   };

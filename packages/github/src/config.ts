@@ -30,7 +30,14 @@ export function loadConfig(): AppConfig {
     githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET!,
     redisUrl: process.env.REDIS_URL!,
     databaseUrl: process.env.DATABASE_URL!,
-    port: Number(process.env.PORT ?? 3200),
+    port: (() => {
+      const rawPort = process.env.PORT ?? "3200";
+      const parsed = Number.parseInt(rawPort, 10);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+        throw new Error(`Invalid PORT: "${rawPort}" — must be an integer between 1 and 65535`);
+      }
+      return parsed;
+    })(),
     nodeEnv: process.env.NODE_ENV ?? "development",
   };
 }

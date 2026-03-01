@@ -16,8 +16,7 @@ export function setDatabase(database: Database): void {
 /** Handle new GitHub App installations — upsert into the installations table */
 export async function handleInstallationCreated(context: InstallationCreatedContext): Promise<void> {
   if (!db) {
-    context.log.error("Database not initialized — cannot store installation");
-    return;
+    throw new Error("Database not initialized — cannot store installation");
   }
 
   const { installation } = context.payload;
@@ -41,6 +40,7 @@ export async function handleInstallationCreated(context: InstallationCreatedCont
       target: schema.installations.githubInstallationId,
       set: {
         accountLogin: account.login,
+        accountType: account.type?.toLowerCase() ?? "user",
         active: true,
         updatedAt: new Date(),
       },
@@ -55,8 +55,7 @@ export async function handleInstallationCreated(context: InstallationCreatedCont
 /** Handle GitHub App uninstallations — mark as inactive in DB */
 export async function handleInstallationDeleted(context: InstallationDeletedContext): Promise<void> {
   if (!db) {
-    context.log.error("Database not initialized — cannot update installation");
-    return;
+    throw new Error("Database not initialized — cannot update installation");
   }
 
   const { installation } = context.payload;

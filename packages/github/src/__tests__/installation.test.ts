@@ -75,12 +75,11 @@ describe("installation handlers", () => {
       expect(context.log.info).toHaveBeenCalled();
     });
 
-    it("logs error when database is not set", async () => {
+    it("throws when database is not set", async () => {
       setDatabase(null as unknown as Parameters<typeof setDatabase>[0]);
       const context = makeCreatedContext();
-      await handleInstallationCreated(context);
 
-      expect(context.log.error).toHaveBeenCalled();
+      await expect(handleInstallationCreated(context)).rejects.toThrow("Database not initialized");
       expect(mockDb._mocks.mockInsert).not.toHaveBeenCalled();
     });
   });
@@ -97,12 +96,11 @@ describe("installation handlers", () => {
       expect(context.log.info).toHaveBeenCalled();
     });
 
-    it("logs error when database is not set", async () => {
+    it("throws when database is not set", async () => {
       setDatabase(null as unknown as Parameters<typeof setDatabase>[0]);
       const context = makeDeletedContext();
-      await handleInstallationDeleted(context);
 
-      expect(context.log.error).toHaveBeenCalled();
+      await expect(handleInstallationDeleted(context)).rejects.toThrow("Database not initialized");
     });
   });
 });
