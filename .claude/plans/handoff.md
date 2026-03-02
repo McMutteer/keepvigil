@@ -1,6 +1,6 @@
 # Vigil — Agent Handoff Document
 
-**Generated:** 2026-03-02
+**Generated:** 2026-03-02 | **Last updated:** 2026-03-02
 **Purpose:** Comprehensive state dump for agent continuity. Read this before any session on the Vigil project.
 
 ---
@@ -24,14 +24,14 @@ A GitHub App that automatically executes AI-generated test plans from PR descrip
 | 2 | GitHub App Core | ✅ Complete | #1 merged (squash) | Probot 14, webhooks, Check Runs, BullMQ |
 | 3 | Test Plan Parser | ✅ Complete | #2 merged (squash) | 33 tests, regex-based, 5 fixture files |
 | 4 | Item Classifier | ✅ Complete | #3 merged (squash) | 35 tests, rule-based + Claude Haiku |
-| 5 | Shell Executor | 🔲 Pending | — | **NEXT: implement this** |
+| 5 | Shell Executor | 🟡 In Review | #4 open | 48 tests, allowlist + Docker sandbox — **awaiting CodeRabbit + merge** |
 | 6 | API Test Executor | 🔲 Pending | — | Can parallel with 5, 7 |
 | 7 | Browser Test Executor | 🔲 Pending | — | Can parallel with 5, 6 |
 | 8 | Result Reporter | 🔲 Pending | — | Can start after 5 |
 | 9 | Orchestrator | 🔲 Pending | — | Needs all above |
 | 10 | Deployment | 🔶 Partial | — | Phase A done (DNS, SSL, placeholder container) |
 
-**Current test count:** 90 tests, 6 test files, all passing.
+**Current test count:** 138 tests, 7 test files, all passing.
 
 ---
 
@@ -206,53 +206,63 @@ const classified = await classifyItems(items, {
 
 ---
 
-## 9. Section 5 — Shell Executor (NEXT TO BUILD)
+## 9. Section 5 — Shell Executor ✅ IN REVIEW (PR #4)
 
-**Branch:** `feat/section-5-shell-executor`
+**Branch:** `feat/section-5-shell-executor` (pushed, PR #4 open)
 **Depends on:** Sections 3, 4 (both complete)
+**Tests:** 48 tests, all passing
 
 ### What it does
-Execute DETERMINISTIC/shell classified items. Run commands like `npm run build`, `pnpm test`, `ruff check .` in a sandboxed Docker container with the PR's code, capture output, report pass/fail.
+Execute `DETERMINISTIC/shell` classified items. Runs all `hints.codeBlocks` commands sequentially in a Docker sandbox. Stops on first failure.
 
-### Key design decisions (from master plan)
-- **Allowlist approach** — only permit known-safe command patterns
-- **Docker sandbox** — never execute on host
-- **5-minute timeout** per command
-- Input: `ClassifiedItem` with `executorType: "shell"`
-- Output: `ExecutionResult` with `passed`, `duration`, `evidence: { stdout, stderr, exitCode }`
-
-### Files to create
+### Files created
 ```
-packages/executors/src/shell.ts          # Main executor
-packages/executors/src/sandbox.ts        # Docker container manager
-packages/executors/src/allowlist.ts      # Command allowlist/validator
-packages/executors/src/__tests__/shell.test.ts
+packages/executors/src/allowlist.ts       — validateCommand() — pure function, 13 allowlist patterns
+packages/executors/src/sandbox.ts         — runInSandbox() — docker run wrapper (child_process.exec)
+packages/executors/src/shell.ts           — executeShellItem(item, context) — orchestrator
+packages/executors/src/__tests__/shell.test.ts — 48 tests
+packages/core/src/types.ts               — Added ShellExecutionContext interface
 ```
 
-### The `ExecutionResult` type needs to be extended
-Current `ExecutionResult` in `types.ts` is minimal. Section 5 should extend `evidence` to include `stdout: string`, `stderr: string`, `exitCode: number`.
-
-### Allowlist patterns (recommended)
+### New type: ShellExecutionContext (in @vigil/core/types)
 ```typescript
-const ALLOWED_COMMANDS = [
-  /^npm\s+(run|test|build|install|ci)\b/,
-  /^pnpm\s+(run|test|build|install|dlx)\b/,
-  /^yarn\s+(run|test|build|install)\b/,
-  /^bun\s+(run|test|build|install)\b/,
-  /^ruff\s+(check|format)\b/,
-  /^docker\s+(build|run|compose)\b/,
-  /^make\b/,
-  /^cargo\s+(test|build|check|clippy)\b/,
-  /^go\s+(test|build|vet)\b/,
-  /^pytest\b/,
-  /^jest\b/,
-  /^vitest\b/,
-];
+interface ShellExecutionContext {
+  repoPath: string;       // absolute path to cloned repo on host
+  timeoutMs?: number;     // default: 300_000 (5 min)
+  sandboxImage?: string;  // default: "node:22-alpine"
+}
 ```
 
-### Anti-patterns to avoid
-- Never `rm -rf`, never `curl` to external, never `eval`, never `bash -c` with untrusted input
-- Never run on host machine — always Docker volume
+### Evidence shape (ExecutionResult.evidence)
+```typescript
+{
+  commands: string[];   // all codeBlocks from the item
+  stdout: string;
+  stderr: string;
+  exitCode: number;     // -1 = timeout
+}
+```
+
+### Docker sandbox flags
+`--network none --memory 512m --cpus 1 --rm -v repoPath:/workspace`
+
+### Usage (from Section 9 orchestrator)
+```typescript
+import { executeShellItem } from "@vigil/executors";
+import type { ShellExecutionContext } from "@vigil/core/types";
+
+const result = await executeShellItem(classifiedItem, {
+  repoPath: "/path/to/cloned/repo",
+  timeoutMs: 300_000,
+});
+```
+
+### Key gotcha: vi.hoisted() for node:child_process mocking
+```typescript
+// In tests — must use vi.hoisted, NOT const mockExec = vi.fn()
+const mockExec = vi.hoisted(() => vi.fn());
+vi.mock("node:child_process", () => ({ exec: mockExec }));
+```
 
 ---
 
