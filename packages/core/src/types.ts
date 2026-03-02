@@ -42,6 +42,29 @@ export interface ParsedTestPlan {
   raw: string;
 }
 
+/** Confidence tier for a classified test plan item (ADR 003) */
+export type ConfidenceTier = "DETERMINISTIC" | "HIGH" | "MEDIUM" | "LOW" | "SKIP";
+
+/** Which executor handles this item */
+export type ExecutorType = "shell" | "api" | "browser" | "none";
+
+/** Category label for a classified item */
+export type CategoryLabel = "build" | "api" | "ui-flow" | "visual" | "metadata" | "manual" | "vague";
+
+/** A test plan item after classification */
+export interface ClassifiedItem {
+  /** The original parsed item */
+  item: TestPlanItem;
+  /** Confidence tier determining execution strategy */
+  confidence: ConfidenceTier;
+  /** Which executor should handle this item */
+  executorType: ExecutorType;
+  /** Category label for this item */
+  category: CategoryLabel;
+  /** Explanation of why this classification was chosen */
+  reasoning: string;
+}
+
 /** Result of executing a single test plan item (Section 5+) */
 export interface ExecutionResult {
   itemId: string;

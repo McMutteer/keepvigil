@@ -14,6 +14,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@vigil/core/classifier": path.resolve(import.meta.dirname, "packages/core/src/classifier"),
       "@vigil/core/db": path.resolve(import.meta.dirname, "packages/core/src/db"),
       "@vigil/core/parser": path.resolve(import.meta.dirname, "packages/core/src/parser"),
       "@vigil/core/queue": path.resolve(import.meta.dirname, "packages/core/src/queue"),
