@@ -79,8 +79,9 @@ function mockExecFailure(exitCode: number, stdout = "", stderr = "error"): void 
  */
 function mockExecTimeout(stdout = "", stderr = ""): void {
   mockExec.mockImplementation(
-    (_cmd: string, _opts: unknown, cb: (e: Error & { code: undefined; killed: boolean }, out: string, err: string) => void) => {
-      const err = Object.assign(new Error("killed"), { code: undefined, killed: true });
+    (_cmd: string, _opts: unknown, cb: (e: Error & { code: undefined; killed: boolean; signal: string }, out: string, err: string) => void) => {
+      // Node sends SIGTERM when the exec timeout fires — mirror that here.
+      const err = Object.assign(new Error("killed"), { code: undefined, killed: true, signal: "SIGTERM" });
       cb(err, stdout, stderr);
       return { pid: 1 };
     },
@@ -219,6 +220,17 @@ describe("runInSandbox", () => {
     await expect(
       runInSandbox("npm test", { repoPath: "/repo", sandboxImage: "--privileged" }),
     ).rejects.toThrow("Invalid Docker image name");
+  });
+
+  it.each([
+    [0],
+    [-1],
+    [-Infinity],
+    [NaN],
+  ])("rejects invalid timeoutMs: %s", async (ms) => {
+    await expect(
+      runInSandbox("npm test", { repoPath: "/repo", timeoutMs: ms }),
+    ).rejects.toThrow("Invalid timeoutMs");
   });
 });
 

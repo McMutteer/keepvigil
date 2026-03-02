@@ -59,6 +59,9 @@ export async function runInSandbox(
   const image = opts.sandboxImage ?? DEFAULT_SANDBOX_IMAGE;
   validateImageName(image);
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new Error(`Invalid timeoutMs: ${timeoutMs}`);
+  }
 
   // Escape the command for use as a sh -c argument.
   // Single-quote the command and escape any embedded single quotes.
@@ -85,10 +88,12 @@ export async function runInSandbox(
       const durationMs = Date.now() - startMs;
 
       if (error) {
-        // child_process.exec throws on non-zero exit codes.
-        // `error.killed` is set when the process was killed due to timeout.
-        const exitCode = error.killed ? -1 : (error.code ?? 1);
-        const timeoutStderr = error.killed
+        // child_process.exec sends SIGTERM when the timeout fires.
+        // Use signal === 'SIGTERM' (not just error.killed) to distinguish
+        // intentional timeout kills from other termination causes (e.g. maxBuffer).
+        const isTimeout = error.killed && error.signal === "SIGTERM";
+        const exitCode = isTimeout ? -1 : (error.code ?? 1);
+        const timeoutStderr = isTimeout
           ? `Command timed out after ${timeoutMs}ms`
           : stderr;
 
