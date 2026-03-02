@@ -72,3 +72,35 @@ export interface ExecutionResult {
   duration: number;
   evidence: Record<string, unknown>;
 }
+
+/** HTTP methods supported by the API executor */
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD";
+
+/**
+ * A single HTTP request specification generated from a NL test plan item.
+ * The `path` is always relative — the base URL is provided by `ApiExecutionContext`.
+ */
+export interface HttpRequestSpec {
+  method: HttpMethod;
+  /** Relative path, e.g. "/api/users" or "/health". Never a full URL. */
+  path: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  /** HTTP status code the response must match. */
+  expectedStatus: number;
+  /** If provided, each key/value must be present in the parsed response body. */
+  expectedBodyContains?: Record<string, unknown>;
+}
+
+/**
+ * Context provided by the orchestrator to the API executor.
+ * The `baseUrl` is always a preview deployment URL — never production.
+ */
+export interface ApiExecutionContext {
+  /** Base URL of the preview deployment, e.g. "https://pr-42.keepvigil.dev" */
+  baseUrl: string;
+  /** Timeout per HTTP request in milliseconds (default: 30_000) */
+  timeoutMs?: number;
+  /** Anthropic API key for spec generation via Claude */
+  anthropicApiKey: string;
+}
