@@ -32,6 +32,7 @@
     "dev": "tsup src/index.ts src/types.ts src/db/index.ts src/queue.ts src/parser/index.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "drizzle-orm": "^0.44.0",
     "pg": "^8.13.0"
   },
