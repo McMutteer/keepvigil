@@ -12,13 +12,15 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --tsconfig tsconfig.build.json",
-    "dev": "tsup src/index.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
+    "build": "tsup src/index.ts src/api.ts src/api-spec-generator.ts src/http-client.ts --format esm --dts --tsconfig tsconfig.build.json",
+    "dev": "tsup src/index.ts src/api.ts src/api-spec-generator.ts src/http-client.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@vigil/core": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "tsup": "^8.0.0",
     "typescript": "~5.8.0"
   }
