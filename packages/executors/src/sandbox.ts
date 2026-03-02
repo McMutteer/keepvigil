@@ -12,7 +12,7 @@
  *  - read-write volume — commands may write build artifacts (e.g., dist/)
  */
 
-import { exec } from "node:child_process";
+import { exec, type ExecException } from "node:child_process";
 
 const DEFAULT_SANDBOX_IMAGE = "node:22-alpine";
 const DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes
@@ -63,7 +63,10 @@ export async function runInSandbox(
   const startMs = Date.now();
 
   return new Promise<SandboxResult>((resolve) => {
-    const child = exec(dockerCmd, { timeout: timeoutMs }, (error, stdout, stderr) => {
+    const child = exec(
+      dockerCmd,
+      { timeout: timeoutMs },
+      (error: ExecException | null, stdout: string, stderr: string) => {
       const durationMs = Date.now() - startMs;
 
       if (error) {
@@ -84,7 +87,8 @@ export async function runInSandbox(
       }
 
       resolve({ stdout: stdout ?? "", stderr: stderr ?? "", exitCode: 0, durationMs });
-    });
+      },
+    );
 
     // Ensure the child reference is used (prevents lint warnings).
     void child;
