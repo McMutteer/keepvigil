@@ -8,6 +8,7 @@
 | 2026-03-01 | Section 1 complete (project bootstrap — pnpm monorepo, TypeScript, Vitest, ESLint, Drizzle, Docker) |
 | 2026-03-01 | Section 2 complete (GitHub App Core — Probot 14, webhooks, Check Runs, BullMQ queue, PR #1) |
 | 2026-03-01 | Section 3 complete (Test Plan Parser — section detector, checkbox parser, hint extractor, 33 tests, PR #2) |
+| 2026-03-01 | Section 4 complete (Item Classifier — two-pass pipeline with rule-based + Claude Haiku LLM, 35 tests, PR #3) |
 
 ## Agent Onboarding
 **If you are an agent starting a new session, read these files in order:**
@@ -67,7 +68,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | 1 | Project Bootstrap | None | Low | GREEN | Complete |
 | 2 | GitHub App Core | 1 | Medium | GREEN | Complete |
 | 3 | Test Plan Parser | 1 | Medium | GREEN | Complete |
-| 4 | Item Classifier | 3 | Medium | YELLOW | Pending |
+| 4 | Item Classifier | 3 | Medium | YELLOW | Complete |
 | 5 | Shell Executor | 3, 4 | Low | GREEN | Pending |
 | 6 | API Test Executor | 3, 4 | Medium | GREEN | Pending |
 | 7 | Browser Test Executor | 3, 4 | High | YELLOW | Pending |
@@ -76,7 +77,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | 10 | Deployment & Infrastructure | 9 | Medium | GREEN | Partial (Phase A done) |
 
 **Last updated:** 2026-03-01
-**Sections complete:** 3 / 10
+**Sections complete:** 4 / 10
 
 ## Key Decisions
 
@@ -342,10 +343,19 @@ Parse the test plan section from a PR description (markdown). Extract individual
 
 ## Section 4: Item Classifier
 
-**Status:** Pending
+**Status:** Complete
 **Depends on:** Section 3
 **Estimated complexity:** Medium
 **Confidence:** YELLOW
+
+### Operational Notes
+- Two-pass classification pipeline: rule-based pre-classification + Claude Haiku LLM for flexible items
+- **Rule-based pass:** Manual items → SKIP, shell commands (`` `npm run build` ``) → DETERMINISTIC/shell, curl/HTTP verbs → HIGH/api
+- **LLM pass:** Claude Haiku batch classification with few-shot prompting on remaining items, fallback to LOW/none on API failure
+- Types implemented: `ConfidenceTier`, `ExecutorType`, `CategoryLabel`, `ClassifiedItem`
+- 35 comprehensive test cases cover rule detection, LLM mocking, batch behavior, error handling
+- CodeRabbit review addressed: batch efficiency, fallback strategy, type safety on confidence enum
+- PR #3 merged (squash)
 
 ### Context
 Classify each parsed test plan item into a category (build, UI, API, visual, metadata, manual) and a confidence tier (DETERMINISTIC, HIGH, MEDIUM, LOW, SKIP). This determines which executor handles the item and how results are reported. Uses Claude API for classification.
