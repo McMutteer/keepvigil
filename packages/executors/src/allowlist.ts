@@ -5,13 +5,24 @@
  * This prevents arbitrary code execution from untrusted test plan items.
  */
 
+/**
+ * Shell metacharacters that could be used to chain or inject commands.
+ * Checked before allowlist patterns — any match immediately rejects the command.
+ *
+ * Covers: semicolons, ampersands, pipes, backticks, $() substitution,
+ * redirects, and newlines.
+ */
+const SHELL_METACHARACTERS = /[;&|`$<>\n\r]/;
+
 /** Patterns that match safe, known build/test commands. */
 const ALLOWED_PATTERNS: RegExp[] = [
   /^npm\s+(run|test|build|install|ci)\b/,
   /^pnpm\s+(run|test|build|install|dlx)\b/,
   /^yarn\s+(run|test|build|install)\b/,
   /^bun\s+(run|test|build|install)\b/,
-  /^npx\s+\S+/,
+  // npx: require a valid npm package name (scoped or unscoped), no bare metacharacters.
+  // This is enforced together with the SHELL_METACHARACTERS check above.
+  /^npx\s+@?[\w][\w.-]*(?:\/[\w.-]+)?/,
   /^ruff\s+(check|format)\b/,
   /^docker\s+(build|run|compose)\b/,
   /^make\b/,
@@ -39,6 +50,10 @@ export function validateCommand(command: string): ValidationResult {
 
   if (!trimmed) {
     return { allowed: false, reason: "Empty command" };
+  }
+
+  if (SHELL_METACHARACTERS.test(trimmed)) {
+    return { allowed: false, reason: "Command contains shell control characters" };
   }
 
   for (const pattern of ALLOWED_PATTERNS) {

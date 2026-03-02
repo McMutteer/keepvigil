@@ -216,7 +216,7 @@ const classified = await classifyItems(items, {
 Execute `DETERMINISTIC/shell` classified items. Runs all `hints.codeBlocks` commands sequentially in a Docker sandbox. Stops on first failure.
 
 ### Files created
-```
+```text
 packages/executors/src/allowlist.ts       — validateCommand() — pure function, 13 allowlist patterns
 packages/executors/src/sandbox.ts         — runInSandbox() — docker run wrapper (child_process.exec)
 packages/executors/src/shell.ts           — executeShellItem(item, context) — orchestrator
@@ -463,7 +463,7 @@ cd /Users/sotero/keepvigil
 # Build all packages
 pnpm build
 
-# Run all tests (90 tests, ~1.2s)
+# Run all tests (138 tests, ~1.2s)
 pnpm test
 
 # Lint

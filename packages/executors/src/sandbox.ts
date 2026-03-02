@@ -17,6 +17,20 @@ import { exec, type ExecException } from "node:child_process";
 const DEFAULT_SANDBOX_IMAGE = "node:22-alpine";
 const DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes
 
+/**
+ * Docker image name validator.
+ * Accepts: [registry/]name[:tag] and name@sha256:<hex>
+ * Rejects: values with spaces, leading dashes, or shell metacharacters
+ * that could inject flags into the docker run command.
+ */
+const VALID_IMAGE_NAME = /^[\w./-]+(:\w[\w.-]*)?(@sha256:[0-9a-f]{64})?$/;
+
+function validateImageName(image: string): void {
+  if (!VALID_IMAGE_NAME.test(image)) {
+    throw new Error(`Invalid Docker image name: "${image}"`);
+  }
+}
+
 export interface SandboxOptions {
   repoPath: string;
   timeoutMs?: number;
@@ -43,6 +57,7 @@ export async function runInSandbox(
   opts: SandboxOptions,
 ): Promise<SandboxResult> {
   const image = opts.sandboxImage ?? DEFAULT_SANDBOX_IMAGE;
+  validateImageName(image);
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   // Escape the command for use as a sh -c argument.
