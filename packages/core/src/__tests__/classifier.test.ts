@@ -275,7 +275,7 @@ describe("classifyWithLLM (mocked)", () => {
     expect(results).toHaveLength(1);
     expect(results[0].confidence).toBe("LOW");
     expect(results[0].executorType).toBe("none");
-    expect(results[0].reasoning).toContain("API timeout");
+    expect(results[0].reasoning).toContain("unavailable");
   });
 
   it("falls back to LOW/none on invalid JSON response", async () => {

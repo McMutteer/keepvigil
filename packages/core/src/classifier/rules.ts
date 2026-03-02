@@ -48,8 +48,8 @@ const STATUS_CODE_PATTERN = /\breturns?\s+(?:[1-5]\d{2}|[45]xx)\b/i;
  *
  * Rule priority:
  * 1. Manual items → SKIP / none / "manual"
- * 2. Code blocks with shell commands → DETERMINISTIC / shell / "build"
- * 3. Code blocks with curl → HIGH / api / "api"
+ * 2. Code blocks with curl → HIGH / api / "api"
+ * 3. Code blocks with shell commands → DETERMINISTIC / shell / "build"
  * 4. Text with HTTP verb + path → HIGH / api / "api"
  * 5. No match → null (deferred to LLM)
  */
@@ -70,18 +70,18 @@ export function applyRules(item: TestPlanItem): ClassifiedItem | null {
     for (const block of item.hints.codeBlocks) {
       const trimmed = block.trim();
 
-      // Rule 3: curl → API call
+      // Rule 2: curl → API call
       if (CURL_PATTERN.test(trimmed)) {
         return {
           item,
           confidence: "HIGH",
           executorType: "api",
           category: "api",
-          reasoning: `Code block contains curl command: \`${trimmed}\``,
+          reasoning: "Code block contains curl command",
         };
       }
 
-      // Rule 2: Shell commands → deterministic build step
+      // Rule 3: Shell commands → deterministic build step
       for (const prefix of SHELL_COMMAND_PREFIXES) {
         if (trimmed.startsWith(prefix)) {
           return {
@@ -89,7 +89,7 @@ export function applyRules(item: TestPlanItem): ClassifiedItem | null {
             confidence: "DETERMINISTIC",
             executorType: "shell",
             category: "build",
-            reasoning: `Code block contains shell command: \`${trimmed}\``,
+            reasoning: `Code block matches shell command pattern: ${prefix}`,
           };
         }
       }

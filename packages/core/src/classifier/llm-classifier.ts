@@ -121,7 +121,7 @@ export async function classifyWithLLM(
     const message = await client.messages.create(
       {
         model: MODEL,
-        max_tokens: 1024,
+        max_tokens: Math.max(1024, items.length * 150),
         system: CLASSIFIER_SYSTEM_PROMPT,
         messages: [{ role: "user", content: buildUserPrompt(itemTexts) }],
       },
@@ -135,12 +135,10 @@ export async function classifyWithLLM(
       );
     }
     responseText = textBlock.text;
-  } catch (error) {
-    const reason =
-      error instanceof Error
-        ? `LLM API error: ${error.message}`
-        : "LLM API unavailable";
-    return items.map((item) => makeFallback(item, reason));
+  } catch {
+    return items.map((item) =>
+      makeFallback(item, "LLM classification unavailable"),
+    );
   }
 
   const classifications = parseLLMResponse(responseText, items.length);
