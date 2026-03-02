@@ -214,6 +214,12 @@ describe("runInSandbox", () => {
     const calledCmd = mockExec.mock.calls[0][0] as string;
     expect(calledCmd).toContain("--network none");
   });
+
+  it("rejects image names with leading dash (flag injection)", async () => {
+    await expect(
+      runInSandbox("npm test", { repoPath: "/repo", sandboxImage: "--privileged" }),
+    ).rejects.toThrow("Invalid Docker image name");
+  });
 });
 
 // ---------------------------------------------------------------------------

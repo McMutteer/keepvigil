@@ -23,7 +23,7 @@ const DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes
  * Rejects: values with spaces, leading dashes, or shell metacharacters
  * that could inject flags into the docker run command.
  */
-const VALID_IMAGE_NAME = /^[\w./-]+(:\w[\w.-]*)?(@sha256:[0-9a-f]{64})?$/;
+const VALID_IMAGE_NAME = /^(?!-)[\w./-]+(:\w[\w.-]*)?(@sha256:[0-9a-f]{64})?$/;
 
 function validateImageName(image: string): void {
   if (!VALID_IMAGE_NAME.test(image)) {
