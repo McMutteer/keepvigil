@@ -29,15 +29,16 @@ const CURL_PATTERN = /^curl\s/;
 /**
  * Pattern to detect HTTP verb + path in item text.
  * Matches: GET /api/foo, POST /users, etc.
- * Also matches when preceded by "to" or "send.*to": "Send 6 requests to GET /api/..."
+ * Requires a slash followed by a non-space path segment.
  */
 const HTTP_VERB_PATH_PATTERN =
-  /\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+[/h]/i;
+  /\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\/\S+/i;
 
 /**
  * Pattern to detect HTTP status code references: "returns 200", "returns 4xx", etc.
+ * Matches both numeric codes (200, 401) and range shorthand (4xx, 5xx).
  */
-const STATUS_CODE_PATTERN = /\breturns?\s+[1-5]\d{2}\b/i;
+const STATUS_CODE_PATTERN = /\breturns?\s+(?:[1-5]\d{2}|[45]xx)\b/i;
 
 /**
  * Attempt to classify a test plan item using deterministic rules.

@@ -113,7 +113,14 @@ export function buildUserPrompt(itemTexts: string[]): string {
   ).join("\n\n");
 
   const itemsBlock = itemTexts
-    .map((text, i) => `${i + 1}. "${text}"`)
+    .map((text, i) => {
+      // Escape quotes and normalize newlines to prevent prompt injection
+      const escaped = text
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, " ");
+      return `${i + 1}. "${escaped}"`;
+    })
     .join("\n");
 
   return `Here are examples of correct classifications:

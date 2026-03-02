@@ -66,9 +66,21 @@ export async function classifyItems(
         };
       }
     } else {
-      const llmResults = await classifyWithLLM(deferredItems, options.apiKey);
-      for (let j = 0; j < deferredIndices.length; j++) {
-        results[deferredIndices[j]] = llmResults[j];
+      try {
+        const llmResults = await classifyWithLLM(deferredItems, options.apiKey);
+        for (let j = 0; j < deferredIndices.length; j++) {
+          results[deferredIndices[j]] = llmResults[j];
+        }
+      } catch {
+        for (const idx of deferredIndices) {
+          results[idx] = {
+            item: items[idx],
+            confidence: "LOW",
+            executorType: "none",
+            category: "vague",
+            reasoning: "LLM classification failed unexpectedly",
+          };
+        }
       }
     }
   }

@@ -361,6 +361,10 @@ describe("classifyWithLLM (mocked)", () => {
 // ============================================================
 
 describe("classifyItems", () => {
+  beforeEach(() => {
+    mockCreate.mockReset();
+  });
+
   it("returns empty array for empty input", async () => {
     const results = await classifyItems([]);
     expect(results).toEqual([]);
@@ -391,6 +395,7 @@ describe("classifyItems", () => {
     expect(results[0].confidence).toBe("LOW");
     expect(results[0].reasoning).toContain("Rules-only");
     expect(results[1].confidence).toBe("LOW");
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 
   it("classifies deferred items as LOW/none when no apiKey", async () => {
@@ -398,6 +403,7 @@ describe("classifyItems", () => {
     const results = await classifyItems(items);
     expect(results[0].confidence).toBe("LOW");
     expect(results[0].reasoning).toContain("No API key");
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 
   it("preserves order with mixed rule and deferred items", async () => {

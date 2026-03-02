@@ -4,6 +4,7 @@ import type {
   ClassifiedItem,
   ConfidenceTier,
   ExecutorType,
+  CategoryLabel,
 } from "../types.js";
 import { CLASSIFIER_SYSTEM_PROMPT, buildUserPrompt } from "./prompts.js";
 
@@ -26,6 +27,15 @@ const VALID_EXECUTOR: Set<string> = new Set([
   "api",
   "browser",
   "none",
+]);
+const VALID_CATEGORY: Set<string> = new Set([
+  "build",
+  "api",
+  "ui-flow",
+  "visual",
+  "metadata",
+  "manual",
+  "vague",
 ]);
 
 interface LLMClassification {
@@ -56,13 +66,17 @@ function parseLLMResponse(
   responseText: string,
   expectedCount: number,
 ): LLMClassification[] | null {
-  // Extract JSON array from response (may be wrapped in markdown code block)
-  const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) return null;
+  // Extract JSON array from response — check for fenced code block first
+  const fenced = responseText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced ? fenced[1] : responseText;
+
+  const start = candidate.indexOf("[");
+  const end = candidate.lastIndexOf("]");
+  if (start === -1 || end === -1 || end <= start) return null;
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(jsonMatch[0]);
+    parsed = JSON.parse(candidate.slice(start, end + 1));
   } catch {
     return null;
   }
@@ -146,7 +160,9 @@ export async function classifyWithLLM(
       executorType: VALID_EXECUTOR.has(c.executorType)
         ? (c.executorType as ExecutorType)
         : "none",
-      category: c.category || "vague",
+      category: VALID_CATEGORY.has(c.category)
+        ? (c.category as CategoryLabel)
+        : "vague",
       reasoning: c.reasoning || "No reasoning provided",
     };
   });

@@ -48,6 +48,9 @@ export type ConfidenceTier = "DETERMINISTIC" | "HIGH" | "MEDIUM" | "LOW" | "SKIP
 /** Which executor handles this item */
 export type ExecutorType = "shell" | "api" | "browser" | "none";
 
+/** Category label for a classified item */
+export type CategoryLabel = "build" | "api" | "ui-flow" | "visual" | "metadata" | "manual" | "vague";
+
 /** A test plan item after classification */
 export interface ClassifiedItem {
   /** The original parsed item */
@@ -56,8 +59,8 @@ export interface ClassifiedItem {
   confidence: ConfidenceTier;
   /** Which executor should handle this item */
   executorType: ExecutorType;
-  /** Category label: build, api, ui-flow, visual, metadata, manual, vague */
-  category: string;
+  /** Category label for this item */
+  category: CategoryLabel;
   /** Explanation of why this classification was chosen */
   reasoning: string;
 }
