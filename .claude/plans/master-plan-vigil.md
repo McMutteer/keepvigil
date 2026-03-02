@@ -7,6 +7,7 @@
 | 2026-03-01 | Section 10 Phase A complete (infrastructure foundation deployed during baptism) |
 | 2026-03-01 | Section 1 complete (project bootstrap — pnpm monorepo, TypeScript, Vitest, ESLint, Drizzle, Docker) |
 | 2026-03-01 | Section 2 complete (GitHub App Core — Probot 14, webhooks, Check Runs, BullMQ queue, PR #1) |
+| 2026-03-01 | Section 3 complete (Test Plan Parser — section detector, checkbox parser, hint extractor, 33 tests, PR #2) |
 
 ## Agent Onboarding
 **If you are an agent starting a new session, read these files in order:**
@@ -65,7 +66,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 |---|---------|------------|------------|------------|--------|
 | 1 | Project Bootstrap | None | Low | GREEN | Complete |
 | 2 | GitHub App Core | 1 | Medium | GREEN | Complete |
-| 3 | Test Plan Parser | 1 | Medium | GREEN | Pending |
+| 3 | Test Plan Parser | 1 | Medium | GREEN | Complete |
 | 4 | Item Classifier | 3 | Medium | YELLOW | Pending |
 | 5 | Shell Executor | 3, 4 | Low | GREEN | Pending |
 | 6 | API Test Executor | 3, 4 | Medium | GREEN | Pending |
@@ -75,7 +76,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | 10 | Deployment & Infrastructure | 9 | Medium | GREEN | Partial (Phase A done) |
 
 **Last updated:** 2026-03-01
-**Sections complete:** 2 / 10
+**Sections complete:** 3 / 10
 
 ## Key Decisions
 
@@ -268,10 +269,18 @@ Build the GitHub App that receives webhooks when PRs are opened/updated. This is
 
 ## Section 3: Test Plan Parser
 
-**Status:** Pending
+**Status:** Complete
 **Depends on:** Section 1
 **Estimated complexity:** Medium
 **Confidence:** GREEN
+
+### Operational Notes
+- Used well-tested regex patterns (not remark/unified) — 33 test cases guarantee correctness
+- `TestPlanItem` enhanced with `hints` (isManual, codeBlocks, urls) and `indent` for nesting
+- Section detector handles headings levels 1-6, case-insensitive, bold-style (`**Test Plan**`)
+- CodeRabbit caught: `isManual` lost on multi-line continuation, bold headings not detected as section boundaries — both fixed
+- 5 fixture files with realistic PR descriptions for regression testing
+- Parser is pure function — no I/O, no deps, no side effects
 
 ### Context
 Parse the test plan section from a PR description (markdown). Extract individual test items, their checked/unchecked status, and any structural information (grouping, prefixes like "Manual:").
