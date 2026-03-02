@@ -11,7 +11,9 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import type { HttpRequestSpec } from "@vigil/core/types";
+import type { HttpMethod, HttpRequestSpec } from "@vigil/core/types";
+
+const VALID_METHODS = new Set<string>(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]);
 
 const MODEL = "claude-haiku-4-5-20251001";
 const TIMEOUT_MS = 15_000;
@@ -79,6 +81,9 @@ function parseSpecResponse(raw: string): HttpRequestSpec[] {
     const spec = item as Record<string, unknown>;
 
     if (typeof spec.method !== "string") throw new Error(`Spec[${index}].method missing`);
+    if (!VALID_METHODS.has(spec.method)) {
+      throw new Error(`Spec[${index}].method invalid: "${spec.method}"`);
+    }
     if (typeof spec.path !== "string") throw new Error(`Spec[${index}].path missing`);
     if (typeof spec.expectedStatus !== "number") {
       throw new Error(`Spec[${index}].expectedStatus missing or not a number`);
@@ -87,7 +92,7 @@ function parseSpecResponse(raw: string): HttpRequestSpec[] {
     validatePath(spec.path);
 
     return {
-      method: spec.method as HttpRequestSpec["method"],
+      method: spec.method as HttpMethod,
       path: spec.path,
       headers: spec.headers as Record<string, string> | undefined,
       body: spec.body,

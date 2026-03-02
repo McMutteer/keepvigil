@@ -129,6 +129,16 @@ describe("generateApiSpec", () => {
     await expect(generateApiSpec("anything", "key")).rejects.toThrow("full URL in path");
   });
 
+  it("throws when LLM returns an invalid HTTP method", async () => {
+    mockLlmResponse([{ method: "OPTIONS", path: "/api/users", expectedStatus: 200 }]);
+    await expect(generateApiSpec("anything", "key")).rejects.toThrow(/method invalid/);
+  });
+
+  it("throws when LLM returns a dangerous method (CONNECT)", async () => {
+    mockLlmResponse([{ method: "CONNECT", path: "/api/users", expectedStatus: 200 }]);
+    await expect(generateApiSpec("anything", "key")).rejects.toThrow(/method invalid/);
+  });
+
   it("throws when path has path traversal", async () => {
     mockLlmResponse([{ method: "GET", path: "/../etc/passwd", expectedStatus: 200 }]);
     await expect(generateApiSpec("anything", "key")).rejects.toThrow("traversal");
