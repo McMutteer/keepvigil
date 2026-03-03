@@ -46,7 +46,7 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
   });
 
   const jobId = await enqueueVerification({
-    installationId: installation.id,
+    installationId: String(installation.id),
     owner,
     repo,
     pullNumber: pr.number,

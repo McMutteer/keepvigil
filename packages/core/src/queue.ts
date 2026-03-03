@@ -5,7 +5,8 @@ export const QUEUE_NAMES = {
 
 /** Job payload for the verify-test-plan queue */
 export interface VerifyTestPlanJob {
-  installationId: number;
+  /** GitHub installation ID as string — matches DB storage format */
+  installationId: string;
   owner: string;
   repo: string;
   pullNumber: number;

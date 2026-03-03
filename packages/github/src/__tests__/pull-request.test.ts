@@ -65,7 +65,7 @@ describe("handlePullRequest", () => {
     });
 
     expect(enqueueVerification).toHaveBeenCalledWith({
-      installationId: 12345,
+      installationId: "12345",
       owner: "owner",
       repo: "my-repo",
       pullNumber: 7,
