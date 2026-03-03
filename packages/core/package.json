@@ -32,8 +32,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/types.ts src/db/index.ts src/queue.ts src/parser/index.ts src/classifier/index.ts --format esm --dts --tsconfig tsconfig.build.json",
-    "dev": "tsup src/index.ts src/types.ts src/db/index.ts src/queue.ts src/parser/index.ts src/classifier/index.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
+    "build": "tsup src/index.ts src/types.ts src/db/index.ts src/db/migrate.ts src/queue.ts src/parser/index.ts src/classifier/index.ts --format esm --dts --tsconfig tsconfig.build.json",
+    "dev": "tsup src/index.ts src/types.ts src/db/index.ts src/db/migrate.ts src/queue.ts src/parser/index.ts src/classifier/index.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
