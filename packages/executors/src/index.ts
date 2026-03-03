@@ -7,3 +7,9 @@ export { executeApiItem } from "./api.js";
 export { generateApiSpec } from "./api-spec-generator.js";
 export { makeRequest, validateBaseUrl } from "./http-client.js";
 export type { HttpResponse } from "./http-client.js";
+
+export { executeShellItem } from "./shell.js";
+export { validateCommand } from "./allowlist.js";
+export { runInSandbox } from "./sandbox.js";
+export type { ValidationResult } from "./allowlist.js";
+export type { SandboxOptions, SandboxResult } from "./sandbox.js";

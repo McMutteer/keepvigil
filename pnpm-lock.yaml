@@ -2768,10 +2768,11 @@ snapshots:
   '@types/node@25.3.3':
     dependencies:
       undici-types: 7.18.2
+    optional: true
 
   '@types/pg@8.18.0':
     dependencies:
-      '@types/node': 25.3.3
+      '@types/node': 22.19.13
       pg-protocol: 1.12.0
       pg-types: 2.2.0
 
@@ -3882,7 +3883,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@7.18.2: {}
+  undici-types@7.18.2:
+    optional: true
 
   universal-github-app-jwt@2.2.2: {}
 

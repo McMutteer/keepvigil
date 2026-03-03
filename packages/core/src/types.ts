@@ -104,3 +104,16 @@ export interface ApiExecutionContext {
   /** Anthropic API key for spec generation via Claude */
   anthropicApiKey: string;
 }
+
+/**
+ * Context provided by the orchestrator (Section 9) to the shell executor.
+ * Configures the sandboxed Docker environment for command execution.
+ */
+export interface ShellExecutionContext {
+  /** Absolute path to the cloned repository on the host */
+  repoPath: string;
+  /** Timeout in milliseconds (default: 300_000 = 5 minutes) */
+  timeoutMs?: number;
+  /** Docker image to use for the sandbox (default: "node:22-alpine") */
+  sandboxImage?: string;
+}
