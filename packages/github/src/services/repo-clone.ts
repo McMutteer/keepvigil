@@ -20,12 +20,19 @@ export interface CloneOptions {
 }
 
 /**
- * Validates a repo path to prevent directory traversal or injection.
- * Same character set as the shell executor's allowlist.
+ * Validates a repo path segment to prevent directory traversal or injection.
+ * Each path segment must contain only safe characters.
  */
 function validateRepoPath(repoPath: string): void {
-  if (!/^[a-zA-Z0-9_\-/:.]+$/.test(repoPath)) {
-    throw new Error(`Invalid repo path characters: ${repoPath}`);
+  const safeSegment = /^[a-zA-Z0-9._-]+$/;
+  const segments = repoPath.split("/").filter(Boolean);
+  for (const segment of segments) {
+    if (!safeSegment.test(segment)) {
+      throw new Error(`Invalid repo path segment: ${segment}`);
+    }
+  }
+  if (repoPath.includes("..") || repoPath.includes("\0")) {
+    throw new Error(`Path traversal detected in repo path: ${repoPath}`);
   }
 }
 
@@ -39,27 +46,35 @@ export async function cloneRepo(options: CloneOptions): Promise<string> {
   const tmpDir = await mkdtemp(join(tmpdir(), "vigil-"));
   const repoPath = join(tmpDir, `${owner}-${repo}`);
 
+  // Validate before any filesystem or network operation
+  validateRepoPath(repoPath);
+
   const cloneUrl = githubToken
     ? `https://x-access-token:${githubToken}@github.com/${owner}/${repo}.git`
     : `https://github.com/${owner}/${repo}.git`;
 
-  await execFileAsync("git", [
-    "clone",
-    "--depth",
-    "1",
-    "--no-tags",
-    cloneUrl,
-    repoPath,
-  ]);
+  try {
+    await execFileAsync("git", [
+      "clone",
+      "--depth",
+      "1",
+      "--no-tags",
+      cloneUrl,
+      repoPath,
+    ]);
 
-  // Checkout the specific commit (shallow clone may not have it if it's old)
-  await execFileAsync("git", ["fetch", "--depth", "1", "origin", sha], {
-    cwd: repoPath,
-  });
-  await execFileAsync("git", ["checkout", sha], { cwd: repoPath });
+    // Checkout the specific commit (shallow clone may not have it if it's old)
+    await execFileAsync("git", ["fetch", "--depth", "1", "origin", sha], {
+      cwd: repoPath,
+    });
+    await execFileAsync("git", ["checkout", sha], { cwd: repoPath });
 
-  validateRepoPath(repoPath);
-  return repoPath;
+    return repoPath;
+  } catch (err) {
+    // Clean up the temp directory if git operations fail
+    await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+    throw err;
+  }
 }
 
 /** Remove the cloned repository directory. Non-fatal — log errors rather than throw. */

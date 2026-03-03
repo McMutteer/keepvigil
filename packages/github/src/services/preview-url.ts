@@ -38,6 +38,7 @@ export async function detectPreviewUrl(
         owner,
         repo,
         environment,
+        ref: `refs/pull/${pullNumber}/head`,
         per_page: 10,
       });
 
@@ -86,9 +87,9 @@ export async function detectPreviewUrl(
 
       for (const run of runs.check_runs) {
         if (run.conclusion === "success" && run.output?.summary) {
-          // Vercel embeds the preview URL in the check run summary as a markdown link
+          // Vercel/Netlify embed the preview URL in the check run summary as a markdown link
           const urlMatch = run.output.summary.match(
-            /https:\/\/[a-z0-9-]+\.vercel\.app/,
+            /https?:\/\/[a-z0-9][a-z0-9-]*\.(?:vercel|netlify)\.app/i,
           );
           if (urlMatch) {
             return urlMatch[0];

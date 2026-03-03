@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean, integer, json } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, boolean, integer, json, index } from "drizzle-orm/pg-core";
 
 /** Tracks GitHub App installations */
 export const installations = pgTable("installations", {
@@ -27,7 +27,10 @@ export const executions = pgTable("executions", {
   resultsSummary: json("results_summary"),
   // { passed: number, failed: number, skipped: number, needsReview: number, total: number }
   error: text("error"),
-});
+}, (table) => [
+  index("executions_job_id_idx").on(table.jobId),
+  index("executions_owner_repo_pull_idx").on(table.owner, table.repo, table.pullNumber),
+]);
 
 /** Simple health check log for migration testing */
 export const healthChecks = pgTable("health_checks", {

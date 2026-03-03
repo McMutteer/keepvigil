@@ -4,7 +4,7 @@
 
 Vigil is a GitHub App that automatically executes the test plans AI coding agents write in pull requests. When Claude Code, Cursor, or GitHub Copilot generates a PR with a test plan checklist, Vigil runs those tests and reports results as GitHub Check Runs — no test files to write, no new platform to learn.
 
-```
+```text
 - [ ] npm run build succeeds                  → ✅ Passed (1.2s)
 - [ ] POST /api/users returns 201             → ❌ Failed — got 500
 - [ ] Login flow works on mobile              → ⚠️ Needs Review
@@ -91,7 +91,7 @@ Vigil is under active development. 8 of 10 implementation sections complete:
 
 This is a pnpm monorepo with three packages:
 
-```
+```text
 packages/
   core/       — types, parser, classifier, database, queue
   github/     — Probot app, webhooks, Check Run management

@@ -39,7 +39,14 @@ export function createWorker(
   );
 
   worker.on("failed", (job, err) => {
-    console.error(`[worker] Job ${job?.id} failed after all retries:`, err);
+    if (job) {
+      console.error(
+        `[worker] Job ${job.id} failed (${job.data.owner}/${job.data.repo}#${job.data.pullNumber}):`,
+        err,
+      );
+    } else {
+      console.error("[worker] Job failed (no job context):", err);
+    }
   });
 
   worker.on("completed", (job) => {

@@ -233,7 +233,7 @@ describe("routeToExecutors", () => {
     expect(results[1].itemId).toBe("tp-1");
   });
 
-  it("passes correct timeouts to each executor", async () => {
+  it("passes correct timeout to shell executor", async () => {
     const shellItem = makeShellItem();
     await routeToExecutors({
       classifiedItems: [shellItem],

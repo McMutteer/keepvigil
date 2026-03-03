@@ -67,7 +67,16 @@ async function main(): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
     });
-    await worker.close();
+    // Wait up to 30s for active jobs, then force-close to avoid hanging
+    await Promise.race([
+      worker.close(),
+      new Promise<void>((resolve) =>
+        setTimeout(() => {
+          probot.log.warn("[worker] Close timed out after 30s, forcing shutdown");
+          resolve();
+        }, 30_000),
+      ),
+    ]);
     await closeQueue();
     process.exit(0);
   };

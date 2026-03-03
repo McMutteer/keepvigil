@@ -33,7 +33,7 @@ export async function enqueueVerification(job: VerifyTestPlanJob): Promise<strin
     jobId,
     attempts: 3,
     backoff: { type: "exponential", delay: 5000 },
-    removeOnComplete: 100,
+    removeOnComplete: true,
     removeOnFail: 200,
   });
 
