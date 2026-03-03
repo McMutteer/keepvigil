@@ -69,7 +69,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | 2 | GitHub App Core | 1 | Medium | GREEN | Complete |
 | 3 | Test Plan Parser | 1 | Medium | GREEN | Complete |
 | 4 | Item Classifier | 3 | Medium | YELLOW | Complete |
-| 5 | Shell Executor | 3, 4 | Low | GREEN | In Review (PR #4) |
+| 5 | Shell Executor | 3, 4 | Low | GREEN | Complete |
 | 6 | API Test Executor | 3, 4 | Medium | GREEN | Complete |
 | 7 | Browser Test Executor | 3, 4 | High | YELLOW | Pending |
 | 8 | Result Reporter | 2, 5 | Medium | GREEN | Pending |
@@ -77,7 +77,7 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | 10 | Deployment & Infrastructure | 9 | Medium | GREEN | Partial (Phase A done) |
 
 **Last updated:** 2026-03-03
-**Sections complete:** 5 / 10
+**Sections complete:** 6 / 10
 
 ## Key Decisions
 
