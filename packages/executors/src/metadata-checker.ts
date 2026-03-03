@@ -90,6 +90,16 @@ export async function checkMetadata(
 
   try {
     const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      return {
+        ogTags: {},
+        jsonLd: [],
+        missingOgTags: EXPECTED_OG_TAGS,
+        jsonLdValid: false,
+        jsonLdErrors: [`Fetch failed with status ${response.status}`],
+        htmlTitle: null,
+      };
+    }
     const html = await response.text();
 
     const ogTags = extractOgTags(html);
@@ -134,9 +144,15 @@ export async function executeMetadataItem(
   const itemId = item.item.id;
 
   // Extract a path from the item hints or default to "/"
-  const path = item.item.hints.urls[0]
-    ? new URL(item.item.hints.urls[0]).pathname
-    : "/";
+  let path = "/";
+  const hintedUrl = item.item.hints.urls[0];
+  if (hintedUrl) {
+    try {
+      path = new URL(hintedUrl).pathname || "/";
+    } catch {
+      path = "/";
+    }
+  }
 
   const result = await checkMetadata(path, context.baseUrl, context.timeoutMs);
 

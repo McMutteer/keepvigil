@@ -121,8 +121,16 @@ async function runAction(
         break;
       }
       case "assertText": {
+        if (!spec.expected) {
+          return {
+            spec,
+            durationMs: Date.now() - start,
+            passed: false,
+            failReason: 'assertText requires non-empty "expected"',
+          };
+        }
         const text = await page.locator(spec.selector!).first().textContent();
-        if (!text?.includes(spec.expected ?? "")) {
+        if (!text?.includes(spec.expected)) {
           const shot = await takeScreenshot(page, "assertion-failure");
           return {
             spec,
@@ -135,8 +143,16 @@ async function runAction(
         break;
       }
       case "assertUrl": {
+        if (!spec.expected) {
+          return {
+            spec,
+            durationMs: Date.now() - start,
+            passed: false,
+            failReason: 'assertUrl requires non-empty "expected"',
+          };
+        }
         const currentUrl = page.url();
-        if (!currentUrl.includes(spec.expected ?? "")) {
+        if (!currentUrl.includes(spec.expected)) {
           const shot = await takeScreenshot(page, "assertion-failure");
           return {
             spec,
@@ -148,6 +164,17 @@ async function runAction(
         }
         break;
       }
+    }
+
+    // Post-action domain confinement: verify page didn't redirect outside baseUrl
+    const finalUrl = page.url();
+    if (finalUrl !== "about:blank" && !isWithinDomain(finalUrl, baseUrl)) {
+      return {
+        spec,
+        durationMs: Date.now() - start,
+        passed: false,
+        failReason: `Navigation outside allowed domain after action: "${finalUrl}"`,
+      };
     }
 
     return { spec, durationMs: Date.now() - start, passed: true };
@@ -329,6 +356,10 @@ async function executeVisualItem(
 
     const url = context.baseUrl.replace(/\/$/, "") + path;
     await page.goto(url, { waitUntil: "domcontentloaded" });
+
+    if (!isWithinDomain(page.url(), context.baseUrl)) {
+      throw new Error(`Navigation outside allowed domain: "${page.url()}"`);
+    }
 
     // Take screenshots at each viewport
     const screenshots = await takeViewportScreenshots(page, viewports);

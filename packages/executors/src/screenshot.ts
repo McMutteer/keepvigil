@@ -75,14 +75,14 @@ export async function takeViewportScreenshots(
   const original = page.viewportSize() ?? { width: 1024, height: 768 };
   const results: ScreenshotResult[] = [];
 
-  for (const vp of viewports) {
-    await page.setViewportSize({ width: vp.width, height: vp.height });
-    const shot = await takeScreenshot(page, `viewport-${vp.label}`);
-    results.push(shot);
+  try {
+    for (const vp of viewports) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      const shot = await takeScreenshot(page, `viewport-${vp.label}`);
+      results.push(shot);
+    }
+    return results;
+  } finally {
+    await page.setViewportSize(original);
   }
-
-  // Restore original viewport
-  await page.setViewportSize(original);
-
-  return results;
 }

@@ -123,17 +123,30 @@ export function parseBrowserSpecResponse(raw: string): BrowserActionSpec[] {
     }
 
     // Validate and cap waitMs
-    let waitMs = raw.waitMs as number | undefined;
+    let waitMs: number | undefined;
     if (action === "wait") {
-      if (typeof waitMs !== "number" || waitMs <= 0) {
+      if (
+        typeof raw.waitMs !== "number" ||
+        !Number.isFinite(raw.waitMs) ||
+        raw.waitMs <= 0
+      ) {
         waitMs = 1000; // default wait
+      } else {
+        waitMs = Math.min(raw.waitMs, MAX_WAIT_MS);
       }
-      waitMs = Math.min(waitMs, MAX_WAIT_MS);
     }
 
     // Validate value for fill/select
     if ((action === "fill" || action === "select") && typeof raw.value !== "string") {
       throw new Error(`Spec[${index}].value required for action "${action}"`);
+    }
+
+    // Require expected for assertion actions
+    if (
+      (action === "assertText" || action === "assertUrl") &&
+      (typeof raw.expected !== "string" || raw.expected.trim() === "")
+    ) {
+      throw new Error(`Spec[${index}].expected required for action "${action}"`);
     }
 
     const spec: BrowserActionSpec = { action };

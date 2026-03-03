@@ -162,6 +162,7 @@ function mockLlmResponse(specs: unknown[]): void {
 
 function mockFetchHtml(html: string, status = 200): void {
   mockFetch.mockResolvedValueOnce({
+    ok: status >= 200 && status < 300,
     status,
     text: async () => html,
   });
@@ -249,6 +250,37 @@ describe("parseBrowserSpecResponse", () => {
       { action: "wait", waitMs: -5 },
     ]));
     expect(specs[0].waitMs).toBe(1000);
+  });
+
+  it("defaults waitMs to 1000 when NaN", () => {
+    const specs = parseBrowserSpecResponse(JSON.stringify([
+      { action: "wait", waitMs: "not-a-number" },
+    ]));
+    expect(specs[0].waitMs).toBe(1000);
+  });
+
+  it("rejects assertText without expected", () => {
+    expect(() =>
+      parseBrowserSpecResponse(JSON.stringify([
+        { action: "assertText", selector: "h1" },
+      ])),
+    ).toThrow('expected required for action "assertText"');
+  });
+
+  it("rejects assertUrl without expected", () => {
+    expect(() =>
+      parseBrowserSpecResponse(JSON.stringify([
+        { action: "assertUrl" },
+      ])),
+    ).toThrow('expected required for action "assertUrl"');
+  });
+
+  it("rejects assertText with empty expected", () => {
+    expect(() =>
+      parseBrowserSpecResponse(JSON.stringify([
+        { action: "assertText", selector: "h1", expected: "  " },
+      ])),
+    ).toThrow('expected required for action "assertText"');
   });
 
   it("throws on invalid JSON", () => {
@@ -385,6 +417,18 @@ describe("checkMetadata", () => {
     expect(result.ogTags).toEqual({});
     expect(result.jsonLd).toEqual([]);
     expect(result.htmlTitle).toBeNull();
+  });
+
+  it("handles non-2xx response as failure", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      text: async () => "<html><head><meta property='og:title' content='404 Page'></head></html>",
+    });
+    const result = await checkMetadata("/", "https://example.com");
+    expect(result.ogTags).toEqual({});
+    expect(result.missingOgTags).toEqual(["og:title", "og:description", "og:image", "og:url"]);
+    expect(result.jsonLdErrors[0]).toContain("status 404");
   });
 });
 
@@ -652,5 +696,19 @@ describe("executeBrowserItem", () => {
     const evidence = result.evidence as Record<string, unknown>;
     const screenshots = evidence.screenshots as unknown[];
     expect(screenshots.length).toBeGreaterThan(0);
+  });
+
+  it("detects domain escape after redirect", async () => {
+    mockUrl.mockReturnValue("https://evil.com/phish");
+    mockLlmResponse([
+      { action: "navigate", path: "/", description: "Open page" },
+    ]);
+    const item = makeBrowserItem("Navigate to page");
+    const result = await executeBrowserItem(item, baseContext);
+
+    expect(result.passed).toBe(false);
+    const evidence = result.evidence as Record<string, unknown>;
+    const actions = evidence.actions as Array<{ passed: boolean; failReason?: string }>;
+    expect(actions[0].failReason).toContain("outside allowed domain");
   });
 });
