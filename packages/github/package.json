@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@vigil/core": "workspace:*",
+    "@vigil/executors": "workspace:*",
     "bullmq": "^5.70.1",
     "ioredis": "^5.10.0",
     "probot": "^14.2.4",

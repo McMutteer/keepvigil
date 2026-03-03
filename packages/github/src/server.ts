@@ -1,10 +1,12 @@
 import { createServer } from "node:http";
+import type { Worker } from "bullmq";
 import { createProbot, createNodeMiddleware } from "probot";
 import { createDb } from "@vigil/core/db";
 import { loadConfig } from "./config.js";
 import { vigilApp } from "./app.js";
 import { initQueue, closeQueue } from "./services/queue.js";
 import { setDatabase } from "./webhooks/installation.js";
+import { createWorker } from "./worker.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -24,6 +26,9 @@ async function main(): Promise<void> {
       secret: config.githubWebhookSecret,
     },
   });
+
+  // Start BullMQ worker (consumes verify-test-plan queue)
+  const worker: Worker = createWorker(config.redisUrl, probot, config.anthropicApiKey);
 
   // Create webhook middleware
   const webhookMiddleware = await createNodeMiddleware(vigilApp, { probot });
@@ -62,6 +67,7 @@ async function main(): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
     });
+    await worker.close();
     await closeQueue();
     process.exit(0);
   };

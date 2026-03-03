@@ -25,7 +25,12 @@ export async function enqueueVerification(job: VerifyTestPlanJob): Promise<strin
     throw new Error("Queue not initialized — call initQueue() first");
   }
 
+  // Deduplicate by PR — if a new push arrives while a job is queued, BullMQ
+  // recognises the same jobId and won't add a duplicate.
+  const jobId = `${job.owner}/${job.repo}#${job.pullNumber}`;
+
   const added = await verifyQueue.add("verify", job, {
+    jobId,
     attempts: 3,
     backoff: { type: "exponential", delay: 5000 },
     removeOnComplete: 100,

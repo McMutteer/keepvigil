@@ -91,6 +91,9 @@ importers:
       '@vigil/core':
         specifier: workspace:*
         version: link:../core
+      '@vigil/executors':
+        specifier: workspace:*
+        version: link:../executors
       bullmq:
         specifier: ^5.70.1
         version: 5.70.1
