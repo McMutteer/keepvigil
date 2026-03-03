@@ -13,6 +13,8 @@ vi.mock("../services/queue.js", () => ({
 import { createPendingCheckRun } from "../services/check-run.js";
 import { enqueueVerification } from "../services/queue.js";
 
+const mockChecksUpdate = vi.fn().mockResolvedValue({});
+
 function makeContext(overrides: {
   body?: string | null;
   action?: string;
@@ -39,7 +41,9 @@ function makeContext(overrides: {
       },
       installation: installationId ? { id: installationId } : null,
     },
-    octokit: {} as unknown,
+    octokit: {
+      rest: { checks: { update: mockChecksUpdate } },
+    } as unknown,
     log: {
       info: vi.fn(),
       warn: vi.fn(),
@@ -113,5 +117,46 @@ describe("handlePullRequest", () => {
 
     expect(createPendingCheckRun).toHaveBeenCalled();
     expect(enqueueVerification).toHaveBeenCalled();
+  });
+
+  it("cancels check run when enqueue fails after check run creation", async () => {
+    vi.mocked(enqueueVerification).mockRejectedValueOnce(new Error("Redis unavailable"));
+    const context = makeContext();
+
+    await handlePullRequest(context);
+
+    expect(context.log.error).toHaveBeenCalled();
+    expect(mockChecksUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        owner: "owner",
+        repo: "my-repo",
+        check_run_id: 42,
+        status: "completed",
+        conclusion: "cancelled",
+      }),
+    );
+  });
+
+  it("logs error but does not throw when check run creation fails", async () => {
+    vi.mocked(createPendingCheckRun).mockRejectedValueOnce(new Error("GitHub API down"));
+    const context = makeContext();
+
+    await handlePullRequest(context);
+
+    expect(context.log.error).toHaveBeenCalled();
+    expect(enqueueVerification).not.toHaveBeenCalled();
+    // No check run to cancel since creation itself failed
+    expect(mockChecksUpdate).not.toHaveBeenCalled();
+  });
+
+  it("logs cleanup error if cancelling orphaned check run also fails", async () => {
+    vi.mocked(enqueueVerification).mockRejectedValueOnce(new Error("Redis unavailable"));
+    mockChecksUpdate.mockRejectedValueOnce(new Error("GitHub API down"));
+    const context = makeContext();
+
+    await handlePullRequest(context);
+
+    // Should have logged two errors: the original + the cleanup failure
+    expect(context.log.error).toHaveBeenCalledTimes(2);
   });
 });
