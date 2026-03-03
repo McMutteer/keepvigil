@@ -117,3 +117,76 @@ export interface ShellExecutionContext {
   /** Docker image to use for the sandbox (default: "node:22-alpine") */
   sandboxImage?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Browser executor types (Section 7)
+// ---------------------------------------------------------------------------
+
+/** Actions the browser executor can perform */
+export type BrowserActionType =
+  | "navigate"
+  | "click"
+  | "fill"
+  | "select"
+  | "wait"
+  | "screenshot"
+  | "assertVisible"
+  | "assertText"
+  | "assertUrl";
+
+/**
+ * A single browser action generated from a NL test plan item.
+ * The LLM produces an array of these; the executor runs them sequentially.
+ * Designed to be simple and linear — no loops, no conditionals, no code execution.
+ */
+export interface BrowserActionSpec {
+  /** Which action to perform */
+  action: BrowserActionType;
+  /** CSS selector (required for click, fill, select, assertVisible, assertText) */
+  selector?: string;
+  /** Value for fill/select actions */
+  value?: string;
+  /** Relative URL path for navigate action (e.g., "/login"). Never a full URL. */
+  path?: string;
+  /** Expected text for assertText, or URL substring for assertUrl */
+  expected?: string;
+  /** Wait duration in ms for wait action (max 10_000) */
+  waitMs?: number;
+  /** Human-readable description of this step */
+  description?: string;
+}
+
+/** Viewport preset for responsive testing */
+export interface ViewportSpec {
+  width: number;
+  height: number;
+  label: string;
+}
+
+/**
+ * Context provided by the orchestrator to the browser executor.
+ * The `baseUrl` is always a preview deployment URL — never production.
+ */
+export interface BrowserExecutionContext {
+  /** Base URL of the preview deployment, e.g. "https://pr-42.keepvigil.dev" */
+  baseUrl: string;
+  /** Anthropic API key for spec generation via Claude */
+  anthropicApiKey: string;
+  /** Timeout per test item in milliseconds (default: 60_000) */
+  timeoutMs?: number;
+  /** Max retry attempts for flaky failures (default: 3) */
+  maxRetries?: number;
+  /** Viewports to test for visual items (default: mobile/tablet/desktop) */
+  viewports?: ViewportSpec[];
+}
+
+/**
+ * Context for metadata-only checking (OG tags, JSON-LD).
+ * Does not require a browser — uses fetch + HTML parsing.
+ */
+export interface MetadataExecutionContext {
+  /** Base URL of the preview deployment */
+  baseUrl: string;
+  /** Timeout per HTTP request in milliseconds (default: 15_000) */
+  timeoutMs?: number;
+}
