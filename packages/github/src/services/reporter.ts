@@ -116,7 +116,9 @@ async function findExistingComment(
     issue_number: pullNumber,
     per_page: 100,
   });
-  const existing = comments.find(c => c.body?.includes(COMMENT_MARKER));
+  const existing = comments.find(
+    c => c.body?.includes(COMMENT_MARKER) && c.user?.type === "Bot",
+  );
   return existing?.id ?? null;
 }
 
@@ -181,7 +183,7 @@ export async function reportResults(context: ReportContext): Promise<void> {
       context.pullNumber,
       commentBody,
     );
-  } catch {
-    // Check Run is already updated — comment is best-effort
+  } catch (err) {
+    console.error("Failed to post/update PR comment:", err);
   }
 }

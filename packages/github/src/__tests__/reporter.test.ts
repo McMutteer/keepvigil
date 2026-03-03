@@ -364,6 +364,14 @@ describe("buildResultsTable", () => {
     expect(table).toContain("| 1 | build passes | DETERMINISTIC | :white_check_mark: Passed |");
   });
 
+  it("escapes pipe characters in item text", () => {
+    const items: ReportItem[] = [
+      { classified: makeClassified("check a | b", { id: "tp-0" }), result: makeResult("tp-0", true), verdict: "passed" },
+    ];
+    const table = buildResultsTable(items);
+    expect(table).toContain("check a \\| b");
+  });
+
   it("shows correct status icons for all verdicts", () => {
     const items: ReportItem[] = [
       { classified: makeClassified("a", { id: "tp-0" }), result: makeResult("tp-0", true), verdict: "passed" },
@@ -504,6 +512,25 @@ describe("formatEvidence", () => {
     expect(text).toContain("Navigate to /login");
     expect(text).toContain("Element not found");
     expect(text).toContain("Console errors");
+  });
+
+  it("includes both actions and metadata evidence for browser executor", () => {
+    const item: ReportItem = {
+      classified: makeClassified("seo check", { executorType: "browser", category: "seo" }),
+      result: makeResult("tp-0", false, {
+        actions: [
+          { description: "Navigate to /home", passed: true },
+          { description: "Check OG tags", passed: false, failReason: "Missing og:image" },
+        ],
+        ogTags: { "og:title": "My Site" },
+        missingOgTags: ["og:image"],
+      }),
+      verdict: "failed",
+    };
+    const text = formatEvidence(item);
+    expect(text).toContain("Navigate to /home");
+    expect(text).toContain("Missing og:image");
+    expect(text).toContain("Missing OG tags");
   });
 
   it("formats generic evidence as JSON for unknown executor", () => {
@@ -721,12 +748,12 @@ describe("reportResults", () => {
     expect(commentBody).toContain(COMMENT_MARKER);
   });
 
-  it("updates existing comment when marker found", async () => {
+  it("updates existing comment when marker found from bot", async () => {
     const updateFn = vi.fn().mockResolvedValue({});
     const createComment = vi.fn().mockResolvedValue({});
     const updateComment = vi.fn().mockResolvedValue({});
     const listComments = vi.fn().mockResolvedValue([
-      { id: 99, body: `${COMMENT_MARKER}\nold results` },
+      { id: 99, body: `${COMMENT_MARKER}\nold results`, user: { type: "Bot" } },
     ]);
     const octokit = makeMockOctokit({ updateCheckRun: updateFn, listComments, createComment, updateComment });
 
@@ -738,6 +765,20 @@ describe("reportResults", () => {
     expect(createComment).not.toHaveBeenCalled();
     expect(updateComment).toHaveBeenCalledOnce();
     expect(updateComment.mock.calls[0][0].comment_id).toBe(99);
+  });
+
+  it("ignores marker in non-bot comments and creates new", async () => {
+    const createComment = vi.fn().mockResolvedValue({});
+    const updateComment = vi.fn().mockResolvedValue({});
+    const listComments = vi.fn().mockResolvedValue([
+      { id: 99, body: `${COMMENT_MARKER}\nold results`, user: { type: "User" } },
+    ]);
+    const octokit = makeMockOctokit({ listComments, createComment, updateComment });
+
+    await reportResults(makeReportContext(octokit, [makeClassified("test")], [makeResult("tp-0", true)]));
+
+    expect(updateComment).not.toHaveBeenCalled();
+    expect(createComment).toHaveBeenCalledOnce();
   });
 
   it("creates new comment when no existing marker found", async () => {
@@ -761,7 +802,8 @@ describe("reportResults", () => {
     ).rejects.toThrow("GitHub API error");
   });
 
-  it("swallows comment errors without throwing", async () => {
+  it("swallows comment errors without throwing and logs error", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const updateFn = vi.fn().mockResolvedValue({});
     const listComments = vi.fn().mockRejectedValue(new Error("Comment API error"));
     const octokit = makeMockOctokit({ updateCheckRun: updateFn, listComments });
@@ -769,6 +811,9 @@ describe("reportResults", () => {
     await expect(
       reportResults(makeReportContext(octokit, [makeClassified("test")], [makeResult("tp-0", true)])),
     ).resolves.toBeUndefined();
+
+    expect(consoleSpy).toHaveBeenCalledWith("Failed to post/update PR comment:", expect.any(Error));
+    consoleSpy.mockRestore();
   });
 
   it("handles empty execution results (all items become error)", async () => {

@@ -120,7 +120,7 @@ export function buildCheckRunText(items: ReportItem[]): string {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const num = i + 1;
-    const text = truncate(item.classified.item.text, 60);
+    const text = truncate(escapeTableCell(item.classified.item.text), 60);
     const confidence = item.classified.confidence;
     const executor = item.classified.executorType === "none" ? "--" : item.classified.executorType;
     const status = statusIcon(item);
@@ -135,7 +135,7 @@ export function buildCheckRunText(items: ReportItem[]): string {
   if (failedItems.length > 0) {
     parts.push("", "### Evidence", "");
     for (const item of failedItems) {
-      const label = `${item.classified.item.id}: ${truncate(item.classified.item.text, 60)}`;
+      const label = `${item.classified.item.id}: ${truncate(escapeHtml(item.classified.item.text), 60)}`;
       const evidence = item.result
         ? formatEvidenceText(item.result.evidence)
         : "No execution result available.";
@@ -168,7 +168,7 @@ function statusIcon(item: ReportItem): string {
       return ":x: Failed";
     }
     case "error": return ":x: Error";
-    case "skipped": return ":construction: Skipped";
+    case "skipped": return ":construction: Human";
   }
 }
 
@@ -180,6 +180,14 @@ function formatEvidenceText(evidence: Record<string, unknown>): string {
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function escapeTableCell(str: string): string {
+  return str.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function truncate(str: string, max: number): string {

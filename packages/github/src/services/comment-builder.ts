@@ -52,7 +52,7 @@ export function buildResultsTable(items: ReportItem[]): string {
   const header = "| # | Item | Confidence | Status |\n|---|------|------------|--------|";
   const rows = items.map((item, index) => {
     const num = index + 1;
-    const text = truncate(item.classified.item.text, 80);
+    const text = truncate(escapeTableCell(item.classified.item.text), 80);
     const confidence = item.classified.confidence;
     const status = verdictToStatus(item);
     return `| ${num} | ${text} | ${confidence} | ${status} |`;
@@ -66,7 +66,7 @@ export function buildEvidenceBlock(item: ReportItem): string {
   if (item.verdict === "passed" || item.verdict === "skipped") return "";
 
   const icon = item.verdict === "failed" || item.verdict === "error" ? "x" : "warning";
-  const label = `${item.classified.item.id}: ${truncate(item.classified.item.text, 60)}`;
+  const label = `${item.classified.item.id}: ${truncate(escapeHtml(item.classified.item.text), 60)}`;
   const meta = [
     `**Executor:** ${item.classified.executorType}`,
     `**Confidence:** ${item.classified.confidence}`,
@@ -178,7 +178,7 @@ function formatBrowserEvidence(ev: Record<string, unknown>): string {
   }
 
   if (ev.ogTags || ev.jsonLd) {
-    return formatMetadataEvidence(ev);
+    parts.push(formatMetadataEvidence(ev));
   }
 
   return parts.join("\n") || "Evidence captured for human review.";
@@ -222,6 +222,14 @@ function verdictToStatus(item: ReportItem): string {
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function escapeTableCell(str: string): string {
+  return str.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function truncate(str: string, max: number): string {
