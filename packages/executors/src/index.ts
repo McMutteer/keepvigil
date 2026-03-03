@@ -13,3 +13,13 @@ export { validateCommand } from "./allowlist.js";
 export { runInSandbox } from "./sandbox.js";
 export type { ValidationResult } from "./allowlist.js";
 export type { SandboxOptions, SandboxResult } from "./sandbox.js";
+
+export { executeBrowserItem } from "./browser.js";
+export { generateBrowserSpec } from "./playwright-generator.js";
+export { takeScreenshot, takeViewportScreenshots } from "./screenshot.js";
+export { checkMetadata, executeMetadataItem } from "./metadata-checker.js";
+export {
+  DEFAULT_VIEWPORTS,
+  hasHorizontalOverflow,
+  createConsoleCollector,
+} from "./viewport.js";
