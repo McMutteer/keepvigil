@@ -20,9 +20,9 @@ const ALLOWED_PATTERNS: RegExp[] = [
   /^pnpm\s+(run|test|build|install|dlx)\b/,
   /^yarn\s+(run|test|build|install)\b/,
   /^bun\s+(run|test|build|install)\b/,
-  // npx: require a valid npm package name (scoped or unscoped), no bare metacharacters.
-  // This is enforced together with the SHELL_METACHARACTERS check above.
-  /^npx\s+@?[\w][\w.-]*(?:\/[\w.-]+)?/,
+  // npx: restricted to known-safe dev tools only.
+  // Arbitrary npx packages can execute post-install scripts with full access.
+  /^npx\s+(eslint|prettier|tsc|tsup|vitest|jest|playwright|biome|oxlint|svelte-check|astro|next|nuxt|turbo)\b/,
   /^ruff\s+(check|format)\b/,
   /^docker\s+(build|run|compose)\b/,
   /^make\b/,

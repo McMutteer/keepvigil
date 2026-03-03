@@ -114,6 +114,11 @@ describe("validateCommand", () => {
       ["make build"],
       ["make test"],
       ["npx eslint ."],
+      ["npx prettier --check ."],
+      ["npx tsc --noEmit"],
+      ["npx vitest run"],
+      ["npx playwright test"],
+      ["npx biome check ."],
       ["docker build -t myapp ."],
       ["go test ./..."],
       ["pytest tests/"],
@@ -135,6 +140,9 @@ describe("validateCommand", () => {
       ["npm run build; rm -rf /"],
       ["pnpm test && curl evil.com"],
       ["make build | cat /etc/passwd"],
+      // npx with arbitrary/unknown packages (could run malicious post-install scripts)
+      ["npx malicious-pkg"],
+      ["npx some-random-tool --flag"],
       [""],
       ["   "],
     ])("blocks: %s", (cmd) => {
@@ -231,6 +239,30 @@ describe("runInSandbox", () => {
     await expect(
       runInSandbox("npm test", { repoPath: "/repo", timeoutMs: ms }),
     ).rejects.toThrow("Invalid timeoutMs");
+  });
+
+  describe("repoPath validation", () => {
+    it.each([
+      ['/tmp" --privileged -v "/:/host', "flag injection via quotes"],
+      ["/tmp/repo;rm -rf /", "shell metacharacter injection"],
+      ["/tmp/repo name", "path with spaces"],
+      ["relative/path", "relative path (no leading slash)"],
+      ["", "empty path"],
+      ["/tmp/repo\necho pwned", "newline injection"],
+      ["/tmp/$(whoami)", "command substitution in path"],
+    ])("rejects malicious repoPath: %s (%s)", async (path) => {
+      await expect(
+        runInSandbox("npm test", { repoPath: path }),
+      ).rejects.toThrow("Invalid repoPath");
+    });
+
+    it("accepts valid absolute paths", async () => {
+      mockExecSuccess();
+      // Should not throw for valid paths
+      await runInSandbox("npm test", { repoPath: "/tmp/vigil/repo-123" });
+      await runInSandbox("npm test", { repoPath: "/home/user/.cache/vigil/abc" });
+      expect(mockExec).toHaveBeenCalledTimes(2);
+    });
   });
 });
 

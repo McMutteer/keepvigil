@@ -25,9 +25,23 @@ const DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes
  */
 const VALID_IMAGE_NAME = /^(?!-)[\w./-]+(:\w[\w.-]*)?(@sha256:[0-9a-f]{64})?$/;
 
+/**
+ * Valid repo path: absolute POSIX path with safe characters only.
+ * Rejects shell metacharacters, quotes, spaces, and flag-injection attempts.
+ */
+const VALID_REPO_PATH = /^\/[\w./-]+$/;
+
 function validateImageName(image: string): void {
   if (!VALID_IMAGE_NAME.test(image)) {
     throw new Error(`Invalid Docker image name: "${image}"`);
+  }
+}
+
+function validateRepoPath(repoPath: string): void {
+  if (!VALID_REPO_PATH.test(repoPath)) {
+    throw new Error(
+      `Invalid repoPath: "${repoPath}" — must be an absolute path with only alphanumeric, dot, hyphen, underscore, and slash characters`,
+    );
   }
 }
 
@@ -58,6 +72,7 @@ export async function runInSandbox(
 ): Promise<SandboxResult> {
   const image = opts.sandboxImage ?? DEFAULT_SANDBOX_IMAGE;
   validateImageName(image);
+  validateRepoPath(opts.repoPath);
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     throw new Error(`Invalid timeoutMs: ${timeoutMs}`);
