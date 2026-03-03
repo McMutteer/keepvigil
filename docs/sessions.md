@@ -74,3 +74,25 @@ related: []
 **Resultado:** PR #8 mergeado. 249 tests, 53 browser-específicos. Vigil en 8/10 secciones (misma cuenta que antes porque Section 8 ya estaba mergeada en la misma sesión). Fixes de CodeRabbit aplicados: domain confinement post-redirect, `expected` requerido en assertions, non-2xx responses en metadata, URL parsing defensivo, `Number.isFinite` para waitMs, `expected` en spec parser, `finally` para viewport restore. El timeout deadline (comment #3) diferido a v2 con justificación documentada.
 
 **Aprendido:** `playwright-core` en Vitest ESM rompe la resolución de módulos hermanos — el patrón `browser-launcher.ts` (wrapper que aísla el import) es la solución canónica para cualquier librería con este comportamiento. `git worktree add` es el escudo definitivo contra IDE que interfiere con branch switching — crea un directorio físicamente separado que los procesos externos no pueden trackear. En worktrees sin `~/.gitconfig` completo, `GIT_TERMINAL_PROMPT=0` fuerza el uso del credential helper configurado en lugar de pedir stdin. Cuando una branch desaparece, `git reflog` y el hash del último commit conocido la recuperan en segundos.
+
+---
+id: 2026-03-03-section-9-orchestrator
+type: feat
+project: vigil
+branch: feat/section-9-orchestrator
+pr: 9
+date: 2026-03-03
+tags: [section-9, orchestrator, bullmq-worker, pipeline, vitest-mock-conflict, double-reportresults, missing-dep]
+summary: "Section 9 (Orchestrator) implemented: BullMQ worker + 8-stage pipeline. Three bugs found and fixed before gates passed. PR #9 created."
+related: []
+---
+
+### El Director de Orquesta
+
+**Hilo:** Penúltima sección de Vigil — el cerebro que conecta todo. Parser → Classifier → Clone → PreviewURL → Execute → Report, coordinado por un BullMQ worker. Una vez que esto mergeara, solo queda Deployment.
+
+**Lo que pasó:** Antes de empezar Section 9, PR #6 (`fix/audit-high-priority-bugs`) estaba abierto desde la sesión anterior: CodeRabbit ya lo había aprobado, pero necesitaba rebase. Quality gates: 317 tests verdes. Mergeado. Con la base limpia, la implementación arrancó bien — siete archivos nuevos, flujo claro. Tres bugs al llegar a los quality gates. Primero: `executor-router.ts` importaba de `@vigil/executors` pero ese paquete no estaba declarado en `@vigil/github/package.json` — build silencioso hasta que pnpm resolvió el workspace. Segundo: el path de "ningún item en el test plan" hacía `return` dentro del `try`... pero el `finally` siempre corre, así que `reportResults` se llamaba dos veces (una vez vacío desde finally, otra vez desde el `return` implícito). Fix: borrar la llamada explícita del `try`, dejar que `finally` lo maneje solo. Tercero, el más interesante: `pipeline.test.ts` necesitaba mockear `executor-router.js` para aislar el pipeline, pero `executor-router.test.ts` necesitaba mockear `@vigil/executors` para testear el router real. En el mismo archivo, Vitest servía el mock del router como implementación real — los tests de router siempre pasaban porque no ejecutaban código real. Solución: dos archivos separados.
+
+**Resultado:** 349 tests, 7 archivos nuevos (`pipeline.ts`, `worker.ts`, `repo-clone.ts`, `preview-url.ts`, `executor-router.ts`, `pipeline.test.ts`, `executor-router.test.ts`). Build/lint/typecheck limpios. PR #9 creado. Vigil en 9/10 secciones.
+
+**Aprendido:** En Vitest, si un test file tiene `vi.mock("moduleA")` y otro test in the same file necesita la implementación real de `moduleA` para testear un consumer de `moduleA` — no funciona. El mock del módulo es global dentro del archivo. La solución es siempre separar en dos archivos: uno que mockea el módulo bajo test, otro que usa el módulo real y mockea sus dependencias. También: `git clone <url> <path>` falla si `<path>` ya existe (aunque esté vacío tras `mkdtemp`). El patrón correcto: `mkdtemp` crea el directorio padre, luego `repoPath = join(tmpDir, "owner-repo")` es el target real.

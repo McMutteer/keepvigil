@@ -5,6 +5,7 @@ export interface AppConfig {
   githubWebhookSecret: string;
   redisUrl: string;
   databaseUrl: string;
+  anthropicApiKey: string;
   port: number;
   nodeEnv: string;
 }
@@ -17,6 +18,7 @@ export function loadConfig(): AppConfig {
     "GITHUB_WEBHOOK_SECRET",
     "REDIS_URL",
     "DATABASE_URL",
+    "ANTHROPIC_API_KEY",
   ] as const;
 
   const missing = required.filter((key) => !process.env[key]);
@@ -30,6 +32,7 @@ export function loadConfig(): AppConfig {
     githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET!,
     redisUrl: process.env.REDIS_URL!,
     databaseUrl: process.env.DATABASE_URL!,
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY!,
     port: (() => {
       const rawPort = process.env.PORT ?? "3200";
       const parsed = Number.parseInt(rawPort, 10);
