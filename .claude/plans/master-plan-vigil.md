@@ -69,15 +69,15 @@ A developer installs Vigil on their GitHub repo in one click. From that moment, 
 | 2 | GitHub App Core | 1 | Medium | GREEN | Complete |
 | 3 | Test Plan Parser | 1 | Medium | GREEN | Complete |
 | 4 | Item Classifier | 3 | Medium | YELLOW | Complete |
-| 5 | Shell Executor | 3, 4 | Low | GREEN | Pending |
-| 6 | API Test Executor | 3, 4 | Medium | GREEN | Pending |
+| 5 | Shell Executor | 3, 4 | Low | GREEN | In Review (PR #4) |
+| 6 | API Test Executor | 3, 4 | Medium | GREEN | Complete |
 | 7 | Browser Test Executor | 3, 4 | High | YELLOW | Pending |
 | 8 | Result Reporter | 2, 5 | Medium | GREEN | Pending |
 | 9 | Orchestrator | 2, 3, 4, 5, 6, 7, 8 | High | YELLOW | Pending |
 | 10 | Deployment & Infrastructure | 9 | Medium | GREEN | Partial (Phase A done) |
 
-**Last updated:** 2026-03-01
-**Sections complete:** 4 / 10
+**Last updated:** 2026-03-03
+**Sections complete:** 5 / 10
 
 ## Key Decisions
 
@@ -417,7 +417,7 @@ See [ADR 003](decisions/003-confidence-tiered-execution.md) for the confidence t
 
 ## Section 5: Shell Executor
 
-**Status:** Pending
+**Status:** In Review (PR #4)
 **Depends on:** Sections 3, 4
 **Estimated complexity:** Low
 **Confidence:** GREEN
@@ -476,7 +476,7 @@ Execute DETERMINISTIC items that are shell commands — `npm run build`, `npm te
 
 ## Section 6: API Test Executor
 
-**Status:** Pending
+**Status:** Complete
 **Depends on:** Sections 3, 4
 **Estimated complexity:** Medium
 **Confidence:** GREEN
