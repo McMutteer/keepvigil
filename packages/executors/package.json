@@ -12,12 +12,13 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/api.ts src/api-spec-generator.ts src/http-client.ts src/shell.ts src/allowlist.ts src/sandbox.ts --format esm --dts --tsconfig tsconfig.build.json",
-    "dev": "tsup src/index.ts src/api.ts src/api-spec-generator.ts src/http-client.ts src/shell.ts src/allowlist.ts src/sandbox.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
+    "build": "tsup src/index.ts src/api.ts src/api-spec-generator.ts src/http-client.ts src/shell.ts src/allowlist.ts src/sandbox.ts src/browser.ts src/browser-launcher.ts src/playwright-generator.ts src/screenshot.ts src/viewport.ts src/metadata-checker.ts --format esm --dts --tsconfig tsconfig.build.json",
+    "dev": "tsup src/index.ts src/api.ts src/api-spec-generator.ts src/http-client.ts src/shell.ts src/allowlist.ts src/sandbox.ts src/browser.ts src/browser-launcher.ts src/playwright-generator.ts src/screenshot.ts src/viewport.ts src/metadata-checker.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
-    "@vigil/core": "workspace:*"
+    "@vigil/core": "workspace:*",
+    "playwright-core": "^1.52.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
