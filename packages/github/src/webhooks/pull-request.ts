@@ -38,25 +38,57 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
     "Test plan detected — creating check run",
   );
 
-  const checkRunId = await createPendingCheckRun(context.octokit, {
-    owner,
-    repo,
-    headSha: pr.head.sha,
-    pullNumber: pr.number,
-  });
+  let checkRunId: number | undefined;
 
-  const jobId = await enqueueVerification({
-    installationId: String(installation.id),
-    owner,
-    repo,
-    pullNumber: pr.number,
-    headSha: pr.head.sha,
-    checkRunId,
-    prBody,
-  });
+  try {
+    checkRunId = await createPendingCheckRun(context.octokit, {
+      owner,
+      repo,
+      headSha: pr.head.sha,
+      pullNumber: pr.number,
+    });
 
-  context.log.info(
-    { pr: pr.number, checkRunId, jobId },
-    "Verification job enqueued",
-  );
+    const jobId = await enqueueVerification({
+      installationId: String(installation.id),
+      owner,
+      repo,
+      pullNumber: pr.number,
+      headSha: pr.head.sha,
+      checkRunId,
+      prBody,
+    });
+
+    context.log.info(
+      { pr: pr.number, checkRunId, jobId },
+      "Verification job enqueued",
+    );
+  } catch (error) {
+    context.log.error(
+      { pr: pr.number, checkRunId, err: error },
+      "Failed to process test plan verification",
+    );
+
+    // If the check run was created but enqueue failed, mark it as cancelled
+    // to avoid an orphaned "pending" check run on the PR.
+    if (checkRunId) {
+      try {
+        await context.octokit.rest.checks.update({
+          owner,
+          repo,
+          check_run_id: checkRunId,
+          status: "completed",
+          conclusion: "cancelled",
+          output: {
+            title: "Verification failed to start",
+            summary: "Vigil could not enqueue the verification job. This check run has been cancelled to avoid a stale pending status.",
+          },
+        });
+      } catch (cleanupError) {
+        context.log.error(
+          { pr: pr.number, checkRunId, err: cleanupError },
+          "Failed to cancel orphaned check run",
+        );
+      }
+    }
+  }
 }
