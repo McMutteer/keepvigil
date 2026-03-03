@@ -2,7 +2,7 @@
  * Viewport constants and responsive-testing utilities for the browser executor.
  */
 
-import type { Page } from "playwright-core";
+import type { Page } from "./browser-launcher.js";
 import type { ViewportSpec } from "@vigil/core/types";
 
 /** Default viewports for responsive testing (mobile, tablet, desktop) */

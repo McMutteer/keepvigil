@@ -3,7 +3,7 @@
  * Returns base64-encoded image data — no file I/O, no persistent storage.
  */
 
-import type { Page } from "playwright-core";
+import type { Page } from "./browser-launcher.js";
 import type { ViewportSpec } from "@vigil/core/types";
 
 /** Max screenshot size in bytes before JPEG fallback (200 KB) */
