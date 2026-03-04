@@ -101,7 +101,7 @@ export interface ApiExecutionContext {
   baseUrl: string;
   /** Timeout per HTTP request in milliseconds (default: 30_000) */
   timeoutMs?: number;
-  /** Groq API key for spec generation via Claude */
+  /** Groq API key for LLM spec generation */
   groqApiKey: string;
 }
 
@@ -170,7 +170,7 @@ export interface ViewportSpec {
 export interface BrowserExecutionContext {
   /** Base URL of the preview deployment, e.g. "https://pr-42.keepvigil.dev" */
   baseUrl: string;
-  /** Groq API key for spec generation via Claude */
+  /** Groq API key for LLM spec generation */
   groqApiKey: string;
   /** Timeout per test item in milliseconds (default: 60_000) */
   timeoutMs?: number;

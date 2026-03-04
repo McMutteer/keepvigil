@@ -98,6 +98,7 @@ related: []
 **Aprendido:** En Vitest, si un test file tiene `vi.mock("moduleA")` y otro test in the same file necesita la implementación real de `moduleA` para testear un consumer de `moduleA` — no funciona. El mock del módulo es global dentro del archivo. La solución es siempre separar en dos archivos: uno que mockea el módulo bajo test, otro que usa el módulo real y mockea sus dependencias. También: `git clone <url> <path>` falla si `<path>` ya existe (aunque esté vacío tras `mkdtemp`). El patrón correcto: `mkdtemp` crea el directorio padre, luego `repoPath = join(tmpDir, "owner-repo")` es el target real.
 
 ---
+
 ---
 id: 2026-03-04-groq-migration-and-github-app-setup
 type: feat
