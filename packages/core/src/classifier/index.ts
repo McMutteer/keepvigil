@@ -11,7 +11,7 @@ export {
 } from "./prompts.js";
 
 export interface ClassifyOptions {
-  /** Anthropic API key for the LLM pass. If omitted, LLM pass is skipped. */
+  /** Groq API key for the LLM pass. If omitted, LLM pass is skipped. */
   apiKey?: string;
   /** Skip the LLM pass entirely — only use rule-based classification. */
   rulesOnly?: boolean;
@@ -23,7 +23,7 @@ export interface ClassifyOptions {
  * 1. **Rule-based pass** — Fast, free, deterministic. Handles items with
  *    clear signals (Manual: prefix, shell commands, HTTP verbs).
  *
- * 2. **LLM pass** — Sends remaining items to Claude Haiku in a single
+ * 2. **LLM pass** — Sends remaining items to Groq in a single
  *    batched API call for classification.
  *
  * Items that the rule-based pass cannot classify and no API key is

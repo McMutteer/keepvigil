@@ -28,7 +28,7 @@ import { routeToExecutors } from "./executor-router.js";
 export async function runPipeline(
   job: VerifyTestPlanJob,
   probot: Probot,
-  anthropicApiKey: string,
+  groqApiKey: string,
 ): Promise<void> {
   const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId } =
     job;
@@ -49,7 +49,7 @@ export async function runPipeline(
     }
 
     // Stage 3: Classify
-    classifiedItems = await classifyItems(parsed.items, anthropicApiKey);
+    classifiedItems = await classifyItems(parsed.items, groqApiKey);
 
     // Stage 4: Clone repo (only if there are shell items)
     const hasShellItems = classifiedItems.some(
@@ -88,7 +88,7 @@ export async function runPipeline(
       classifiedItems,
       repoPath,
       previewUrl,
-      anthropicApiKey,
+      groqApiKey,
     });
   } catch (err) {
     console.error(`[pipeline] Error processing PR #${pullNumber}:`, err);

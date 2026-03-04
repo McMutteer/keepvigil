@@ -11,10 +11,10 @@ import type { TestPlanItem, TestPlanHints } from "../types.js";
 const mockCreate = vi.fn();
 
 // Mock the Anthropic SDK with a proper class
-vi.mock("@anthropic-ai/sdk", () => {
+vi.mock("openai", () => {
   return {
     default: class MockAnthropic {
-      messages = { create: mockCreate };
+      chat = { completions: { create: mockCreate } };
     },
   };
 });
@@ -214,7 +214,7 @@ describe("applyRules", () => {
 });
 
 // ============================================================
-// LLM classifier tests (mocked Anthropic SDK)
+// LLM classifier tests (mocked Groq/OpenAI SDK)
 // ============================================================
 
 describe("classifyWithLLM (mocked)", () => {
@@ -224,25 +224,10 @@ describe("classifyWithLLM (mocked)", () => {
 
   it("classifies a batch of items via LLM", async () => {
     mockCreate.mockResolvedValue({
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify([
-            {
-              category: "ui-flow",
-              confidence: "HIGH",
-              executorType: "browser",
-              reasoning: "UI interaction test",
-            },
-            {
-              category: "visual",
-              confidence: "MEDIUM",
-              executorType: "browser",
-              reasoning: "Visual rendering check",
-            },
-          ]),
-        },
-      ],
+      choices: [{ message: { content: JSON.stringify([
+        { category: "ui-flow", confidence: "HIGH", executorType: "browser", reasoning: "UI interaction test" },
+        { category: "visual", confidence: "MEDIUM", executorType: "browser", reasoning: "Visual rendering check" },
+      ]) } }],
     });
 
     const { classifyWithLLM } = await import(
@@ -280,7 +265,7 @@ describe("classifyWithLLM (mocked)", () => {
 
   it("falls back to LOW/none on invalid JSON response", async () => {
     mockCreate.mockResolvedValue({
-      content: [{ type: "text", text: "not json at all" }],
+      choices: [{ message: { content: "not json at all" } }],
     });
 
     const { classifyWithLLM } = await import(
@@ -295,19 +280,9 @@ describe("classifyWithLLM (mocked)", () => {
 
   it("falls back when array length mismatches", async () => {
     mockCreate.mockResolvedValue({
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify([
-            {
-              category: "api",
-              confidence: "HIGH",
-              executorType: "api",
-              reasoning: "test",
-            },
-          ]),
-        },
-      ],
+      choices: [{ message: { content: JSON.stringify([
+        { category: "api", confidence: "HIGH", executorType: "api", reasoning: "test" },
+      ]) } }],
     });
 
     const { classifyWithLLM } = await import(
@@ -331,19 +306,9 @@ describe("classifyWithLLM (mocked)", () => {
 
   it("normalizes invalid confidence/executor values", async () => {
     mockCreate.mockResolvedValue({
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify([
-            {
-              category: "api",
-              confidence: "ULTRA_HIGH",
-              executorType: "quantum",
-              reasoning: "test",
-            },
-          ]),
-        },
-      ],
+      choices: [{ message: { content: JSON.stringify([
+        { category: "vague", confidence: "INVALID_TIER", executorType: "invalid_executor", reasoning: "bad values" },
+      ]) } }],
     });
 
     const { classifyWithLLM } = await import(

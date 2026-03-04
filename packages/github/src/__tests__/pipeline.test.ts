@@ -309,7 +309,7 @@ describe("runPipeline", () => {
     );
   });
 
-  it("passes anthropicApiKey to router", async () => {
+  it("passes groqApiKey to router", async () => {
     const apiItem = makeApiItem();
     mockParseTestPlan.mockReturnValue({ items: [apiItem.item], sectionTitle: "Test Plan", raw: "" });
     mockClassifyItems.mockResolvedValue([apiItem]);
@@ -320,7 +320,7 @@ describe("runPipeline", () => {
     await runPipeline(makeJob(), probot as never, API_KEY);
 
     expect(mockRouteToExecutors).toHaveBeenCalledWith(
-      expect.objectContaining({ anthropicApiKey: API_KEY }),
+      expect.objectContaining({ groqApiKey: API_KEY }),
     );
   });
 

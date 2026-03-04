@@ -96,7 +96,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem],
       repoPath: "/tmp/repo",
       previewUrl: null,
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(mockExecuteShellItem).toHaveBeenCalledWith(
@@ -111,7 +111,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [apiItem],
       repoPath: null,
       previewUrl: "https://preview.example.com",
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(mockExecuteApiItem).toHaveBeenCalledWith(
@@ -126,7 +126,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [browserItem],
       repoPath: null,
       previewUrl: "https://preview.example.com",
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(mockExecuteBrowserItem).toHaveBeenCalledWith(
@@ -141,7 +141,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [apiItem],
       repoPath: null,
       previewUrl: null,
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(results[0].passed).toBe(false);
@@ -157,7 +157,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem],
       repoPath: null,
       previewUrl: null,
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(results[0].passed).toBe(false);
@@ -177,7 +177,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [skipItem],
       repoPath: null,
       previewUrl: null,
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(results[0].passed).toBe(true);
@@ -194,7 +194,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [noneItem],
       repoPath: null,
       previewUrl: null,
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(results[0].passed).toBe(true);
@@ -208,7 +208,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem],
       repoPath: "/tmp/repo",
       previewUrl: null,
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(results[0].passed).toBe(false);
@@ -225,7 +225,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem, apiItem],
       repoPath: "/tmp/repo",
       previewUrl: "https://preview.example.com",
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(results).toHaveLength(2);
@@ -239,7 +239,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem],
       repoPath: "/tmp/repo",
       previewUrl: null,
-      anthropicApiKey: API_KEY,
+      groqApiKey: API_KEY,
     });
 
     expect(mockExecuteShellItem).toHaveBeenCalledWith(
@@ -248,18 +248,18 @@ describe("routeToExecutors", () => {
     );
   });
 
-  it("passes anthropicApiKey to api executor", async () => {
+  it("passes groqApiKey to api executor", async () => {
     const apiItem = makeApiItem();
     await routeToExecutors({
       classifiedItems: [apiItem],
       repoPath: null,
       previewUrl: "https://preview.example.com",
-      anthropicApiKey: "sk-custom-key",
+      groqApiKey: "sk-custom-key",
     });
 
     expect(mockExecuteApiItem).toHaveBeenCalledWith(
       apiItem,
-      expect.objectContaining({ anthropicApiKey: "sk-custom-key" }),
+      expect.objectContaining({ groqApiKey: "sk-custom-key" }),
     );
   });
 });

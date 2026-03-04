@@ -31,7 +31,7 @@ Every master plan section follows this flow:
 5. `git push -u origin feat/section-N-description`
 6. `gh pr create` with standard format
 7. Wait for CodeRabbit review, address feedback
-8. User merges — agents NEVER merge to main
+8. Agents ARE authorized to merge PRs to main in this repo
 
 **Branch naming:** `feat/section-N-short-name` (e.g., `feat/section-2-github-app`)
 **Commit style:** Conventional Commits — `feat(parser): extract checkbox items from markdown`

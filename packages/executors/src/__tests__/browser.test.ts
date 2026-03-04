@@ -99,9 +99,9 @@ const {
 // Mocks — hoisted to top by Vitest
 // ---------------------------------------------------------------------------
 
-vi.mock("@anthropic-ai/sdk", () => ({
+vi.mock("openai", () => ({
   default: class MockAnthropic {
-    messages = { create: mockCreate };
+    chat = { completions: { create: mockCreate } };
   },
 }));
 
@@ -149,14 +149,14 @@ function makeBrowserItem(
 
 const baseContext: BrowserExecutionContext = {
   baseUrl: "https://pr-42.example.dev",
-  anthropicApiKey: "test-key",
+  groqApiKey: "test-key",
   timeoutMs: 5000,
   maxRetries: 1,
 };
 
 function mockLlmResponse(specs: unknown[]): void {
   mockCreate.mockResolvedValueOnce({
-    content: [{ type: "text", text: JSON.stringify(specs) }],
+    choices: [{ message: { content: JSON.stringify(specs) } }],
   });
 }
 
@@ -328,13 +328,13 @@ describe("generateBrowserSpec", () => {
   });
 
   it("throws when LLM returns no text content", async () => {
-    mockCreate.mockResolvedValueOnce({ content: [] });
+    mockCreate.mockResolvedValueOnce({ choices: [] });
     await expect(generateBrowserSpec("test", "key")).rejects.toThrow("no text content");
   });
 
   it("throws when LLM returns invalid JSON", async () => {
     mockCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: "not json" }],
+      choices: [{ message: { content: "not json" } }],
     });
     await expect(generateBrowserSpec("test", "key")).rejects.toThrow("invalid JSON");
   });

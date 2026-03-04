@@ -28,7 +28,7 @@ async function main(): Promise<void> {
   });
 
   // Start BullMQ worker (consumes verify-test-plan queue)
-  const worker: Worker = createWorker(config.redisUrl, probot, config.anthropicApiKey);
+  const worker: Worker = createWorker(config.redisUrl, probot, config.groqApiKey);
 
   // Create webhook middleware
   const webhookMiddleware = await createNodeMiddleware(vigilApp, { probot });

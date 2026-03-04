@@ -96,3 +96,27 @@ related: []
 **Resultado:** 349 tests, 7 archivos nuevos (`pipeline.ts`, `worker.ts`, `repo-clone.ts`, `preview-url.ts`, `executor-router.ts`, `pipeline.test.ts`, `executor-router.test.ts`). Build/lint/typecheck limpios. PR #9 creado. Vigil en 9/10 secciones.
 
 **Aprendido:** En Vitest, si un test file tiene `vi.mock("moduleA")` y otro test in the same file necesita la implementación real de `moduleA` para testear un consumer de `moduleA` — no funciona. El mock del módulo es global dentro del archivo. La solución es siempre separar en dos archivos: uno que mockea el módulo bajo test, otro que usa el módulo real y mockea sus dependencias. También: `git clone <url> <path>` falla si `<path>` ya existe (aunque esté vacío tras `mkdtemp`). El patrón correcto: `mkdtemp` crea el directorio padre, luego `repoPath = join(tmpDir, "owner-repo")` es el target real.
+
+---
+
+---
+id: 2026-03-04-groq-migration-and-github-app-setup
+type: feat
+project: vigil
+branch: feat/groq-migration
+pr: 11
+date: 2026-03-04
+tags: [groq-migration, openai-sdk, infisical, github-app, deployment, secrets, mock-format]
+summary: "Migrated LLM from Anthropic to Groq, created the GitHub App from scratch, filled Infisical vigil project with all 6 required secrets."
+related: []
+---
+
+### El Secreto que No Existía
+
+**Hilo:** Sections 1–10 en main, Dockerfile y docker-compose listos. Esta sesión cierra el último gap antes del primer deploy real: cambiar el LLM, conseguir los credentials del GitHub App, y poblar Infisical.
+
+**Lo que pasó:** Primero la migración a Groq — el usuario quería el modelo "openai-gpt-oss-120b" que no existe en Groq; usamos `llama-3.3-70b-versatile`. El SDK es el mismo (`openai` con `baseURL` de Groq), pero el formato de respuesta cambió de `message.content[0].text` a `choices[0].message.content`. Los tres archivos de test con mocks de LLM rompieron al cambiar; un Python regex demasiado agresivo mangló el contenido en el primer intento — tuvieron que reconstruirse manualmente bloque por bloque. Segundo: búsqueda de `GITHUB_APP_ID` en todos los proyectos de Infisical — ninguno de los 10+ tenía nada. Conclusión evidente en retrospectiva: el GitHub App para keepvigil nunca fue creado. El CLI de Infisical tampoco tiene comando `projects` — el proyecto `vigil` se creó vía `POST /api/v2/workspace` con solo `projectName` en el body (sin `organizationId`, que produce 403). Creado el GitHub App en GitHub UI, configurado con permisos mínimos (Checks r/w, Contents r, Pull requests r/w) y eventos Pull request + Check run. La private key RSA se almacenó en Infisical con `\n` literales usando `awk 'NF {printf "%s\\n", $0}'`.
+
+**Resultado:** PR #11 (Groq migration) abierto, 349/349 tests. Infisical `vigil` completo — 6/6 secrets (DATABASE_URL, POSTGRES_PASSWORD, GROQ_API_KEY, GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET). GitHub App ID 3004145, webhook secret generado, private key guardada.
+
+**Aprendido:** `infisical projects` no existe — para crear o listar proyectos usar REST API directamente. `POST /api/v2/workspace` con `{"projectName": "vigil"}` funciona; incluir `organizationId` rompe el endpoint con 403. Para guardar una RSA private key como env var de una sola línea: `awk 'NF {printf "%s\\n", $0}'` produce `-----BEGIN RSA PRIVATE KEY-----\nMII...` que Probot acepta sin problema.

@@ -14,19 +14,19 @@ import { runPipeline } from "./services/pipeline.js";
  *
  * @param redisUrl - Redis connection URL (e.g., "redis://localhost:6379")
  * @param probot   - Probot instance used to authenticate as a GitHub App installation
- * @param anthropicApiKey - Anthropic API key passed to executors that use Claude
+ * @param groqApiKey - Groq API key passed to executors that use Claude
  */
 export function createWorker(
   redisUrl: string,
   probot: Probot,
-  anthropicApiKey: string,
+  groqApiKey: string,
 ): Worker<VerifyTestPlanJob> {
   const url = new URL(redisUrl);
 
   const worker = new Worker<VerifyTestPlanJob>(
     QUEUE_NAMES.VERIFY_TEST_PLAN,
     async (job: Job<VerifyTestPlanJob>) => {
-      await runPipeline(job.data, probot, anthropicApiKey);
+      await runPipeline(job.data, probot, groqApiKey);
     },
     {
       connection: {
