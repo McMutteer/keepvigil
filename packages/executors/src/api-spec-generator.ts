@@ -10,12 +10,12 @@
  * `ApiExecutionContext`, keeping host control out of the LLM's hands.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import type { HttpMethod, HttpRequestSpec } from "@vigil/core/types";
 
 const VALID_METHODS = new Set<string>(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]);
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "llama-3.3-70b-versatile";
 const TIMEOUT_MS = 15_000;
 
 const SYSTEM_PROMPT = `You extract HTTP request specifications from test plan items written in natural language.
@@ -114,22 +114,27 @@ export async function generateApiSpec(
   itemText: string,
   apiKey: string,
 ): Promise<HttpRequestSpec[]> {
-  const client = new Anthropic({ apiKey });
+  const client = new OpenAI({
+    apiKey,
+    baseURL: "https://api.groq.com/openai/v1",
+  });
 
-  const message = await client.messages.create(
+  const completion = await client.chat.completions.create(
     {
       model: MODEL,
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: itemText }],
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: itemText },
+      ],
     },
-    { timeout: TIMEOUT_MS },
+    { signal: AbortSignal.timeout(TIMEOUT_MS) },
   );
 
-  const firstBlock = message.content[0];
-  if (!firstBlock || firstBlock.type !== "text") {
+  const text = completion.choices[0]?.message?.content;
+  if (!text) {
     throw new Error("LLM returned no text content");
   }
 
-  return parseSpecResponse(firstBlock.text);
+  return parseSpecResponse(text);
 }

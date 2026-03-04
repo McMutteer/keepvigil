@@ -11,7 +11,7 @@ export {
 } from "./prompts.js";
 
 export interface ClassifyOptions {
-  /** Anthropic API key for the LLM pass. If omitted, LLM pass is skipped. */
+  /** Groq API key for the LLM pass. If omitted, LLM pass is skipped. */
   apiKey?: string;
   /** Skip the LLM pass entirely — only use rule-based classification. */
   rulesOnly?: boolean;

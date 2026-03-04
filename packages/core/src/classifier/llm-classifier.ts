@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import type {
   TestPlanItem,
   ClassifiedItem,
@@ -9,7 +9,7 @@ import type {
 import { CLASSIFIER_SYSTEM_PROMPT, buildUserPrompt } from "./prompts.js";
 
 /** Model used for batch classification */
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "llama-3.3-70b-versatile";
 
 /** Timeout for the API call in milliseconds */
 const TIMEOUT_MS = 10_000;
@@ -113,28 +113,33 @@ export async function classifyWithLLM(
 ): Promise<ClassifiedItem[]> {
   if (items.length === 0) return [];
 
-  const client = new Anthropic({ apiKey });
+  const client = new OpenAI({
+    apiKey,
+    baseURL: "https://api.groq.com/openai/v1",
+  });
   const itemTexts = items.map((item) => item.text);
 
   let responseText: string;
   try {
-    const message = await client.messages.create(
+    const completion = await client.chat.completions.create(
       {
         model: MODEL,
         max_tokens: Math.max(1024, items.length * 150),
-        system: CLASSIFIER_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: buildUserPrompt(itemTexts) }],
+        messages: [
+          { role: "system", content: CLASSIFIER_SYSTEM_PROMPT },
+          { role: "user", content: buildUserPrompt(itemTexts) },
+        ],
       },
-      { timeout: TIMEOUT_MS },
+      { signal: AbortSignal.timeout(TIMEOUT_MS) },
     );
 
-    const textBlock = message.content.find((block) => block.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
+    const text = completion.choices[0]?.message?.content;
+    if (!text) {
       return items.map((item) =>
         makeFallback(item, "LLM returned no text content"),
       );
     }
-    responseText = textBlock.text;
+    responseText = text;
   } catch {
     return items.map((item) =>
       makeFallback(item, "LLM classification unavailable"),

@@ -17,7 +17,7 @@ export interface RouterOptions {
   repoPath: string | null;
   /** Preview deployment URL, required for api/browser items */
   previewUrl: string | null;
-  anthropicApiKey: string;
+  groqApiKey: string;
 }
 
 /**
@@ -27,11 +27,11 @@ export interface RouterOptions {
 export async function routeToExecutors(
   options: RouterOptions,
 ): Promise<ExecutionResult[]> {
-  const { classifiedItems, repoPath, previewUrl, anthropicApiKey } = options;
+  const { classifiedItems, repoPath, previewUrl, groqApiKey } = options;
 
   const settled = await Promise.allSettled(
     classifiedItems.map((item) =>
-      executeItem(item, { repoPath, previewUrl, anthropicApiKey }),
+      executeItem(item, { repoPath, previewUrl, groqApiKey }),
     ),
   );
 
@@ -57,7 +57,7 @@ async function executeItem(
   item: ClassifiedItem,
   options: Omit<RouterOptions, "classifiedItems">,
 ): Promise<ExecutionResult> {
-  const { repoPath, previewUrl, anthropicApiKey } = options;
+  const { repoPath, previewUrl, groqApiKey } = options;
 
   if (item.confidence === "SKIP" || item.executorType === "none") {
     return {
@@ -85,7 +85,7 @@ async function executeItem(
       }
       return executeApiItem(item, {
         baseUrl: previewUrl,
-        anthropicApiKey,
+        groqApiKey,
         timeoutMs: 30_000,
       });
     }
@@ -96,7 +96,7 @@ async function executeItem(
       }
       return executeBrowserItem(item, {
         baseUrl: previewUrl,
-        anthropicApiKey,
+        groqApiKey,
         timeoutMs: 60_000,
       });
     }

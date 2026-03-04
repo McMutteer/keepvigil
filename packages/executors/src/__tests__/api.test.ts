@@ -7,9 +7,9 @@ import type { ClassifiedItem, TestPlanItem, TestPlanHints, ApiExecutionContext }
 // ---------------------------------------------------------------------------
 
 const mockCreate = vi.fn();
-vi.mock("@anthropic-ai/sdk", () => ({
+vi.mock("openai", () => ({
   default: class MockAnthropic {
-    messages = { create: mockCreate };
+    chat = { completions: { create: mockCreate } };
   },
 }));
 
@@ -53,13 +53,13 @@ function makeClassified(text: string, id = "tp-0"): ClassifiedItem {
 const baseContext: ApiExecutionContext = {
   baseUrl: "https://pr-42.example.dev",
   timeoutMs: 5_000,
-  anthropicApiKey: "test-key",
+  groqApiKey: "test-key",
 };
 
 /** Build the Anthropic-shaped text response the mock will return. */
 function mockLlmResponse(specs: unknown[]): void {
   mockCreate.mockResolvedValueOnce({
-    content: [{ type: "text", text: JSON.stringify(specs) }],
+    choices: [{ message: { content: JSON.stringify(specs) } }],
   });
 }
 
@@ -112,14 +112,14 @@ describe("generateApiSpec", () => {
 
   it("throws when LLM returns invalid JSON", async () => {
     mockCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: "not json at all" }],
+      choices: [{ message: { content: "not json at all" } }],
     });
     await expect(generateApiSpec("anything", "key")).rejects.toThrow("invalid JSON");
   });
 
   it("throws when LLM returns non-array JSON", async () => {
     mockCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: '{"method":"GET"}' }],
+      choices: [{ message: { content: '{"method":"GET"}' } }],
     });
     await expect(generateApiSpec("anything", "key")).rejects.toThrow("not an array");
   });
@@ -163,7 +163,7 @@ describe("generateApiSpec", () => {
   });
 
   it("throws when LLM returns no text content block", async () => {
-    mockCreate.mockResolvedValueOnce({ content: [] });
+    mockCreate.mockResolvedValueOnce({ choices: [] });
     await expect(generateApiSpec("anything", "key")).rejects.toThrow("no text content");
   });
 });

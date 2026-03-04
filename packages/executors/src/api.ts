@@ -85,7 +85,7 @@ export async function executeApiItem(
 
   let specs: HttpRequestSpec[];
   try {
-    specs = await generateApiSpec(item.item.text, context.anthropicApiKey);
+    specs = await generateApiSpec(item.item.text, context.groqApiKey);
   } catch (err) {
     return {
       itemId,
