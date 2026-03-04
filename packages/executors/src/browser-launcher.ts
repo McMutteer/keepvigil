@@ -12,5 +12,9 @@ export type { Browser, Page } from "playwright-core";
 export async function launchBrowser(): Promise<
   Awaited<ReturnType<typeof chromium.launch>>
 > {
-  return chromium.launch({ headless: true });
+  return chromium.launch({
+    headless: true,
+    // Use system Chromium in Docker (set via PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH)
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+  });
 }
