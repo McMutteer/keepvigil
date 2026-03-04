@@ -23,8 +23,7 @@ Thumbs.db
 # pnpm
 .pnpm-debug.log
 
-# Drizzle
-drizzle/meta/
+
 
 # Test coverage
 coverage/
