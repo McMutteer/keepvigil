@@ -802,18 +802,15 @@ describe("reportResults", () => {
     ).rejects.toThrow("GitHub API error");
   });
 
-  it("swallows comment errors without throwing and logs error", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("swallows comment errors without throwing", async () => {
     const updateFn = vi.fn().mockResolvedValue({});
     const listComments = vi.fn().mockRejectedValue(new Error("Comment API error"));
     const octokit = makeMockOctokit({ updateCheckRun: updateFn, listComments });
 
+    // Errors in comment posting are caught so BullMQ does not retry the whole job
     await expect(
       reportResults(makeReportContext(octokit, [makeClassified("test")], [makeResult("tp-0", true)])),
     ).resolves.toBeUndefined();
-
-    expect(consoleSpy).toHaveBeenCalledWith("Failed to post/update PR comment:", expect.any(Error));
-    consoleSpy.mockRestore();
   });
 
   it("handles empty execution results (all items become error)", async () => {

@@ -10,15 +10,16 @@ export interface UpdateCheckRunParams {
   summary: ReportSummary;
   items: ReportItem[];
   pipelineError?: string;
+  correlationId?: string;
 }
 
 const MAX_TEXT_CHARS = 60_000;
 
 /** Update the pending Check Run with final results and conclusion. */
 export async function updateCheckRun(params: UpdateCheckRunParams): Promise<void> {
-  const { octokit, owner, repo, checkRunId, conclusion, summary, items, pipelineError } = params;
+  const { octokit, owner, repo, checkRunId, conclusion, summary, items, pipelineError, correlationId } = params;
   const title = pipelineError && items.length === 0 ? pipelineError : buildCheckRunTitle(summary);
-  const summaryMd = buildCheckRunSummary(summary, conclusion, pipelineError);
+  const summaryMd = buildCheckRunSummary(summary, conclusion, pipelineError, correlationId);
   const text = buildCheckRunText(items);
 
   await octokit.rest.checks.update({
@@ -80,7 +81,7 @@ export function buildCheckRunTitle(summary: ReportSummary): string {
 }
 
 /** Build the Check Run summary markdown. */
-export function buildCheckRunSummary(summary: ReportSummary, conclusion: CheckConclusion, pipelineError?: string): string {
+export function buildCheckRunSummary(summary: ReportSummary, conclusion: CheckConclusion, pipelineError?: string, correlationId?: string): string {
   const lines: string[] = [
     "## Vigil Test Plan Results",
     "",
@@ -106,6 +107,10 @@ export function buildCheckRunSummary(summary: ReportSummary, conclusion: CheckCo
 
   if (pipelineError) {
     lines.push("", `> **Note:** ${pipelineError}`);
+  }
+
+  if (correlationId) {
+    lines.push("", `<sub>Run ID: ${correlationId}</sub>`);
   }
 
   return lines.join("\n");

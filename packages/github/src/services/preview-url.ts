@@ -5,6 +5,9 @@
  */
 
 import type { ProbotOctokit } from "probot";
+import { createLogger } from "@vigil/core";
+
+const log = createLogger("preview-url");
 
 export interface DetectPreviewUrlOptions {
   octokit: ProbotOctokit;
@@ -61,10 +64,7 @@ export async function detectPreviewUrl(
         }
       }
     } catch (err) {
-      console.warn(
-        `[preview-url] Could not fetch deployments (env=${environment}):`,
-        err,
-      );
+      log.warn({ err, environment }, "Could not fetch deployments");
     }
   }
 
@@ -98,7 +98,7 @@ export async function detectPreviewUrl(
       }
     }
   } catch (err) {
-    console.warn("[preview-url] Could not fetch check suites:", err);
+    log.warn({ err }, "Could not fetch check suites");
   }
 
   return null;

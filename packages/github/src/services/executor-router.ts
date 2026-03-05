@@ -5,11 +5,14 @@
  */
 
 import type { ClassifiedItem, ExecutionResult } from "@vigil/core";
+import { createLogger } from "@vigil/core";
 import {
   executeShellItem,
   executeApiItem,
   executeBrowserItem,
 } from "@vigil/executors";
+
+const log = createLogger("executor-router");
 
 export interface RouterOptions {
   classifiedItems: ClassifiedItem[];
@@ -40,10 +43,7 @@ export async function routeToExecutors(
 
     // Executors follow the error-as-evidence model and should never throw,
     // but handle defensively in case of unexpected errors.
-    console.error(
-      `[executor-router] Unexpected throw for item ${classifiedItems[i].item.id}:`,
-      result.reason,
-    );
+    log.error({ err: result.reason, itemId: classifiedItems[i].item.id }, "Unexpected throw from executor");
     return {
       itemId: classifiedItems[i].item.id,
       passed: false,

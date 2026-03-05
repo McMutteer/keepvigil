@@ -4,13 +4,16 @@
  * clone → detect → execute → report in a try/finally to guarantee reporting.
  */
 
+import { randomUUID } from "node:crypto";
 import type { Probot } from "probot";
 import type { ClassifiedItem, ExecutionResult, VerifyTestPlanJob } from "@vigil/core";
-import { parseTestPlan, classifyItems } from "@vigil/core";
+import { parseTestPlan, classifyItems, createLogger, runWithCorrelationId } from "@vigil/core";
 import { reportResults } from "./reporter.js";
 import { cloneRepo, cleanupRepo } from "./repo-clone.js";
 import { detectPreviewUrl } from "./preview-url.js";
 import { routeToExecutors } from "./executor-router.js";
+
+const log = createLogger("pipeline");
 
 /**
  * Run the full verification pipeline for a single PR job.
@@ -30,8 +33,20 @@ export async function runPipeline(
   probot: Probot,
   groqApiKey: string,
 ): Promise<void> {
+  const correlationId = randomUUID();
+  return runWithCorrelationId(correlationId, () => _runPipeline(job, probot, groqApiKey, correlationId));
+}
+
+async function _runPipeline(
+  job: VerifyTestPlanJob,
+  probot: Probot,
+  groqApiKey: string,
+  correlationId: string,
+): Promise<void> {
   const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId } =
     job;
+
+  log.info({ owner, repo, pullNumber }, "Pipeline started");
 
   const octokit = await probot.auth(Number(installationId));
 
@@ -71,11 +86,9 @@ export async function runPipeline(
             githubToken = String(auth.token);
           }
         }
-      } catch {
+      } catch (err) {
         // Fall back to unauthenticated clone (public repos only)
-        console.warn(
-          "[pipeline] Could not get GitHub token — attempting unauthenticated clone",
-        );
+        log.warn({ err, owner, repo }, "Could not get GitHub token — attempting unauthenticated clone");
       }
 
       repoPath = await cloneRepo({ owner, repo, sha: headSha, githubToken });
@@ -98,7 +111,7 @@ export async function runPipeline(
     });
   } catch (err) {
     pipelineError = `Pipeline error: ${err instanceof Error ? err.message : String(err)}`;
-    console.error(`[pipeline] Error processing PR #${pullNumber}:`, err);
+    log.error({ err, owner, repo, pullNumber }, "Pipeline error");
   } finally {
     // Stage 7: Always report — partial results are better than silence
     try {
@@ -112,16 +125,19 @@ export async function runPipeline(
         classifiedItems,
         executionResults,
         pipelineError,
+        correlationId,
       });
     } catch (reportErr) {
-      console.error("[pipeline] Failed to report results:", reportErr);
+      log.error({ err: reportErr }, "Failed to report results");
     }
 
     // Stage 8: Cleanup cloned repo (non-fatal)
     if (repoPath) {
       await cleanupRepo(repoPath).catch((cleanupErr) => {
-        console.error("[pipeline] Cleanup failed:", cleanupErr);
+        log.error({ err: cleanupErr }, "Cleanup failed");
       });
     }
+
+    log.info({ owner, repo, pullNumber }, "Pipeline finished");
   }
 }

@@ -5,7 +5,7 @@ const MAX_EVIDENCE_BLOCK_CHARS = 2000;
 const MAX_COMMENT_CHARS = 60_000;
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
-export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string): string {
+export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string): string {
   const parts: string[] = [
     COMMENT_MARKER,
     "## Vigil Test Plan Results",
@@ -28,7 +28,10 @@ export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pi
     parts.push("", ...evidenceBlocks);
   }
 
-  parts.push("", "---", `<sub>Vigil v0.1.0 | keepvigil.dev</sub>`);
+  const footer = correlationId
+    ? `<sub>Vigil v0.1.0 | keepvigil.dev | run: ${correlationId}</sub>`
+    : `<sub>Vigil v0.1.0 | keepvigil.dev</sub>`;
+  parts.push("", "---", footer);
 
   let body = parts.join("\n");
 
