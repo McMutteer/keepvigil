@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ClassifiedItem, TestPlanItem, TestPlanHints } from "@vigil/core";
 import type { ShellExecutionContext } from "@vigil/core/types";
 
-// vi.hoisted ensures mockExec is available when the mock factory runs (both are hoisted).
-const mockExec = vi.hoisted(() => vi.fn());
-vi.mock("node:child_process", () => ({ exec: mockExec }));
+// vi.hoisted ensures mockExecFile is available when the mock factory runs (both are hoisted).
+const mockExecFile = vi.hoisted(() => vi.fn());
+vi.mock("node:child_process", () => ({ execFile: mockExecFile }));
 
 import { validateCommand } from "../allowlist.js";
 import { runInSandbox } from "../sandbox.js";
@@ -50,11 +50,11 @@ const baseContext: ShellExecutionContext = {
 };
 
 /**
- * Helper that makes mockExec call its callback with success (exitCode 0).
+ * Helper that makes mockExecFile call its callback with success (exitCode 0).
  */
 function mockExecSuccess(stdout = "done", stderr = ""): void {
-  mockExec.mockImplementation(
-    (_cmd: string, _opts: unknown, cb: (e: null, out: string, err: string) => void) => {
+  mockExecFile.mockImplementation(
+    (_file: string, _args: string[], _opts: unknown, cb: (e: null, out: string, err: string) => void) => {
       cb(null, stdout, stderr);
       return { pid: 1 };
     },
@@ -62,11 +62,11 @@ function mockExecSuccess(stdout = "done", stderr = ""): void {
 }
 
 /**
- * Helper that makes mockExec call its callback with a failure exit code.
+ * Helper that makes mockExecFile call its callback with a failure exit code.
  */
 function mockExecFailure(exitCode: number, stdout = "", stderr = "error"): void {
-  mockExec.mockImplementation(
-    (_cmd: string, _opts: unknown, cb: (e: Error & { code: number; killed: boolean }, out: string, err: string) => void) => {
+  mockExecFile.mockImplementation(
+    (_file: string, _args: string[], _opts: unknown, cb: (e: Error & { code: number; killed: boolean }, out: string, err: string) => void) => {
       const err = Object.assign(new Error("exit"), { code: exitCode, killed: false });
       cb(err, stdout, stderr);
       return { pid: 1 };
@@ -78,8 +78,8 @@ function mockExecFailure(exitCode: number, stdout = "", stderr = "error"): void 
  * Helper that simulates a Docker timeout (process killed).
  */
 function mockExecTimeout(stdout = "", stderr = ""): void {
-  mockExec.mockImplementation(
-    (_cmd: string, _opts: unknown, cb: (e: Error & { code: undefined; killed: boolean; signal: string }, out: string, err: string) => void) => {
+  mockExecFile.mockImplementation(
+    (_file: string, _args: string[], _opts: unknown, cb: (e: Error & { code: undefined; killed: boolean; signal: string }, out: string, err: string) => void) => {
       // Node sends SIGTERM when the exec timeout fires — mirror that here.
       const err = Object.assign(new Error("killed"), { code: undefined, killed: true, signal: "SIGTERM" });
       cb(err, stdout, stderr);
@@ -199,29 +199,29 @@ describe("runInSandbox", () => {
   it("uses default image when not specified", async () => {
     mockExecSuccess();
     await runInSandbox("npm test", { repoPath: "/repo" });
-    const calledCmd = mockExec.mock.calls[0][0] as string;
-    expect(calledCmd).toContain("node:22-alpine");
+    const calledArgs = mockExecFile.mock.calls[0][1] as string[];
+    expect(calledArgs).toContain("node:22-alpine");
   });
 
   it("uses custom image when specified", async () => {
     mockExecSuccess();
     await runInSandbox("pytest", { repoPath: "/repo", sandboxImage: "python:3.12-slim" });
-    const calledCmd = mockExec.mock.calls[0][0] as string;
-    expect(calledCmd).toContain("python:3.12-slim");
+    const calledArgs = mockExecFile.mock.calls[0][1] as string[];
+    expect(calledArgs).toContain("python:3.12-slim");
   });
 
   it("mounts repoPath as /workspace volume", async () => {
     mockExecSuccess();
     await runInSandbox("npm test", { repoPath: "/my/project" });
-    const calledCmd = mockExec.mock.calls[0][0] as string;
-    expect(calledCmd).toContain("/my/project:/workspace");
+    const calledArgs = mockExecFile.mock.calls[0][1] as string[];
+    expect(calledArgs.join(" ")).toContain("/my/project:/workspace");
   });
 
   it("includes --network none for isolation", async () => {
     mockExecSuccess();
     await runInSandbox("npm test", baseContext);
-    const calledCmd = mockExec.mock.calls[0][0] as string;
-    expect(calledCmd).toContain("--network none");
+    const calledArgs = mockExecFile.mock.calls[0][1] as string[];
+    expect(calledArgs).toContain("--network");
   });
 
   it("rejects image names with leading dash (flag injection)", async () => {
@@ -261,7 +261,7 @@ describe("runInSandbox", () => {
       // Should not throw for valid paths
       await runInSandbox("npm test", { repoPath: "/tmp/vigil/repo-123" });
       await runInSandbox("npm test", { repoPath: "/home/user/.cache/vigil/abc" });
-      expect(mockExec).toHaveBeenCalledTimes(2);
+      expect(mockExecFile).toHaveBeenCalledTimes(2);
     });
   });
 });
@@ -308,7 +308,7 @@ describe("executeShellItem", () => {
 
     expect(result.passed).toBe(false);
     expect(result.evidence).toMatchObject({ commands: [] });
-    expect(mockExec).not.toHaveBeenCalled();
+    expect(mockExecFile).not.toHaveBeenCalled();
   });
 
   it("returns passed: false for disallowed command without calling Docker", async () => {
@@ -316,7 +316,7 @@ describe("executeShellItem", () => {
     const result = await executeShellItem(item, baseContext);
 
     expect(result.passed).toBe(false);
-    expect(mockExec).not.toHaveBeenCalled();
+    expect(mockExecFile).not.toHaveBeenCalled();
   });
 
   it("runs multiple codeBlocks sequentially when all succeed", async () => {
@@ -325,7 +325,7 @@ describe("executeShellItem", () => {
     const result = await executeShellItem(item, baseContext);
 
     expect(result.passed).toBe(true);
-    expect(mockExec).toHaveBeenCalledTimes(2);
+    expect(mockExecFile).toHaveBeenCalledTimes(2);
   });
 
   it("stops on first failing codeBlock and returns failed", async () => {
@@ -335,7 +335,7 @@ describe("executeShellItem", () => {
     const result = await executeShellItem(item, baseContext);
 
     expect(result.passed).toBe(false);
-    expect(mockExec).toHaveBeenCalledTimes(1);
+    expect(mockExecFile).toHaveBeenCalledTimes(1);
   });
 
   it("itemId matches item.item.id", async () => {

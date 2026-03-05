@@ -155,6 +155,9 @@ export async function classifyWithLLM(
 
   return items.map((item, i) => {
     const c = classifications[i];
+    if (!c) {
+      return makeFallback(item, "LLM response missing expected item at index " + i);
+    }
     return {
       item,
       confidence: VALID_CONFIDENCE.has(c.confidence)

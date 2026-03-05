@@ -12,7 +12,7 @@
  *  - read-write volume — commands may write build artifacts (e.g., dist/)
  */
 
-import { exec, type ExecException } from "node:child_process";
+import { execFile, type ExecFileException } from "node:child_process";
 
 const DEFAULT_SANDBOX_IMAGE = "node:22-alpine";
 const DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes
@@ -78,36 +78,31 @@ export async function runInSandbox(
     throw new Error(`Invalid timeoutMs: ${timeoutMs}`);
   }
 
-  // Escape the command for use as a sh -c argument.
-  // Single-quote the command and escape any embedded single quotes.
-  const escaped = command.replace(/'/g, "'\\''");
-
-  const dockerCmd = [
-    "docker run --rm",
-    `--volume "${opts.repoPath}:/workspace"`,
-    "--workdir /workspace",
-    "--network none",
-    "--memory 512m",
-    "--cpus 1",
+  const dockerArgs = [
+    "run", "--rm",
+    "--volume", `${opts.repoPath}:/workspace`,
+    "--workdir", "/workspace",
+    "--network", "none",
+    "--memory", "512m",
+    "--cpus", "1",
     image,
-    `sh -c '${escaped}'`,
-  ].join(" ");
+    "sh", "-c", command,
+  ];
 
   const startMs = Date.now();
 
   return new Promise<SandboxResult>((resolve) => {
-    const child = exec(
-      dockerCmd,
-      { timeout: timeoutMs },
-      (error: ExecException | null, stdout: string, stderr: string) => {
+    const child = execFile(
+      "docker",
+      dockerArgs,
+      { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 },
+      (error: ExecFileException | null, stdout: string, stderr: string) => {
       const durationMs = Date.now() - startMs;
 
       if (error) {
-        // child_process.exec sends SIGTERM when the timeout fires.
-        // Use signal === 'SIGTERM' (not just error.killed) to distinguish
-        // intentional timeout kills from other termination causes (e.g. maxBuffer).
         const isTimeout = error.killed && error.signal === "SIGTERM";
-        const exitCode = isTimeout ? -1 : (error.code ?? 1);
+        const rawCode = error.code;
+        const exitCode = isTimeout ? -1 : (typeof rawCode === "number" ? rawCode : 1);
         const timeoutStderr = isTimeout
           ? `Command timed out after ${timeoutMs}ms`
           : stderr;
@@ -115,7 +110,7 @@ export async function runInSandbox(
         resolve({
           stdout: stdout ?? "",
           stderr: timeoutStderr ?? "",
-          exitCode: typeof exitCode === "number" ? exitCode : 1,
+          exitCode,
           durationMs,
         });
         return;

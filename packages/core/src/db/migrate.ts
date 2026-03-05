@@ -10,14 +10,18 @@ async function runMigrations() {
     throw new Error("DATABASE_URL environment variable is required");
   }
 
-  const pool = new Pool({ connectionString });
-  const db = drizzle(pool);
-
-  console.log("Running migrations...");
-  await migrate(db, { migrationsFolder: "./drizzle" });
-  console.log("Migrations complete.");
-
-  await pool.end();
+  const pool = new Pool({
+    connectionString,
+    connectionTimeoutMillis: 5_000,
+  });
+  try {
+    const db = drizzle(pool);
+    console.log("Running migrations...");
+    await migrate(db, { migrationsFolder: "./drizzle" });
+    console.log("Migrations complete.");
+  } finally {
+    await pool.end();
+  }
 }
 
 runMigrations().catch((err) => {

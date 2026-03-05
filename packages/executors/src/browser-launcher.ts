@@ -9,12 +9,35 @@
 import { chromium } from "playwright-core";
 export type { Browser, Page } from "playwright-core";
 
+const LAUNCH_TIMEOUT_MS = 30_000;
+const CLOSE_TIMEOUT_MS = 5_000;
+
 export async function launchBrowser(): Promise<
   Awaited<ReturnType<typeof chromium.launch>>
 > {
   return chromium.launch({
     headless: true,
-    // Use system Chromium in Docker (set via PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH)
+    timeout: LAUNCH_TIMEOUT_MS,
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
   });
+}
+
+/**
+ * Close a browser with a timeout to avoid hanging on stuck processes.
+ * Never throws — logs warnings on failure or timeout.
+ */
+export async function closeBrowser(browser: { close: () => Promise<void> }): Promise<void> {
+  try {
+    await Promise.race([
+      browser.close(),
+      new Promise<void>((resolve) =>
+        setTimeout(() => {
+          console.warn("[browser] close() timed out, process may be leaked");
+          resolve();
+        }, CLOSE_TIMEOUT_MS),
+      ),
+    ]);
+  } catch (err) {
+    console.warn("[browser] close() failed:", err);
+  }
 }

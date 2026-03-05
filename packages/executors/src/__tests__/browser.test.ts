@@ -29,6 +29,7 @@ const {
   mockEvaluate,
   _mockPageClose,
   mockBrowserClose,
+  mockCloseBrowser,
   mockNewPage,
 } = vi.hoisted(() => {
   const mockIsVisible = vi.fn().mockResolvedValue(true);
@@ -47,6 +48,7 @@ const {
   const mockSetDefaultTimeout = vi.fn();
   const mockPageClose = vi.fn();
   const mockBrowserClose = vi.fn();
+  const mockCloseBrowser = vi.fn().mockResolvedValue(undefined);
 
   const mockLocator = vi.fn().mockReturnValue({
     click: mockClick,
@@ -91,6 +93,7 @@ const {
     mockEvaluate,
     _mockPageClose: mockPageClose,
     mockBrowserClose,
+    mockCloseBrowser,
     mockNewPage,
   };
 });
@@ -112,6 +115,7 @@ vi.mock("../browser-launcher.js", () => ({
     newPage: mockNewPage,
     close: mockBrowserClose,
   }),
+  closeBrowser: mockCloseBrowser,
 }));
 
 // ---------------------------------------------------------------------------
@@ -661,7 +665,7 @@ describe("executeBrowserItem", () => {
     ]);
     const item = makeBrowserItem("Test");
     await executeBrowserItem(item, baseContext);
-    expect(mockBrowserClose).toHaveBeenCalled();
+    expect(mockCloseBrowser).toHaveBeenCalled();
   });
 
   it("handles click action", async () => {
