@@ -10,7 +10,10 @@ async function runMigrations() {
     throw new Error("DATABASE_URL environment variable is required");
   }
 
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({
+    connectionString,
+    connectionTimeoutMillis: 5_000,
+  });
   try {
     const db = drizzle(pool);
     console.log("Running migrations...");

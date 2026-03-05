@@ -15,31 +15,29 @@ const CLOSE_TIMEOUT_MS = 5_000;
 export async function launchBrowser(): Promise<
   Awaited<ReturnType<typeof chromium.launch>>
 > {
-  const launch = chromium.launch({
+  return chromium.launch({
     headless: true,
-    // Use system Chromium in Docker (set via PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH)
+    timeout: LAUNCH_TIMEOUT_MS,
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
   });
-
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error("Browser launch timed out")), LAUNCH_TIMEOUT_MS),
-  );
-
-  return Promise.race([launch, timeout]);
 }
 
 /**
  * Close a browser with a timeout to avoid hanging on stuck processes.
- * Logs a warning if close times out but does not throw.
+ * Never throws — logs warnings on failure or timeout.
  */
 export async function closeBrowser(browser: { close: () => Promise<void> }): Promise<void> {
-  await Promise.race([
-    browser.close(),
-    new Promise<void>((resolve) =>
-      setTimeout(() => {
-        console.warn("[browser] close() timed out, process may be leaked");
-        resolve();
-      }, CLOSE_TIMEOUT_MS),
-    ),
-  ]);
+  try {
+    await Promise.race([
+      browser.close(),
+      new Promise<void>((resolve) =>
+        setTimeout(() => {
+          console.warn("[browser] close() timed out, process may be leaked");
+          resolve();
+        }, CLOSE_TIMEOUT_MS),
+      ),
+    ]);
+  } catch (err) {
+    console.warn("[browser] close() failed:", err);
+  }
 }

@@ -23,22 +23,27 @@ export interface HttpResponse {
   durationMs: number;
 }
 
-/**
- * Validate that the base URL is a safe HTTP/HTTPS origin.
- * Throws for non-HTTP protocols, path traversal, or empty input.
- */
-/** Private/loopback IP patterns to block SSRF */
+/** Loopback/link-local hosts to block SSRF */
 const BLOCKED_HOSTS = [
   "localhost",
+  "localhost.",
   "127.0.0.1",
   "0.0.0.0",
   "::1",
   "[::1]",
 ];
 
-const PRIVATE_IP_PATTERN =
-  /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/;
+/** RFC1918 + link-local IPv4 */
+const PRIVATE_IPV4_PATTERN =
+  /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3})$/;
 
+/** IPv6 private (fc00::/7) and link-local (fe80::/10) */
+const PRIVATE_IPV6_PATTERN = /^(\[?)(fc|fd|fe[89ab])/i;
+
+/**
+ * Validate that the base URL is a safe HTTP/HTTPS origin.
+ * Throws for non-HTTP protocols, path traversal, SSRF targets, or empty input.
+ */
 export function validateBaseUrl(baseUrl: string): void {
   if (!baseUrl) {
     throw new Error("baseUrl is required");
@@ -57,7 +62,10 @@ export function validateBaseUrl(baseUrl: string): void {
   if (BLOCKED_HOSTS.includes(url.hostname)) {
     throw new Error(`baseUrl must not target localhost: "${url.hostname}"`);
   }
-  if (PRIVATE_IP_PATTERN.test(url.hostname)) {
+  if (PRIVATE_IPV4_PATTERN.test(url.hostname)) {
+    throw new Error(`baseUrl must not target private IP ranges: "${url.hostname}"`);
+  }
+  if (PRIVATE_IPV6_PATTERN.test(url.hostname)) {
     throw new Error(`baseUrl must not target private IP ranges: "${url.hostname}"`);
   }
 }

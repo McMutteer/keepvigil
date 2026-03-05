@@ -195,6 +195,7 @@ describe("validateBaseUrl", () => {
 
   it("rejects localhost (SSRF protection)", () => {
     expect(() => validateBaseUrl("http://localhost:3000")).toThrow("localhost");
+    expect(() => validateBaseUrl("http://localhost.")).toThrow("localhost");
     expect(() => validateBaseUrl("http://127.0.0.1:8080")).toThrow("localhost");
   });
 
@@ -202,6 +203,12 @@ describe("validateBaseUrl", () => {
     expect(() => validateBaseUrl("http://10.0.0.1")).toThrow("private");
     expect(() => validateBaseUrl("http://192.168.1.1")).toThrow("private");
     expect(() => validateBaseUrl("http://172.16.0.1")).toThrow("private");
+    expect(() => validateBaseUrl("http://169.254.169.254")).toThrow("private");
+  });
+
+  it("rejects IPv6 private/link-local (SSRF protection)", () => {
+    expect(() => validateBaseUrl("http://[fc00::1]")).toThrow("private");
+    expect(() => validateBaseUrl("http://[fe80::1]")).toThrow("private");
   });
 
   it("rejects URLs with credentials", () => {

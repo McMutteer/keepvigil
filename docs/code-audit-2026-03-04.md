@@ -94,7 +94,7 @@ Deep investigation of the entire codebase by 3 parallel analysis agents covering
 
 ## Quality Gates (post-fix)
 
-```
+```bash
 pnpm build    -> OK
 pnpm test     -> 352 tests passing (was 349 pre-audit + 3 new SSRF tests)
 pnpm lint     -> OK
