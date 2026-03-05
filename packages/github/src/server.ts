@@ -12,7 +12,7 @@ async function main(): Promise<void> {
   const config = loadConfig();
 
   // Initialize database
-  const db = createDb(config.databaseUrl);
+  const { db, pool } = createDb(config.databaseUrl);
   setDatabase(db);
 
   // Initialize BullMQ queue
@@ -64,9 +64,17 @@ async function main(): Promise<void> {
   // Graceful shutdown
   const shutdown = async () => {
     probot.log.info("Shutting down...");
-    await new Promise<void>((resolve, reject) => {
-      server.close((err) => (err ? reject(err) : resolve()));
-    });
+    await Promise.race([
+      new Promise<void>((resolve, reject) => {
+        server.close((err) => (err ? reject(err) : resolve()));
+      }),
+      new Promise<void>((resolve) =>
+        setTimeout(() => {
+          probot.log.warn("[server] close timed out after 10s");
+          resolve();
+        }, 10_000),
+      ),
+    ]);
     // Wait up to 30s for active jobs, then force-close to avoid hanging
     await Promise.race([
       worker.close(),
@@ -78,6 +86,7 @@ async function main(): Promise<void> {
       ),
     ]);
     await closeQueue();
+    await pool.end();
     process.exit(0);
   };
 

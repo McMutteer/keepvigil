@@ -11,6 +11,9 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
+/** Maximum time for any single git operation (clone, fetch, checkout) */
+const GIT_TIMEOUT_MS = 120_000;
+
 export interface CloneOptions {
   owner: string;
   repo: string;
@@ -61,13 +64,17 @@ export async function cloneRepo(options: CloneOptions): Promise<string> {
       "--no-tags",
       cloneUrl,
       repoPath,
-    ]);
+    ], { timeout: GIT_TIMEOUT_MS });
 
     // Checkout the specific commit (shallow clone may not have it if it's old)
     await execFileAsync("git", ["fetch", "--depth", "1", "origin", sha], {
       cwd: repoPath,
+      timeout: GIT_TIMEOUT_MS,
     });
-    await execFileAsync("git", ["checkout", sha], { cwd: repoPath });
+    await execFileAsync("git", ["checkout", sha], {
+      cwd: repoPath,
+      timeout: GIT_TIMEOUT_MS,
+    });
 
     return repoPath;
   } catch (err) {

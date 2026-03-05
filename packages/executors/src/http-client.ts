@@ -27,6 +27,18 @@ export interface HttpResponse {
  * Validate that the base URL is a safe HTTP/HTTPS origin.
  * Throws for non-HTTP protocols, path traversal, or empty input.
  */
+/** Private/loopback IP patterns to block SSRF */
+const BLOCKED_HOSTS = [
+  "localhost",
+  "127.0.0.1",
+  "0.0.0.0",
+  "::1",
+  "[::1]",
+];
+
+const PRIVATE_IP_PATTERN =
+  /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$/;
+
 export function validateBaseUrl(baseUrl: string): void {
   if (!baseUrl) {
     throw new Error("baseUrl is required");
@@ -36,6 +48,17 @@ export function validateBaseUrl(baseUrl: string): void {
   }
   if (baseUrl.includes("..")) {
     throw new Error(`baseUrl contains path traversal: "${baseUrl}"`);
+  }
+
+  const url = new URL(baseUrl);
+  if (url.username || url.password) {
+    throw new Error("baseUrl must not contain credentials");
+  }
+  if (BLOCKED_HOSTS.includes(url.hostname)) {
+    throw new Error(`baseUrl must not target localhost: "${url.hostname}"`);
+  }
+  if (PRIVATE_IP_PATTERN.test(url.hostname)) {
+    throw new Error(`baseUrl must not target private IP ranges: "${url.hostname}"`);
   }
 }
 

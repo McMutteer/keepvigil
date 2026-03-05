@@ -9,7 +9,7 @@
  * Evidence shape varies per path — see each sub-executor for details.
  */
 
-import { launchBrowser } from "./browser-launcher.js";
+import { launchBrowser, closeBrowser } from "./browser-launcher.js";
 import type { Page, Browser } from "./browser-launcher.js";
 import type {
   BrowserActionSpec,
@@ -266,7 +266,7 @@ async function executeUiFlowItem(
       }
 
       const consoleErrors = console.flush();
-      await browser.close();
+      await closeBrowser(browser);
       browser = undefined;
 
       if (!allPassed && attempt < maxRetries) {
@@ -287,7 +287,7 @@ async function executeUiFlowItem(
     } catch (err) {
       lastError = err;
       if (browser) {
-        try { await browser.close(); } catch { /* ignore cleanup error */ }
+        try { await closeBrowser(browser); } catch { /* ignore cleanup error */ }
       }
       if (attempt < maxRetries && isRetryable(err)) {
         continue;
@@ -372,7 +372,7 @@ async function executeVisualItem(
     }
 
     const consoleErrors = consoleCollector.flush();
-    await browser.close();
+    await closeBrowser(browser);
 
     return {
       itemId,
@@ -387,7 +387,7 @@ async function executeVisualItem(
     };
   } catch (err) {
     if (browser) {
-      try { await browser.close(); } catch { /* ignore */ }
+      try { await closeBrowser(browser); } catch { /* ignore */ }
     }
     return {
       itemId,

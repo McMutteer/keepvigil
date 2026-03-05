@@ -11,13 +11,14 @@ async function runMigrations() {
   }
 
   const pool = new Pool({ connectionString });
-  const db = drizzle(pool);
-
-  console.log("Running migrations...");
-  await migrate(db, { migrationsFolder: "./drizzle" });
-  console.log("Migrations complete.");
-
-  await pool.end();
+  try {
+    const db = drizzle(pool);
+    console.log("Running migrations...");
+    await migrate(db, { migrationsFolder: "./drizzle" });
+    console.log("Migrations complete.");
+  } finally {
+    await pool.end();
+  }
 }
 
 runMigrations().catch((err) => {
