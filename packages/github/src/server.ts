@@ -4,9 +4,48 @@ import { createProbot, createNodeMiddleware } from "probot";
 import { createDb } from "@vigil/core/db";
 import { loadConfig } from "./config.js";
 import { vigilApp } from "./app.js";
-import { initQueue, closeQueue } from "./services/queue.js";
+import { initQueue, closeQueue, getQueue } from "./services/queue.js";
 import { setDatabase } from "./webhooks/installation.js";
 import { createWorker } from "./worker.js";
+import type { ServerResponse } from "node:http";
+import type { Pool } from "pg";
+
+const HEALTH_TIMEOUT_MS = 5_000;
+
+async function handleHealthCheck(pool: Pool, res: ServerResponse): Promise<void> {
+  const checks: Record<string, "ok" | "error"> = { db: "error", redis: "error" };
+
+  try {
+    const results = await Promise.race([
+      Promise.allSettled([
+        pool.query("SELECT 1"),
+        getQueue()?.getJobCounts() ?? Promise.reject(new Error("Queue not initialized")),
+      ]),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Health check timeout")), HEALTH_TIMEOUT_MS),
+      ),
+    ]);
+
+    if (results[0].status === "fulfilled") checks.db = "ok";
+    if (results[1].status === "fulfilled") checks.redis = "ok";
+  } catch {
+    // Timeout or unexpected error — checks stay "error"
+  }
+
+  const status = checks.db === "ok" && checks.redis === "ok" ? "ok" : "degraded";
+  const httpStatus = status === "ok" ? 200 : 503;
+
+  res.writeHead(httpStatus, { "Content-Type": "application/json" });
+  res.end(
+    JSON.stringify({
+      status,
+      service: "vigil-github",
+      version: "0.1.0",
+      timestamp: new Date().toISOString(),
+      checks,
+    }),
+  );
+}
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -16,7 +55,7 @@ async function main(): Promise<void> {
   setDatabase(db);
 
   // Initialize BullMQ queue
-  initQueue(config.redisUrl);
+  await initQueue(config.redisUrl);
 
   // Create Probot instance
   const probot = createProbot({
@@ -35,16 +74,8 @@ async function main(): Promise<void> {
 
   // HTTP server with health endpoint + Probot webhooks
   const server = createServer((req, res) => {
-    if (req.url === "/health" && req.method === "GET") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(
-        JSON.stringify({
-          status: "ok",
-          service: "vigil-github",
-          version: "0.1.0",
-          timestamp: new Date().toISOString(),
-        }),
-      );
+    if (req.url?.startsWith("/health") && req.method === "GET") {
+      handleHealthCheck(pool, res);
       return;
     }
 

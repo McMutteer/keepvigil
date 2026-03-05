@@ -38,13 +38,15 @@ export async function runPipeline(
   let repoPath: string | null = null;
   let classifiedItems: ClassifiedItem[] = [];
   let executionResults: ExecutionResult[] = [];
+  let pipelineError: string | null = null;
 
   try {
     // Stage 2: Parse
     const parsed = parseTestPlan(prBody);
 
-    // If no items found, skip remaining stages (finally will still report)
+    // If no items found, complete with neutral conclusion immediately
     if (parsed.items.length === 0) {
+      pipelineError = "Test plan section found but contained no checkbox items.";
       return;
     }
 
@@ -59,12 +61,14 @@ export async function runPipeline(
       let githubToken: string | undefined;
       try {
         // Get installation access token for cloning private repos
-        const auth = await (
-          octokit as unknown as {
-            auth: (opts: { type: string }) => Promise<{ token: string }>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Probot's Octokit exposes auth() but types don't surface it
+        const authFn = (octokit as any).auth;
+        if (typeof authFn === "function") {
+          const auth = await authFn({ type: "installation" });
+          if (auth && typeof auth === "object" && "token" in auth) {
+            githubToken = String(auth.token);
           }
-        ).auth({ type: "installation" });
-        githubToken = auth.token;
+        }
       } catch {
         // Fall back to unauthenticated clone (public repos only)
         console.warn(
@@ -91,6 +95,7 @@ export async function runPipeline(
       groqApiKey,
     });
   } catch (err) {
+    pipelineError = `Pipeline error: ${err instanceof Error ? err.message : String(err)}`;
     console.error(`[pipeline] Error processing PR #${pullNumber}:`, err);
   } finally {
     // Stage 7: Always report — partial results are better than silence
@@ -104,6 +109,7 @@ export async function runPipeline(
         checkRunId,
         classifiedItems,
         executionResults,
+        pipelineError,
       });
     } catch (reportErr) {
       console.error("[pipeline] Failed to report results:", reportErr);

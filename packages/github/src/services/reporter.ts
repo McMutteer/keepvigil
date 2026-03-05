@@ -39,6 +39,8 @@ export interface ReportContext {
   checkRunId: number;
   classifiedItems: ClassifiedItem[];
   executionResults: ExecutionResult[];
+  /** If set, indicates a pipeline-level error (empty parse, crash, etc.) */
+  pipelineError?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,7 +162,7 @@ async function postOrUpdateComment(
 export async function reportResults(context: ReportContext): Promise<void> {
   const items = buildReportItems(context.classifiedItems, context.executionResults);
   const summary = computeSummary(items);
-  const conclusion = determineConclusion(items);
+  const conclusion = context.pipelineError && items.length === 0 ? "neutral" : determineConclusion(items);
 
   // Critical — let errors propagate so BullMQ can retry
   await updateCheckRun({
@@ -171,11 +173,12 @@ export async function reportResults(context: ReportContext): Promise<void> {
     conclusion,
     summary,
     items,
+    pipelineError: context.pipelineError ?? undefined,
   });
 
   // Secondary — catch errors so a comment failure doesn't re-trigger the whole job
   try {
-    const commentBody = buildCommentBody(items, summary);
+    const commentBody = buildCommentBody(items, summary, context.pipelineError ?? undefined);
     await postOrUpdateComment(
       context.octokit,
       context.owner,
