@@ -105,19 +105,30 @@ export async function makeRequest(
     const response = await fetch(url, init);
     const durationMs = Date.now() - startMs;
 
-    // Try to parse as JSON; fall back to raw text
+    // Parse response body based on content type
     let body: unknown = null;
     const contentType = response.headers.get("content-type") ?? "";
-    const text = await response.text();
-    if (text) {
-      if (contentType.includes("application/json")) {
-        try {
-          body = JSON.parse(text);
-        } catch {
+    const contentLength = response.headers.get("content-length");
+
+    // Skip reading binary responses to avoid corruption
+    const isBinary = /^(image|audio|video|application\/octet-stream|application\/pdf|application\/zip)/i.test(contentType);
+    if (isBinary) {
+      // Drain the response stream to release resources
+      await response.body?.cancel();
+      body = `<binary content, ${contentLength ?? "unknown"} bytes>`;
+    } else {
+      const text = await response.text();
+      if (text) {
+        const isJson = /\bapplication\/(?:[\w.+-]+\+)?json\b/i.test(contentType);
+        if (isJson) {
+          try {
+            body = JSON.parse(text);
+          } catch {
+            body = text;
+          }
+        } else {
           body = text;
         }
-      } else {
-        body = text;
       }
     }
 

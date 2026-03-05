@@ -5,15 +5,19 @@ const MAX_EVIDENCE_BLOCK_CHARS = 2000;
 const MAX_COMMENT_CHARS = 60_000;
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
-export function buildCommentBody(items: ReportItem[], summary: ReportSummary): string {
+export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string): string {
   const parts: string[] = [
     COMMENT_MARKER,
     "## Vigil Test Plan Results",
     "",
     buildSummaryLine(summary),
-    "",
-    buildResultsTable(items),
   ];
+
+  if (pipelineError) {
+    parts.push("", `> **Note:** ${pipelineError}`);
+  }
+
+  parts.push("", buildResultsTable(items));
 
   const evidenceBlocks = items
     .filter(i => i.verdict === "failed" || i.verdict === "error" || isNeedsReview(i))

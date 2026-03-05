@@ -12,7 +12,7 @@
  * Covers: semicolons, ampersands, pipes, backticks, $() substitution,
  * redirects, and newlines.
  */
-const SHELL_METACHARACTERS = /[;&|`$<>\n\r]/;
+const SHELL_METACHARACTERS = /[;&|`$<>\n\r(){}]/;
 
 /** Patterns that match safe, known build/test commands. */
 const ALLOWED_PATTERNS: RegExp[] = [
@@ -22,6 +22,7 @@ const ALLOWED_PATTERNS: RegExp[] = [
   /^bun\s+(run|test|build|install)\b/,
   // npx: restricted to known-safe dev tools only.
   // Arbitrary npx packages can execute post-install scripts with full access.
+  // Flag validation applied separately via DANGEROUS_NPX_FLAGS.
   /^npx\s+(eslint|prettier|tsc|tsup|vitest|jest|playwright|biome|oxlint|svelte-check|astro|next|nuxt|turbo)\b/,
   /^ruff\s+(check|format)\b/,
   /^docker\s+(build|run|compose)\b/,
@@ -31,6 +32,15 @@ const ALLOWED_PATTERNS: RegExp[] = [
   /^pytest\b/,
   /^jest\b/,
   /^vitest\b/,
+];
+
+/** Dangerous npx flags that could be used to load arbitrary code */
+const DANGEROUS_NPX_FLAGS = [
+  "--config",
+  "--resolve-plugins-relative-to",
+  "--rulesdir",
+  "--plugin",
+  "-c",
 ];
 
 export interface ValidationResult {
@@ -58,6 +68,17 @@ export function validateCommand(command: string): ValidationResult {
 
   for (const pattern of ALLOWED_PATTERNS) {
     if (pattern.test(trimmed)) {
+      // Extra validation for npx: reject dangerous flags
+      if (trimmed.startsWith("npx ")) {
+        const args = trimmed.split(/\s+/).slice(2); // skip "npx <tool>"
+        for (const arg of args) {
+          const cleaned = arg.replace(/^['"]|['"]$/g, "");
+          const flag = cleaned.split("=")[0];
+          if (DANGEROUS_NPX_FLAGS.includes(flag)) {
+            return { allowed: false, reason: `npx flag not allowed: "${flag}"` };
+          }
+        }
+      }
       return { allowed: true, reason: `Matches allowlist pattern` };
     }
   }

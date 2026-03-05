@@ -63,7 +63,10 @@ export function extractTestPlanSection(markdown: string): DetectedSection | null
   for (let i = headingIndex + 1; i < lines.length; i++) {
     const line = lines[i];
     const hashMatch = line.match(/^(#{1,6})\s+/);
-    const isBoldHeading = /^\*\*.+\*\*\s*$/.test(line);
+    // Only treat as a bold heading if it's short (< 80 chars) and not a sentence
+    const isBoldHeading = /^\*\*.+\*\*\s*$/.test(line)
+      && line.length < 80
+      && !/[.,;:!?]\*\*\s*$/.test(line);
 
     // For bold "Test Plan" heading: any heading style terminates the section
     if (headingLevel === 0) {

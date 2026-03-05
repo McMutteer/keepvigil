@@ -10,6 +10,7 @@ import type { ClassifiedItem, ExecutionResult, MetadataExecutionContext } from "
 import { validateBaseUrl } from "./http-client.js";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
+const MAX_HTML_LENGTH = 1_048_576; // 1 MB — limit to prevent regex DoS on huge pages
 
 /** Standard OG tags that should be present on well-formed pages */
 const EXPECTED_OG_TAGS = ["og:title", "og:description", "og:image", "og:url"];
@@ -43,7 +44,7 @@ function extractOgTags(html: string): Record<string, string> {
 function extractJsonLd(html: string): { parsed: unknown[]; errors: string[] } {
   const parsed: unknown[] = [];
   const errors: string[] = [];
-  const pattern = /<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const pattern = /<script\b[^>]*\btype=["']application\/ld\+json["'][^>]*>([^<]*(?:<(?!\/script>)[^<]*)*)<\/script>/gi;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(html)) !== null) {
     try {
@@ -100,7 +101,21 @@ export async function checkMetadata(
         htmlTitle: null,
       };
     }
-    const html = await response.text();
+    // Early reject if Content-Length exceeds cap (avoids loading into memory)
+    const contentLength = Number(response.headers?.get?.("content-length") ?? "0");
+    if (contentLength > MAX_HTML_LENGTH) {
+      await response.body?.cancel();
+      return {
+        ogTags: {},
+        jsonLd: [],
+        missingOgTags: EXPECTED_OG_TAGS,
+        jsonLdValid: false,
+        jsonLdErrors: [`HTML exceeds ${MAX_HTML_LENGTH} byte limit (${contentLength} bytes)`],
+        htmlTitle: null,
+      };
+    }
+    const rawHtml = await response.text();
+    const html = rawHtml.length > MAX_HTML_LENGTH ? rawHtml.slice(0, MAX_HTML_LENGTH) : rawHtml;
 
     const ogTags = extractOgTags(html);
     const missingOgTags = EXPECTED_OG_TAGS.filter((tag) => !ogTags[tag]);

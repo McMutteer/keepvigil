@@ -38,7 +38,7 @@ const HTTP_VERB_PATH_PATTERN =
  * Pattern to detect HTTP status code references: "returns 200", "returns 4xx", etc.
  * Matches both numeric codes (200, 401) and range shorthand (4xx, 5xx).
  */
-const STATUS_CODE_PATTERN = /\breturns?\s+(?:[1-5]\d{2}|[45]xx)\b/i;
+const STATUS_CODE_PATTERN = /\breturns?\s+(?:[2-5]\d{2}|[45]xx)\b(?!\s+(?:items?|rows?|records?|results?|entries|bytes?))/i;
 
 /**
  * Attempt to classify a test plan item using deterministic rules.
