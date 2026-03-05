@@ -86,9 +86,9 @@ async function _runPipeline(
             githubToken = String(auth.token);
           }
         }
-      } catch {
+      } catch (err) {
         // Fall back to unauthenticated clone (public repos only)
-        log.warn("Could not get GitHub token — attempting unauthenticated clone");
+        log.warn({ err, owner, repo }, "Could not get GitHub token — attempting unauthenticated clone");
       }
 
       repoPath = await cloneRepo({ owner, repo, sha: headSha, githubToken });
@@ -131,13 +131,13 @@ async function _runPipeline(
       log.error({ err: reportErr }, "Failed to report results");
     }
 
-    log.info({ owner, repo, pullNumber }, "Pipeline finished");
-
     // Stage 8: Cleanup cloned repo (non-fatal)
     if (repoPath) {
       await cleanupRepo(repoPath).catch((cleanupErr) => {
         log.error({ err: cleanupErr }, "Cleanup failed");
       });
     }
+
+    log.info({ owner, repo, pullNumber }, "Pipeline finished");
   }
 }

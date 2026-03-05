@@ -125,45 +125,49 @@ async function main(): Promise<void> {
     const t0 = Date.now();
     log.info({ signal }, "Shutdown initiated");
 
-    // Phase 1: Stop accepting new HTTP connections
-    await Promise.race([
-      new Promise<void>((resolve, reject) => {
-        server.close((err) => (err ? reject(err) : resolve()));
-      }),
-      new Promise<void>((resolve) =>
-        setTimeout(() => {
-          log.warn("HTTP server close timed out after 10s");
-          resolve();
-        }, 10_000),
-      ),
-    ]);
-    log.info({ ms: Date.now() - t0 }, "Phase 1: HTTP server closed");
+    try {
+      // Phase 1: Stop accepting new HTTP connections
+      await Promise.race([
+        new Promise<void>((resolve, reject) => {
+          server.close((err) => (err ? reject(err) : resolve()));
+        }),
+        new Promise<void>((resolve) =>
+          setTimeout(() => {
+            log.warn("HTTP server close timed out after 10s");
+            resolve();
+          }, 10_000),
+        ),
+      ]);
+      log.info({ ms: Date.now() - t0 }, "Phase 1: HTTP server closed");
 
-    // Phase 2: Drain BullMQ worker (up to 30s)
-    await Promise.race([
-      worker.close(),
-      new Promise<void>((resolve) =>
-        setTimeout(() => {
-          log.warn("Worker close timed out after 30s, forcing shutdown");
-          resolve();
-        }, 30_000),
-      ),
-    ]);
-    log.info({ ms: Date.now() - t0 }, "Phase 2: Worker drained");
+      // Phase 2: Drain BullMQ worker (up to 30s)
+      await Promise.race([
+        worker.close(),
+        new Promise<void>((resolve) =>
+          setTimeout(() => {
+            log.warn("Worker close timed out after 30s, forcing shutdown");
+            resolve();
+          }, 30_000),
+        ),
+      ]);
+      log.info({ ms: Date.now() - t0 }, "Phase 2: Worker drained");
 
-    // Phase 3: Close queue connection
-    await closeQueue();
-    log.info({ ms: Date.now() - t0 }, "Phase 3: Queue closed");
+      // Phase 3: Close queue connection
+      await closeQueue();
+      log.info({ ms: Date.now() - t0 }, "Phase 3: Queue closed");
 
-    // Phase 4: Close DB pool
-    await pool.end();
-    log.info({ ms: Date.now() - t0 }, "Phase 4: DB pool closed — shutdown complete");
-
-    process.exit(0);
+      // Phase 4: Close DB pool
+      await pool.end();
+      log.info({ ms: Date.now() - t0 }, "Phase 4: DB pool closed — shutdown complete");
+    } catch (err) {
+      log.error({ err, ms: Date.now() - t0 }, "Error during shutdown");
+    } finally {
+      process.exit(0);
+    }
   };
 
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => { void shutdown("SIGTERM"); });
+  process.on("SIGINT", () => { void shutdown("SIGINT"); });
 }
 
 main().catch((err) => {

@@ -8,7 +8,10 @@
 import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from "prom-client";
 import type { ServerResponse } from "node:http";
 import type { Pool } from "pg";
+import { createLogger } from "@vigil/core";
 import { getQueue } from "./services/queue.js";
+
+const log = createLogger("metrics");
 
 // ---------------------------------------------------------------------------
 // Registry + default metrics
@@ -76,6 +79,8 @@ export async function handleMetrics(pool: Pool, res: ServerResponse): Promise<vo
     if (queue) {
       const counts = await queue.getJobCounts("waiting", "active").catch(() => ({ waiting: 0, active: 0 }));
       queueDepth.set(counts.waiting ?? 0);
+    } else {
+      queueDepth.set(0);
     }
 
     dbPoolTotal.set(pool.totalCount);
@@ -85,7 +90,8 @@ export async function handleMetrics(pool: Pool, res: ServerResponse): Promise<vo
     res.writeHead(200, { "Content-Type": metricsRegistry.contentType });
     res.end(metrics);
   } catch (err) {
+    log.error({ err }, "Failed to collect metrics");
     res.writeHead(500, { "Content-Type": "text/plain" });
-    res.end(`# Error collecting metrics\n${String(err)}`);
+    res.end("# Internal server error collecting metrics");
   }
 }

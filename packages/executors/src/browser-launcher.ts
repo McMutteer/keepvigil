@@ -29,17 +29,18 @@ export async function launchBrowser(): Promise<
  * Never throws — logs warnings on failure or timeout.
  */
 export async function closeBrowser(browser: { close: () => Promise<void> }): Promise<void> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
-    await Promise.race([
-      browser.close(),
-      new Promise<void>((resolve) =>
-        setTimeout(() => {
-          log.warn("close() timed out, process may be leaked");
-          resolve();
-        }, CLOSE_TIMEOUT_MS),
-      ),
-    ]);
+    const timeoutPromise = new Promise<void>((resolve) => {
+      timeoutId = setTimeout(() => {
+        log.warn("close() timed out, process may be leaked");
+        resolve();
+      }, CLOSE_TIMEOUT_MS);
+    });
+    await Promise.race([browser.close(), timeoutPromise]);
   } catch (err) {
     log.warn({ err }, "close() failed");
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
   }
 }

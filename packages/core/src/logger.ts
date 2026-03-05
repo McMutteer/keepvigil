@@ -43,10 +43,17 @@ export function getCorrelationId(): string | undefined {
  *
  * @param name - Logger name (e.g. "pipeline", "worker", "browser-launcher")
  */
+const VALID_LEVELS = new Set(["trace", "debug", "info", "warn", "error", "fatal", "silent"]);
+
+function resolveLogLevel(): string {
+  const raw = process.env.LOG_LEVEL?.toLowerCase();
+  return raw && VALID_LEVELS.has(raw) ? raw : "info";
+}
+
 export function createLogger(name: string): Logger {
   return pino({
     name,
-    level: process.env.LOG_LEVEL ?? "info",
+    level: resolveLogLevel(),
     mixin() {
       const cid = correlationStore.getStore();
       return cid ? { correlationId: cid } : {};
