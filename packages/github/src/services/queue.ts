@@ -10,16 +10,21 @@ export function initQueue(redisUrl: string): Promise<void> {
   if (verifyQueue) return Promise.resolve();
   if (initPromise) return initPromise;
 
-  initPromise = new Promise<void>((resolve) => {
-    const url = new URL(redisUrl);
-    verifyQueue = new Queue<VerifyTestPlanJob>(QUEUE_NAMES.VERIFY_TEST_PLAN, {
-      connection: {
-        host: url.hostname,
-        port: Number(url.port) || 6379,
-        password: url.password || undefined,
-      },
-    });
-    resolve();
+  initPromise = new Promise<void>((resolve, reject) => {
+    try {
+      const url = new URL(redisUrl);
+      verifyQueue = new Queue<VerifyTestPlanJob>(QUEUE_NAMES.VERIFY_TEST_PLAN, {
+        connection: {
+          host: url.hostname,
+          port: Number(url.port) || 6379,
+          password: url.password || undefined,
+        },
+      });
+      resolve();
+    } catch (err) {
+      initPromise = null;
+      reject(err);
+    }
   });
 
   return initPromise;

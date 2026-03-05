@@ -1,5 +1,6 @@
-import { createServer } from "node:http";
+import { createServer, type ServerResponse } from "node:http";
 import type { Worker } from "bullmq";
+import type { Pool } from "pg";
 import { createProbot, createNodeMiddleware } from "probot";
 import { createDb } from "@vigil/core/db";
 import { loadConfig } from "./config.js";
@@ -7,8 +8,6 @@ import { vigilApp } from "./app.js";
 import { initQueue, closeQueue, getQueue } from "./services/queue.js";
 import { setDatabase } from "./webhooks/installation.js";
 import { createWorker } from "./worker.js";
-import type { ServerResponse } from "node:http";
-import type { Pool } from "pg";
 
 const HEALTH_TIMEOUT_MS = 5_000;
 
@@ -74,8 +73,14 @@ async function main(): Promise<void> {
 
   // HTTP server with health endpoint + Probot webhooks
   const server = createServer((req, res) => {
-    if (req.url?.startsWith("/health") && req.method === "GET") {
-      handleHealthCheck(pool, res);
+    if (req.url === "/health" && req.method === "GET") {
+      handleHealthCheck(pool, res).catch((err) => {
+        console.error("[health] Unhandled error:", err);
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ status: "error" }));
+        }
+      });
       return;
     }
 

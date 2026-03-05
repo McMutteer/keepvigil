@@ -46,7 +46,9 @@ export async function runPipeline(
 
     // If no items found, complete with neutral conclusion immediately
     if (parsed.items.length === 0) {
-      pipelineError = "Test plan section found but contained no checkbox items.";
+      pipelineError = parsed.sectionTitle
+        ? `"${parsed.sectionTitle}" found but contained no checkbox items.`
+        : "No test plan section found or PR body was empty.";
       return;
     }
 

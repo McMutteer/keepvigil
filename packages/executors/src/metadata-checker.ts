@@ -44,7 +44,7 @@ function extractOgTags(html: string): Record<string, string> {
 function extractJsonLd(html: string): { parsed: unknown[]; errors: string[] } {
   const parsed: unknown[] = [];
   const errors: string[] = [];
-  const pattern = /<script\s+type=["']application\/ld\+json["'][^>]*>([^<]*(?:<(?!\/script>)[^<]*)*)<\/script>/gi;
+  const pattern = /<script\b[^>]*\btype=["']application\/ld\+json["'][^>]*>([^<]*(?:<(?!\/script>)[^<]*)*)<\/script>/gi;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(html)) !== null) {
     try {

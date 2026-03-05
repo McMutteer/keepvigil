@@ -72,7 +72,8 @@ export function validateCommand(command: string): ValidationResult {
       if (trimmed.startsWith("npx ")) {
         const args = trimmed.split(/\s+/).slice(2); // skip "npx <tool>"
         for (const arg of args) {
-          const flag = arg.split("=")[0];
+          const cleaned = arg.replace(/^['"]|['"]$/g, "");
+          const flag = cleaned.split("=")[0];
           if (DANGEROUS_NPX_FLAGS.includes(flag)) {
             return { allowed: false, reason: `npx flag not allowed: "${flag}"` };
           }

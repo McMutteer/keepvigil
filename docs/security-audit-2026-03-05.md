@@ -135,7 +135,7 @@ Vigil demonstrates **strong security fundamentals**. All 5 HIGH issues from the 
 
 ## Supply Chain Audit
 
-```
+```text
 $ pnpm audit
 1 vulnerability found
 Severity: 1 moderate
@@ -151,7 +151,7 @@ No HIGH or CRITICAL vulnerabilities in any dependency.
 
 ## Security Architecture Summary
 
-```
+```text
 GitHub Webhook (HMAC verified by Probot)
   |
   v
