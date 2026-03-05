@@ -1,4 +1,5 @@
-FROM node:22-alpine AS base
+# Pinned to Node 22.14 Alpine — update periodically for security patches
+FROM node:22.14-alpine AS base
 RUN npm i -g corepack@latest && corepack enable
 WORKDIR /app
 
