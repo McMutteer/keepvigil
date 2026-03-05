@@ -66,9 +66,9 @@ export function getQueue(): Queue<VerifyTestPlanJob> | null {
 
 /** Close the queue connection gracefully */
 export async function closeQueue(): Promise<void> {
+  initPromise = null;
   if (verifyQueue) {
     await verifyQueue.close();
     verifyQueue = null;
-    initPromise = null;
   }
 }

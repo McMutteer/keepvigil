@@ -101,6 +101,19 @@ export async function checkMetadata(
         htmlTitle: null,
       };
     }
+    // Early reject if Content-Length exceeds cap (avoids loading into memory)
+    const contentLength = Number(response.headers?.get?.("content-length") ?? "0");
+    if (contentLength > MAX_HTML_LENGTH) {
+      await response.body?.cancel();
+      return {
+        ogTags: {},
+        jsonLd: [],
+        missingOgTags: EXPECTED_OG_TAGS,
+        jsonLdValid: false,
+        jsonLdErrors: [`HTML exceeds ${MAX_HTML_LENGTH} byte limit (${contentLength} bytes)`],
+        htmlTitle: null,
+      };
+    }
     const rawHtml = await response.text();
     const html = rawHtml.length > MAX_HTML_LENGTH ? rawHtml.slice(0, MAX_HTML_LENGTH) : rawHtml;
 
