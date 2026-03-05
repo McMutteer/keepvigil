@@ -31,11 +31,13 @@ export interface ConsoleCollector {
  * Listens for `console` events with level "error" and accumulates messages.
  * Call `flush()` to retrieve collected errors and clear the buffer.
  */
+const MAX_CONSOLE_ERRORS = 100;
+
 export function createConsoleCollector(page: Page): ConsoleCollector {
   const errors: string[] = [];
 
   page.on("console", (msg) => {
-    if (msg.type() === "error") {
+    if (msg.type() === "error" && errors.length < MAX_CONSOLE_ERRORS) {
       errors.push(msg.text());
     }
   });
