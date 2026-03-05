@@ -3,12 +3,15 @@ import type { Worker } from "bullmq";
 import type { Pool } from "pg";
 import { createProbot, createNodeMiddleware } from "probot";
 import { createDb } from "@vigil/core/db";
+import { createLogger } from "@vigil/core";
 import { loadConfig } from "./config.js";
 import { vigilApp } from "./app.js";
 import { initQueue, closeQueue, getQueue } from "./services/queue.js";
 import { setDatabase } from "./webhooks/installation.js";
 import { createWorker } from "./worker.js";
+import { handleMetrics } from "./metrics.js";
 
+const log = createLogger("server");
 const HEALTH_TIMEOUT_MS = 5_000;
 
 async function handleHealthCheck(pool: Pool, res: ServerResponse): Promise<void> {
@@ -71,14 +74,25 @@ async function main(): Promise<void> {
   // Create webhook middleware
   const webhookMiddleware = await createNodeMiddleware(vigilApp, { probot });
 
-  // HTTP server with health endpoint + Probot webhooks
+  // HTTP server: health + metrics + Probot webhooks
   const server = createServer((req, res) => {
     if (req.url === "/health" && req.method === "GET") {
       handleHealthCheck(pool, res).catch((err) => {
-        console.error("[health] Unhandled error:", err);
+        log.error({ err }, "Unhandled error in health check");
         if (!res.headersSent) {
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ status: "error" }));
+        }
+      });
+      return;
+    }
+
+    if (req.url === "/metrics" && req.method === "GET") {
+      handleMetrics(pool, res).catch((err) => {
+        log.error({ err }, "Unhandled error in metrics");
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "text/plain" });
+          res.end("# metrics error");
         }
       });
       return;
@@ -92,45 +106,67 @@ async function main(): Promise<void> {
   });
 
   server.listen(config.port, () => {
-    probot.log.info(`Vigil GitHub App listening on port ${config.port}`);
-    probot.log.info(`Health: http://localhost:${config.port}/health`);
-    probot.log.info(`Webhooks: http://localhost:${config.port}/api/github/webhooks`);
+    log.info({ port: config.port }, "Vigil GitHub App listening");
+    log.info(`Health:   http://localhost:${config.port}/health`);
+    log.info(`Metrics:  http://localhost:${config.port}/metrics`);
+    log.info(`Webhooks: http://localhost:${config.port}/api/github/webhooks`);
   });
 
-  // Graceful shutdown
-  const shutdown = async () => {
-    probot.log.info("Shutting down...");
+  // Graceful shutdown — anti-reentry guard prevents double-shutdown on SIGTERM + SIGINT
+  let isShuttingDown = false;
+
+  const shutdown = async (signal: string) => {
+    if (isShuttingDown) {
+      log.warn({ signal }, "Shutdown already in progress — ignoring duplicate signal");
+      return;
+    }
+    isShuttingDown = true;
+
+    const t0 = Date.now();
+    log.info({ signal }, "Shutdown initiated");
+
+    // Phase 1: Stop accepting new HTTP connections
     await Promise.race([
       new Promise<void>((resolve, reject) => {
         server.close((err) => (err ? reject(err) : resolve()));
       }),
       new Promise<void>((resolve) =>
         setTimeout(() => {
-          probot.log.warn("[server] close timed out after 10s");
+          log.warn("HTTP server close timed out after 10s");
           resolve();
         }, 10_000),
       ),
     ]);
-    // Wait up to 30s for active jobs, then force-close to avoid hanging
+    log.info({ ms: Date.now() - t0 }, "Phase 1: HTTP server closed");
+
+    // Phase 2: Drain BullMQ worker (up to 30s)
     await Promise.race([
       worker.close(),
       new Promise<void>((resolve) =>
         setTimeout(() => {
-          probot.log.warn("[worker] Close timed out after 30s, forcing shutdown");
+          log.warn("Worker close timed out after 30s, forcing shutdown");
           resolve();
         }, 30_000),
       ),
     ]);
+    log.info({ ms: Date.now() - t0 }, "Phase 2: Worker drained");
+
+    // Phase 3: Close queue connection
     await closeQueue();
+    log.info({ ms: Date.now() - t0 }, "Phase 3: Queue closed");
+
+    // Phase 4: Close DB pool
     await pool.end();
+    log.info({ ms: Date.now() - t0 }, "Phase 4: DB pool closed — shutdown complete");
+
     process.exit(0);
   };
 
-  process.on("SIGTERM", shutdown);
-  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 main().catch((err) => {
-  console.error("Fatal error starting Vigil:", err);
+  log.fatal({ err }, "Fatal error starting Vigil");
   process.exit(1);
 });

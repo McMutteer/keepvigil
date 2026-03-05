@@ -8,9 +8,11 @@
 
 import { chromium } from "playwright-core";
 export type { Browser, Page } from "playwright-core";
+import { createLogger } from "@vigil/core";
 
 const LAUNCH_TIMEOUT_MS = 30_000;
 const CLOSE_TIMEOUT_MS = 5_000;
+const log = createLogger("browser-launcher");
 
 export async function launchBrowser(): Promise<
   Awaited<ReturnType<typeof chromium.launch>>
@@ -32,12 +34,12 @@ export async function closeBrowser(browser: { close: () => Promise<void> }): Pro
       browser.close(),
       new Promise<void>((resolve) =>
         setTimeout(() => {
-          console.warn("[browser] close() timed out, process may be leaked");
+          log.warn("close() timed out, process may be leaked");
           resolve();
         }, CLOSE_TIMEOUT_MS),
       ),
     ]);
   } catch (err) {
-    console.warn("[browser] close() failed:", err);
+    log.warn({ err }, "close() failed");
   }
 }

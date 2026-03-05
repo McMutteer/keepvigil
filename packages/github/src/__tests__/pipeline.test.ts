@@ -15,6 +15,8 @@ const mockRouteToExecutors = vi.hoisted(() => vi.fn());
 vi.mock("@vigil/core", () => ({
   parseTestPlan: mockParseTestPlan,
   classifyItems: mockClassifyItems,
+  createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(), debug: vi.fn() }),
+  runWithCorrelationId: (_id: string, fn: () => unknown) => fn(),
 }));
 
 vi.mock("../services/reporter.js", () => ({

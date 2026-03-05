@@ -1,7 +1,10 @@
 import type { ProbotOctokit } from "probot";
 import type { ClassifiedItem, ExecutionResult } from "@vigil/core";
+import { createLogger } from "@vigil/core";
 import { updateCheckRun, determineConclusion } from "./check-run-updater.js";
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
+
+const log = createLogger("reporter");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,6 +44,8 @@ export interface ReportContext {
   executionResults: ExecutionResult[];
   /** If set, indicates a pipeline-level error (empty parse, crash, etc.) */
   pipelineError?: string | null;
+  /** Correlation ID for this pipeline run — included in check run footer. */
+  correlationId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,11 +179,17 @@ export async function reportResults(context: ReportContext): Promise<void> {
     summary,
     items,
     pipelineError: context.pipelineError ?? undefined,
+    correlationId: context.correlationId,
   });
 
   // Secondary — catch errors so a comment failure doesn't re-trigger the whole job
   try {
-    const commentBody = buildCommentBody(items, summary, context.pipelineError ?? undefined);
+    const commentBody = buildCommentBody(
+      items,
+      summary,
+      context.pipelineError ?? undefined,
+      context.correlationId,
+    );
     await postOrUpdateComment(
       context.octokit,
       context.owner,
@@ -187,6 +198,6 @@ export async function reportResults(context: ReportContext): Promise<void> {
       commentBody,
     );
   } catch (err) {
-    console.error("Failed to post/update PR comment:", err);
+    log.error({ err }, "Failed to post/update PR comment");
   }
 }

@@ -5,8 +5,10 @@
 
 import { Worker, type Job } from "bullmq";
 import type { Probot } from "probot";
-import { QUEUE_NAMES, type VerifyTestPlanJob } from "@vigil/core";
+import { QUEUE_NAMES, type VerifyTestPlanJob, createLogger } from "@vigil/core";
 import { runPipeline } from "./services/pipeline.js";
+
+const log = createLogger("worker");
 
 /**
  * Create and start the BullMQ worker.
@@ -40,23 +42,24 @@ export function createWorker(
 
   worker.on("failed", (job, err) => {
     if (job) {
-      console.error(
-        `[worker] Job ${job.id} failed (${job.data.owner}/${job.data.repo}#${job.data.pullNumber}):`,
-        err,
+      log.error(
+        { err, jobId: job.id, owner: job.data.owner, repo: job.data.repo, pullNumber: job.data.pullNumber },
+        "Job failed",
       );
     } else {
-      console.error("[worker] Job failed (no job context):", err);
+      log.error({ err }, "Job failed (no job context)");
     }
   });
 
   worker.on("completed", (job) => {
-    console.info(
-      `[worker] Job ${job.id} completed (${job.data.owner}/${job.data.repo}#${job.data.pullNumber})`,
+    log.info(
+      { jobId: job.id, owner: job.data.owner, repo: job.data.repo, pullNumber: job.data.pullNumber },
+      "Job completed",
     );
   });
 
   worker.on("error", (err) => {
-    console.error("[worker] Worker error:", err);
+    log.error({ err }, "Worker error");
   });
 
   return worker;
