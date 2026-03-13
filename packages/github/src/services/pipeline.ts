@@ -5,8 +5,8 @@
  */
 
 import { randomUUID } from "node:crypto";
-import type { Probot } from "probot";
-import type { ClassifiedItem, ExecutionResult, VerifyTestPlanJob } from "@vigil/core";
+import type { Probot, ProbotOctokit } from "probot";
+import type { ClassifiedItem, ExecutionResult, ParsedTestPlan, VerifyTestPlanJob } from "@vigil/core";
 import { parseTestPlan, classifyItems, createLogger, runWithCorrelationId } from "@vigil/core";
 import { reportResults } from "./reporter.js";
 import { cloneRepo, cleanupRepo } from "./repo-clone.js";
@@ -21,7 +21,7 @@ const log = createLogger("pipeline");
  * Stage order:
  * 1. Authenticate as GitHub installation
  * 2. Parse test plan items from prBody
- * 3. Classify items (rule-based + Claude Haiku)
+ * 3. Classify items (rule-based + LLM)
  * 4. Clone repo for shell items (optional)
  * 5. Detect preview URL for api/browser items (optional)
  * 6. Execute all items concurrently via executor-router
@@ -37,14 +37,86 @@ export async function runPipeline(
   return runWithCorrelationId(correlationId, () => _runPipeline(job, probot, groqApiKey, correlationId));
 }
 
+// ---------------------------------------------------------------------------
+// Stage functions
+// ---------------------------------------------------------------------------
+
+function stageParse(prBody: string): { plan: ParsedTestPlan; emptyError: string | null } {
+  const plan = parseTestPlan(prBody);
+  if (plan.items.length === 0) {
+    const emptyError = plan.sectionTitle
+      ? `"${plan.sectionTitle}" found but contained no checkbox items.`
+      : "No test plan section found or PR body was empty.";
+    return { plan, emptyError };
+  }
+  return { plan, emptyError: null };
+}
+
+async function stageClassify(
+  plan: ParsedTestPlan,
+  groqApiKey: string,
+): Promise<ClassifiedItem[]> {
+  return classifyItems(plan.items, { apiKey: groqApiKey });
+}
+
+async function stageCloneRepo(
+  classifiedItems: ClassifiedItem[],
+  job: Pick<VerifyTestPlanJob, "owner" | "repo" | "headSha">,
+  octokit: ProbotOctokit,
+): Promise<string | null> {
+  const hasShellItems = classifiedItems.some((i) => i.executorType === "shell");
+  if (!hasShellItems) return null;
+
+  let githubToken: string | undefined;
+  try {
+    // Get installation access token for cloning private repos
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Probot's Octokit exposes auth() but types don't surface it
+    const authFn = (octokit as any).auth;
+    if (typeof authFn === "function") {
+      const auth = await authFn({ type: "installation" });
+      if (auth && typeof auth === "object" && "token" in auth) {
+        githubToken = String(auth.token);
+      }
+    }
+  } catch (err) {
+    log.warn({ err, owner: job.owner, repo: job.repo }, "Could not get GitHub token — attempting unauthenticated clone");
+  }
+
+  return cloneRepo({ owner: job.owner, repo: job.repo, sha: job.headSha, githubToken });
+}
+
+async function stageDetectPreviewUrl(
+  classifiedItems: ClassifiedItem[],
+  job: Pick<VerifyTestPlanJob, "owner" | "repo" | "pullNumber">,
+  octokit: ProbotOctokit,
+): Promise<string | null> {
+  const hasWebItems = classifiedItems.some(
+    (i) => i.executorType === "api" || i.executorType === "browser",
+  );
+  if (!hasWebItems) return null;
+  return detectPreviewUrl({ octokit, owner: job.owner, repo: job.repo, pullNumber: job.pullNumber });
+}
+
+async function stageExecute(
+  classifiedItems: ClassifiedItem[],
+  repoPath: string | null,
+  previewUrl: string | null,
+  groqApiKey: string,
+): Promise<ExecutionResult[]> {
+  return routeToExecutors({ classifiedItems, repoPath, previewUrl, groqApiKey });
+}
+
+// ---------------------------------------------------------------------------
+// Coordinator
+// ---------------------------------------------------------------------------
+
 async function _runPipeline(
   job: VerifyTestPlanJob,
   probot: Probot,
   groqApiKey: string,
   correlationId: string,
 ): Promise<void> {
-  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId } =
-    job;
+  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId } = job;
 
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
@@ -57,58 +129,23 @@ async function _runPipeline(
 
   try {
     // Stage 2: Parse
-    const parsed = parseTestPlan(prBody);
-
-    // If no items found, complete with neutral conclusion immediately
-    if (parsed.items.length === 0) {
-      pipelineError = parsed.sectionTitle
-        ? `"${parsed.sectionTitle}" found but contained no checkbox items.`
-        : "No test plan section found or PR body was empty.";
+    const { plan, emptyError } = stageParse(prBody);
+    if (emptyError) {
+      pipelineError = emptyError;
       return;
     }
 
     // Stage 3: Classify
-    classifiedItems = await classifyItems(parsed.items, groqApiKey);
+    classifiedItems = await stageClassify(plan, groqApiKey);
 
     // Stage 4: Clone repo (only if there are shell items)
-    const hasShellItems = classifiedItems.some(
-      (i) => i.executorType === "shell",
-    );
-    if (hasShellItems) {
-      let githubToken: string | undefined;
-      try {
-        // Get installation access token for cloning private repos
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Probot's Octokit exposes auth() but types don't surface it
-        const authFn = (octokit as any).auth;
-        if (typeof authFn === "function") {
-          const auth = await authFn({ type: "installation" });
-          if (auth && typeof auth === "object" && "token" in auth) {
-            githubToken = String(auth.token);
-          }
-        }
-      } catch (err) {
-        // Fall back to unauthenticated clone (public repos only)
-        log.warn({ err, owner, repo }, "Could not get GitHub token — attempting unauthenticated clone");
-      }
-
-      repoPath = await cloneRepo({ owner, repo, sha: headSha, githubToken });
-    }
+    repoPath = await stageCloneRepo(classifiedItems, job, octokit);
 
     // Stage 5: Detect preview URL (only if there are api/browser items)
-    const hasWebItems = classifiedItems.some(
-      (i) => i.executorType === "api" || i.executorType === "browser",
-    );
-    const previewUrl = hasWebItems
-      ? await detectPreviewUrl({ octokit, owner, repo, pullNumber })
-      : null;
+    const previewUrl = await stageDetectPreviewUrl(classifiedItems, job, octokit);
 
     // Stage 6: Execute
-    executionResults = await routeToExecutors({
-      classifiedItems,
-      repoPath,
-      previewUrl,
-      groqApiKey,
-    });
+    executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, groqApiKey);
   } catch (err) {
     pipelineError = `Pipeline error: ${err instanceof Error ? err.message : String(err)}`;
     log.error({ err, owner, repo, pullNumber }, "Pipeline error");

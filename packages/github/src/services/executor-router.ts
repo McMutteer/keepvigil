@@ -4,7 +4,7 @@
  * Follows the error-as-evidence model — never throws, always returns ExecutionResult.
  */
 
-import type { ClassifiedItem, ExecutionResult } from "@vigil/core";
+import type { ClassifiedItem, ExecutionResult, ExecutorType } from "@vigil/core";
 import { createLogger } from "@vigil/core";
 import {
   executeShellItem,
@@ -53,12 +53,41 @@ export async function routeToExecutors(
   });
 }
 
+type ExecutorContext = Omit<RouterOptions, "classifiedItems">;
+type ExecutorFn = (item: ClassifiedItem, ctx: ExecutorContext) => Promise<ExecutionResult>;
+
+/**
+ * Registry mapping executor types to their handler functions.
+ * Adding a new executor type requires only a new entry here — no changes to the router logic.
+ */
+const EXECUTOR_REGISTRY = new Map<ExecutorType, ExecutorFn>([
+  [
+    "shell",
+    (item, ctx) => {
+      if (!ctx.repoPath) return Promise.resolve(noRepoResult(item.item.id));
+      return executeShellItem(item, { repoPath: ctx.repoPath, timeoutMs: 300_000 });
+    },
+  ],
+  [
+    "api",
+    (item, ctx) => {
+      if (!ctx.previewUrl) return Promise.resolve(noPreviewResult(item.item.id));
+      return executeApiItem(item, { baseUrl: ctx.previewUrl, groqApiKey: ctx.groqApiKey, timeoutMs: 30_000 });
+    },
+  ],
+  [
+    "browser",
+    (item, ctx) => {
+      if (!ctx.previewUrl) return Promise.resolve(noPreviewResult(item.item.id));
+      return executeBrowserItem(item, { baseUrl: ctx.previewUrl, groqApiKey: ctx.groqApiKey, timeoutMs: 60_000 });
+    },
+  ],
+]);
+
 async function executeItem(
   item: ClassifiedItem,
-  options: Omit<RouterOptions, "classifiedItems">,
+  ctx: ExecutorContext,
 ): Promise<ExecutionResult> {
-  const { repoPath, previewUrl, groqApiKey } = options;
-
   if (item.confidence === "SKIP" || item.executorType === "none") {
     return {
       itemId: item.item.id,
@@ -68,47 +97,17 @@ async function executeItem(
     };
   }
 
-  switch (item.executorType) {
-    case "shell": {
-      if (!repoPath) {
-        return noRepoResult(item.item.id);
-      }
-      return executeShellItem(item, {
-        repoPath,
-        timeoutMs: 300_000,
-      });
-    }
-
-    case "api": {
-      if (!previewUrl) {
-        return noPreviewResult(item.item.id);
-      }
-      return executeApiItem(item, {
-        baseUrl: previewUrl,
-        groqApiKey,
-        timeoutMs: 30_000,
-      });
-    }
-
-    case "browser": {
-      if (!previewUrl) {
-        return noPreviewResult(item.item.id);
-      }
-      return executeBrowserItem(item, {
-        baseUrl: previewUrl,
-        groqApiKey,
-        timeoutMs: 60_000,
-      });
-    }
-
-    default:
-      return {
-        itemId: item.item.id,
-        passed: false,
-        duration: 0,
-        evidence: { error: `Unknown executor type: ${item.executorType}` },
-      };
+  const executor = EXECUTOR_REGISTRY.get(item.executorType);
+  if (!executor) {
+    return {
+      itemId: item.item.id,
+      passed: false,
+      duration: 0,
+      evidence: { error: `Unknown executor type: ${item.executorType}` },
+    };
   }
+
+  return executor(item, ctx);
 }
 
 function noRepoResult(itemId: string): ExecutionResult {

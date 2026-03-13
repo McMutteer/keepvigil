@@ -8,6 +8,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { VigilSecurityError } from "@vigil/core";
 
 const execFileAsync = promisify(execFile);
 
@@ -31,11 +32,11 @@ function validateRepoPath(repoPath: string): void {
   const segments = repoPath.split("/").filter(Boolean);
   for (const segment of segments) {
     if (!safeSegment.test(segment)) {
-      throw new Error(`Invalid repo path segment: ${segment}`);
+      throw new VigilSecurityError(`Invalid repo path segment: ${segment}`);
     }
   }
   if (repoPath.includes("..") || repoPath.includes("\0")) {
-    throw new Error(`Path traversal detected in repo path: ${repoPath}`);
+    throw new VigilSecurityError(`Path traversal detected in repo path: ${repoPath}`);
   }
 }
 
