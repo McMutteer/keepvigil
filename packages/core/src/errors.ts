@@ -10,7 +10,7 @@
 export class VigilTransientError extends Error {
   readonly isTransient = true as const;
   constructor(message: string, public readonly cause?: unknown) {
-    super(message);
+    super(message, { cause });
     this.name = "VigilTransientError";
   }
 }
@@ -18,7 +18,7 @@ export class VigilTransientError extends Error {
 export class VigilPermanentError extends Error {
   readonly isPermanent = true as const;
   constructor(message: string, public readonly cause?: unknown) {
-    super(message);
+    super(message, { cause });
     this.name = "VigilPermanentError";
   }
 }

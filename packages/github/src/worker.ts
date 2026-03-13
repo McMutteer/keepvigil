@@ -3,7 +3,7 @@
  * and runs the orchestration pipeline for each PR.
  */
 
-import { Worker, type Job } from "bullmq";
+import { Worker, UnrecoverableError, type Job } from "bullmq";
 import type { Probot } from "probot";
 import { QUEUE_NAMES, type VerifyTestPlanJob, createLogger, isPermanentError } from "@vigil/core";
 import { runPipeline } from "./services/pipeline.js";
@@ -32,12 +32,12 @@ export function createWorker(
         await runPipeline(job.data, probot, groqApiKey);
       } catch (err) {
         if (isPermanentError(err)) {
-          // Do not retry — log and swallow so BullMQ marks job as failed without retry
+          // Throw UnrecoverableError so BullMQ marks the job as failed (not completed) without retry
           log.warn(
             { err, jobId: job.id, owner: job.data.owner, repo: job.data.repo },
             "Permanent error — job will not be retried",
           );
-          return;
+          throw new UnrecoverableError(err instanceof Error ? err.message : String(err));
         }
         // Transient or unknown — rethrow so BullMQ retries per queue config (3 attempts, exponential backoff)
         throw err;
