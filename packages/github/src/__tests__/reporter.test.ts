@@ -15,7 +15,7 @@ import {
   reportResults,
 } from "../services/reporter.js";
 import type { ReportItem, ReportSummary, ReportContext } from "../services/reporter.js";
-import { updateCheckRun as updateCheckRunFn, determineConclusion, buildCheckRunTitle, buildCheckRunSummary, buildCheckRunText } from "../services/check-run-updater.js";
+import { updateCheckRun as updateCheckRunFn, determineConclusion, buildCheckRunTitle, buildCheckRunSummary, buildCheckRunText, truncateToBytes } from "../services/check-run-updater.js";
 import { buildCommentBody, buildSummaryLine, buildResultsTable, buildEvidenceBlock, formatEvidence, COMMENT_MARKER } from "../services/comment-builder.js";
 
 // ---------------------------------------------------------------------------
@@ -912,8 +912,6 @@ describe("formatEvidence — defensive type guards", () => {
 // ---------------------------------------------------------------------------
 // truncateToBytes — byte-aware truncation (L8)
 // ---------------------------------------------------------------------------
-
-import { truncateToBytes } from "../services/check-run-updater.js";
 
 describe("truncateToBytes", () => {
   it("returns the string unchanged when within byte limit", () => {

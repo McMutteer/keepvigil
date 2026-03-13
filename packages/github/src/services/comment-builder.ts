@@ -1,4 +1,5 @@
 import type { ReportItem, ReportSummary } from "./reporter.js";
+import { truncateToBytes } from "./check-run-updater.js";
 
 const COMMENT_MARKER = "<!-- vigil-results -->";
 /** GitHub PR comment body limit is ~262,144 bytes. We target 60,000 bytes to stay safe. */
@@ -81,16 +82,20 @@ export function buildEvidenceBlock(item: ReportItem): string {
     .filter(Boolean)
     .join(" | ");
 
-  const evidence = item.result ? formatEvidence(item) : "No execution result available.";
+  let evidence = item.result ? formatEvidence(item) : "No execution result available.";
 
-  let block = `<details>\n<summary>:${icon}: ${label}</summary>\n\n${meta}\n\n${evidence}\n\n</details>`;
-
-  const evidenceSuffix = "\n\n...(truncated)\n\n</details>";
-  if (Buffer.byteLength(block, "utf8") > MAX_EVIDENCE_BLOCK_BYTES) {
-    block = truncateToBytes(block, MAX_EVIDENCE_BLOCK_BYTES - Buffer.byteLength(evidenceSuffix, "utf8"), "") + evidenceSuffix;
+  // Truncate the evidence content *before* wrapping in HTML tags so we never
+  // cut the output mid-tag (which would produce malformed HTML in the comment).
+  const openTag = `<details>\n<summary>:${icon}: ${label}</summary>\n\n${meta}\n\n`;
+  const closeTag = `\n\n</details>`;
+  const evidenceTruncSuffix = "\n\n...(truncated)";
+  const wrapperBytes = Buffer.byteLength(openTag + closeTag, "utf8");
+  const maxEvidenceBytes = MAX_EVIDENCE_BLOCK_BYTES - wrapperBytes;
+  if (Buffer.byteLength(evidence, "utf8") > maxEvidenceBytes) {
+    evidence = truncateToBytes(evidence, maxEvidenceBytes - Buffer.byteLength(evidenceTruncSuffix, "utf8"), evidenceTruncSuffix);
   }
 
-  return block;
+  return openTag + evidence + closeTag;
 }
 
 /** Format evidence from a specific executor type. */
@@ -241,22 +246,6 @@ function escapeHtml(str: string): string {
 function truncate(str: string, max: number): string {
   if (str.length <= max) return str;
   return str.slice(0, max - 3) + "...";
-}
-
-/**
- * Truncate a string so that its UTF-8 byte length stays within `maxBytes`.
- * Handles multi-byte chars (emoji, CJK, etc) correctly via Buffer.
- */
-function truncateToBytes(str: string, maxBytes: number, suffix: string = ""): string {
-  const suffixBytes = Buffer.byteLength(suffix, "utf8");
-  const buf = Buffer.from(str, "utf8");
-  if (buf.byteLength <= maxBytes) return str;
-
-  const limit = maxBytes - suffixBytes;
-  let truncated = buf.slice(0, limit).toString("utf8");
-  // Remove trailing replacement character from a split codepoint
-  truncated = truncated.replace(/\uFFFD$/, "");
-  return truncated + suffix;
 }
 
 export { COMMENT_MARKER };

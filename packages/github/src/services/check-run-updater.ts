@@ -216,6 +216,12 @@ export function truncateToBytes(str: string, maxBytes: number, suffix: string = 
   if (buf.byteLength <= maxBytes) return str;
 
   const limit = maxBytes - suffixBytes;
+  if (limit <= 0) {
+    // Suffix alone exceeds maxBytes — return a safe slice of the suffix itself
+    const safeSuffix = Buffer.from(suffix, "utf8").slice(0, maxBytes).toString("utf8").replace(/\uFFFD$/, "");
+    return safeSuffix;
+  }
+
   // Slice to byte limit, then decode — may produce a trailing replacement char if cut mid-codepoint
   let truncated = buf.slice(0, limit).toString("utf8");
   // Remove any trailing replacement character (U+FFFD) from a split codepoint

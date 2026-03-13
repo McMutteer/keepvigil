@@ -109,7 +109,7 @@ function parseLLMResponse(
  *
  * Sends all items in a single API call with few-shot examples.
  * On any error (timeout, invalid response, API failure), all items
- * are classified as LOW/none with an explanatory reasoning.
+ * are classified as SKIP/manual with an explanatory reasoning.
  */
 export async function classifyWithLLM(
   items: TestPlanItem[],
