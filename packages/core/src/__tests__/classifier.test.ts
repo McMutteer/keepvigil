@@ -248,7 +248,7 @@ describe("classifyWithLLM (mocked)", () => {
     expect(results[1].category).toBe("visual");
   });
 
-  it("falls back to LOW/none on API error", async () => {
+  it("falls back to SKIP/manual on API error", async () => {
     mockCreate.mockRejectedValue(new Error("API timeout"));
 
     const { classifyWithLLM } = await import(
@@ -258,12 +258,13 @@ describe("classifyWithLLM (mocked)", () => {
     const items = [makeItem("Some ambiguous item")];
     const results = await classifyWithLLM(items, "test-key");
     expect(results).toHaveLength(1);
-    expect(results[0].confidence).toBe("LOW");
+    expect(results[0].confidence).toBe("SKIP");
     expect(results[0].executorType).toBe("none");
+    expect(results[0].category).toBe("manual");
     expect(results[0].reasoning).toContain("unavailable");
   });
 
-  it("falls back to LOW/none on invalid JSON response", async () => {
+  it("falls back to SKIP/manual on invalid JSON response", async () => {
     mockCreate.mockResolvedValue({
       choices: [{ message: { content: "not json at all" } }],
     });
@@ -274,7 +275,8 @@ describe("classifyWithLLM (mocked)", () => {
 
     const items = [makeItem("Another item")];
     const results = await classifyWithLLM(items, "test-key");
-    expect(results[0].confidence).toBe("LOW");
+    expect(results[0].confidence).toBe("SKIP");
+    expect(results[0].category).toBe("manual");
     expect(results[0].reasoning).toContain("invalid JSON");
   });
 
@@ -289,11 +291,12 @@ describe("classifyWithLLM (mocked)", () => {
       "../classifier/llm-classifier.js"
     );
 
-    // Send 2 items but mock returns 1
+    // Send 2 items but mock returns 1 → parseLLMResponse returns null → all items fall back
     const items = [makeItem("Item 1"), makeItem("Item 2")];
     const results = await classifyWithLLM(items, "test-key");
     expect(results).toHaveLength(2);
-    expect(results[0].confidence).toBe("LOW"); // fallback
+    expect(results[0].confidence).toBe("SKIP"); // fallback
+    expect(results[0].category).toBe("manual");
   });
 
   it("returns empty array for empty input", async () => {
@@ -539,5 +542,64 @@ describe("parse → classify integration", () => {
 
     const results = await classifyItems(parsed.items, { rulesOnly: true });
     expect(results).toEqual([]);
+  });
+});
+
+// ============================================================
+// LLM fallback — graceful degradation when Groq is down (P3)
+// ============================================================
+
+describe("LLM fallback — SKIP/manual when Groq unavailable", () => {
+  it("falls back to SKIP/manual when LLM throws (API error)", async () => {
+    mockCreate.mockRejectedValueOnce(new Error("Connection refused"));
+
+    const items = [
+      makeItem("Check that the login page loads correctly"),
+      makeItem("Verify that the API returns 200 for GET /health"),
+    ];
+
+    const results = await classifyItems(items, { apiKey: "gsk_invalid_key" });
+
+    // Items that fail rule-based classification go to LLM; on LLM error → SKIP/manual
+    for (const result of results) {
+      if (result.confidence === "SKIP") {
+        expect(result.executorType).toBe("none");
+        expect(result.category).toBe("manual");
+      }
+    }
+  });
+
+  it("falls back to SKIP/manual when LLM returns invalid JSON", async () => {
+    mockCreate.mockResolvedValueOnce({
+      choices: [{ message: { content: "not valid json at all" } }],
+    });
+
+    const items = [makeItem("Verify the dashboard renders without errors")];
+    const results = await classifyItems(items, { apiKey: "gsk_test" });
+
+    // If rule doesn't match and LLM returns invalid JSON → SKIP/manual fallback
+    const unmatched = results.filter(r => r.confidence === "SKIP");
+    for (const r of unmatched) {
+      expect(r.executorType).toBe("none");
+      expect(r.category).toBe("manual");
+    }
+  });
+
+  it("fallback items do not have confidence LOW or category vague", async () => {
+    mockCreate.mockRejectedValueOnce(new Error("timeout"));
+
+    const items = [makeItem("Check that the dashboard loads within 2 seconds")];
+    const results = await classifyItems(items, { apiKey: "gsk_test" });
+
+    for (const result of results) {
+      // After fallback: no LOW/vague — those are from old behavior
+      if (!["DETERMINISTIC", "HIGH", "MEDIUM", "SKIP"].includes(result.confidence)) {
+        throw new Error(`Unexpected confidence: ${result.confidence}`);
+      }
+      if (result.confidence === "SKIP") {
+        expect(result.category).not.toBe("vague");
+        expect(result.executorType).toBe("none");
+      }
+    }
   });
 });

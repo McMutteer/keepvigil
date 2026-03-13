@@ -13,7 +13,9 @@ export interface UpdateCheckRunParams {
   correlationId?: string;
 }
 
-const MAX_TEXT_CHARS = 60_000;
+/** GitHub Check Run text field limit is 65,535 bytes. We target 60,000 bytes to stay well clear. */
+const MAX_TEXT_BYTES = 60_000;
+const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Update the pending Check Run with final results and conclusion. */
 export async function updateCheckRun(params: UpdateCheckRunParams): Promise<void> {
@@ -162,9 +164,7 @@ export function buildCheckRunText(items: ReportItem[]): string {
   }
 
   let text = parts.join("\n");
-  if (text.length > MAX_TEXT_CHARS) {
-    text = text.slice(0, MAX_TEXT_CHARS - 20) + "\n\n...(truncated)";
-  }
+  text = truncateToBytes(text, MAX_TEXT_BYTES, TRUNCATION_SUFFIX);
 
   return text;
 }
@@ -203,4 +203,28 @@ function escapeHtml(str: string): string {
 function truncate(str: string, max: number): string {
   if (str.length <= max) return str;
   return str.slice(0, max - 3) + "...";
+}
+
+/**
+ * Truncate a string so that its UTF-8 byte length stays within `maxBytes`.
+ * Uses Buffer to count bytes correctly — handles multi-byte chars (emoji, CJK, etc).
+ * The suffix (e.g., "\n\n...(truncated)") is appended when truncation occurs.
+ */
+export function truncateToBytes(str: string, maxBytes: number, suffix: string = ""): string {
+  const suffixBytes = Buffer.byteLength(suffix, "utf8");
+  const buf = Buffer.from(str, "utf8");
+  if (buf.byteLength <= maxBytes) return str;
+
+  const limit = maxBytes - suffixBytes;
+  if (limit <= 0) {
+    // Suffix alone exceeds maxBytes — return a safe slice of the suffix itself
+    const safeSuffix = Buffer.from(suffix, "utf8").slice(0, maxBytes).toString("utf8").replace(/\uFFFD$/, "");
+    return safeSuffix;
+  }
+
+  // Slice to byte limit, then decode — may produce a trailing replacement char if cut mid-codepoint
+  let truncated = buf.slice(0, limit).toString("utf8");
+  // Remove any trailing replacement character (U+FFFD) from a split codepoint
+  truncated = truncated.replace(/\uFFFD$/, "");
+  return truncated + suffix;
 }
