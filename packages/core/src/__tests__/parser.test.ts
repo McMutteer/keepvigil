@@ -317,3 +317,101 @@ describe("parseCheckboxItems", () => {
     expect(items.map((i) => i.id)).toEqual(["tp-0", "tp-1", "tp-2"]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edge cases
+// ---------------------------------------------------------------------------
+
+describe("parseTestPlan — edge cases", () => {
+  it("parses unicode checkbox text with accents and special chars", () => {
+    const md = "## Test Plan\n\n- [x] Verificar ítem con acentos y ñ\n- [ ] Tester l'écran en français\n";
+    const result = parseTestPlan(md);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].text).toContain("Verificar ítem con acentos y ñ");
+    expect(result.items[0].checked).toBe(true);
+    expect(result.items[1].text).toContain("Tester l'écran en français");
+  });
+
+  it("does not terminate section on a bold sentence with punctuation", () => {
+    // A bold line ending in period is a prose sentence, not a heading — section continues
+    const md = "## Test Plan\n\n- [ ] First item\n\n**This is a full sentence.**\n\n- [ ] Second item\n";
+    const result = parseTestPlan(md);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[1].text).toContain("Second item");
+  });
+
+  it("terminates bold-style test plan section on a short bold heading without punctuation", () => {
+    // A bold-style **Test Plan** heading (headingLevel=0) is terminated by any bold heading
+    const md = "**Test Plan**\n\n- [ ] Only item\n\n**Next Section**\n\n- [ ] Should not be included\n";
+    const result = parseTestPlan(md);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].text).toContain("Only item");
+  });
+
+  it("only parses the first test plan section when multiple exist", () => {
+    const md = [
+      "## Test Plan",
+      "- [ ] First section item",
+      "",
+      "## Other Stuff",
+      "Some content",
+      "",
+      "## Test Plan",
+      "- [ ] Second section item",
+    ].join("\n");
+    const result = parseTestPlan(md);
+    // Only items from the first section
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].text).toContain("First section item");
+  });
+
+  it("heading with trailing colon does not match as test plan section", () => {
+    // "## Test plan:" has a colon — does not match HEADING_PATTERN (/test\s*plan\s*$/)
+    const md = "## Test plan:\n\n- [ ] Item A\n";
+    const result = parseTestPlan(md);
+    expect(result.items).toHaveLength(0);
+    expect(result.sectionTitle).toBe("");
+  });
+
+  it("returns sectionTitle with empty items for a section with no checkboxes", () => {
+    const md = "## Test Plan\n\nJust prose, no checkboxes.\n\n## Next\n";
+    const result = parseTestPlan(md);
+    expect(result.sectionTitle).toBe("## Test Plan");
+    expect(result.items).toHaveLength(0);
+  });
+
+  it("handles very long PR body (50KB) without losing items", () => {
+    // Padding goes BEFORE the test plan section so it doesn't affect parsing
+    const padding = "x".repeat(50_000);
+    const md = `<!-- ${padding} -->\n\n## Test Plan\n\n- [ ] Item A\n- [x] Item B\n`;
+    const result = parseTestPlan(md);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].text).toBe("Item A");
+    expect(result.items[1].text).toBe("Item B");
+  });
+
+  it("handles checkbox with empty text after whitespace trim", () => {
+    const md = "## Test Plan\n\n- [ ]   \n- [ ] Normal item\n";
+    const result = parseTestPlan(md);
+    // Normal item should still be parsed; whitespace-only item behaviour is implementation-defined
+    const normalItems = result.items.filter((i) => i.text.trim() === "Normal item");
+    expect(normalItems).toHaveLength(1);
+  });
+
+  it("accumulates multiple code blocks in continuation block", () => {
+    const md = [
+      "## Test Plan",
+      "- [ ] Run the full suite",
+      "  `npm install`",
+      "  `npm run build`",
+      "  `npm test`",
+    ].join("\n");
+    const result = parseTestPlan(md);
+    expect(result.items).toHaveLength(1);
+    // All three code blocks should appear in hints
+    const codeBlocks = result.items[0].hints.codeBlocks;
+    expect(codeBlocks).toContain("npm install");
+    expect(codeBlocks).toContain("npm run build");
+    expect(codeBlocks).toContain("npm test");
+  });
+});

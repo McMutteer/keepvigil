@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import fc from "fast-check";
 import type { ClassifiedItem, TestPlanItem, TestPlanHints } from "@vigil/core";
 import type { ShellExecutionContext } from "@vigil/core/types";
 
@@ -353,5 +354,74 @@ describe("executeShellItem", () => {
 
     expect(typeof result.duration).toBe("number");
     expect(result.duration).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateCommand — property-based fuzz tests
+// ---------------------------------------------------------------------------
+
+describe("validateCommand — property-based (fast-check)", () => {
+  it("never allows commands containing shell metacharacters", () => {
+    // Build: inject a random metacharacter between two arbitrary strings
+    const commandArb = fc.tuple(
+      fc.string({ maxLength: 20 }),
+      fc.constantFrom(";", "&", "|", "`", "$", "<", ">", "\n", "\r", "(", ")", "{", "}"),
+      fc.string({ maxLength: 20 }),
+    ).map(([prefix, meta, suffix]) => `${prefix}${meta}${suffix}`);
+
+    fc.assert(
+      fc.property(commandArb, (cmd) => {
+        const result = validateCommand(cmd);
+        return result.allowed === false;
+      }),
+      { numRuns: 1000, verbose: false },
+    );
+  });
+
+  it("always allows known-safe commands with alphanumeric args", () => {
+    // Build: <tool> <subcommand> <safe-arg> — no metacharacters anywhere
+    const safeArgArb = fc.string({ maxLength: 15 }).map(
+      (s) => s.replace(/[^a-zA-Z0-9._/-]/g, "a"),
+    );
+
+    const commandArb = fc.tuple(
+      fc.constantFrom("npm", "pnpm", "yarn", "bun"),
+      fc.constantFrom("test", "build", "install", "run"),
+      safeArgArb,
+    ).map(([tool, sub, arg]) => (arg ? `${tool} ${sub} ${arg}` : `${tool} ${sub}`));
+
+    fc.assert(
+      fc.property(commandArb, (cmd) => {
+        const result = validateCommand(cmd);
+        return result.allowed === true;
+      }),
+      { numRuns: 500, verbose: false },
+    );
+  });
+
+  it("always rejects empty or whitespace-only strings", () => {
+    // Build: strings consisting solely of spaces and tabs
+    const whitespaceArb = fc.string({ maxLength: 20 }).map(
+      (s) => s.replace(/[^ \t]/g, " "),
+    );
+
+    fc.assert(
+      fc.property(whitespaceArb, (cmd) => {
+        const result = validateCommand(cmd);
+        return result.allowed === false;
+      }),
+      { numRuns: 200, verbose: false },
+    );
+  });
+
+  it("always returns a non-empty reason string for any input", () => {
+    fc.assert(
+      fc.property(fc.string({ maxLength: 100 }), (cmd) => {
+        const result = validateCommand(cmd);
+        return typeof result.reason === "string" && result.reason.length > 0;
+      }),
+      { numRuns: 500, verbose: false },
+    );
   });
 });
