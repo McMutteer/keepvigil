@@ -32,8 +32,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/types.ts src/db/index.ts src/db/migrate.ts src/queue.ts src/parser/index.ts src/classifier/index.ts src/logger.ts --format esm --dts --tsconfig tsconfig.build.json",
-    "dev": "tsup src/index.ts src/types.ts src/db/index.ts src/db/migrate.ts src/queue.ts src/parser/index.ts src/classifier/index.ts src/logger.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
+    "build": "tsup src/index.ts src/types.ts src/db/index.ts src/db/migrate.ts src/queue.ts src/parser/index.ts src/classifier/index.ts src/logger.ts src/errors.ts --format esm --dts --tsconfig tsconfig.build.json",
+    "dev": "tsup src/index.ts src/types.ts src/db/index.ts src/db/migrate.ts src/queue.ts src/parser/index.ts src/classifier/index.ts src/logger.ts src/errors.ts --format esm --dts --tsconfig tsconfig.build.json --watch"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.0",
