@@ -1,46 +1,37 @@
-/** Environment configuration for the GitHub App server */
-export interface AppConfig {
-  githubAppId: string;
-  githubPrivateKey: string;
-  githubWebhookSecret: string;
-  redisUrl: string;
-  databaseUrl: string;
-  groqApiKey: string;
-  port: number;
-  nodeEnv: string;
-}
+import { z } from "zod";
 
-/** Load and validate environment variables. Throws if required vars are missing. */
+const AppConfigSchema = z.object({
+  githubAppId:         z.string().min(1, "GITHUB_APP_ID is required"),
+  githubPrivateKey:    z.string().min(1, "GITHUB_APP_PRIVATE_KEY is required"),
+  githubWebhookSecret: z.string().min(1, "GITHUB_WEBHOOK_SECRET is required"),
+  redisUrl:            z.string().url("REDIS_URL must be a valid URL"),
+  databaseUrl:         z.string().url("DATABASE_URL must be a valid URL"),
+  groqApiKey:          z.string().min(1, "GROQ_API_KEY is required"),
+  port:                z.coerce.number().int().min(1).max(65535).default(3200),
+  nodeEnv:             z.string().default("development"),
+});
+
+export type AppConfig = z.infer<typeof AppConfigSchema>;
+
+/** Load and validate environment variables. Throws with all issues listed if any are missing or invalid. */
 export function loadConfig(): AppConfig {
-  const required = [
-    "GITHUB_APP_ID",
-    "GITHUB_APP_PRIVATE_KEY",
-    "GITHUB_WEBHOOK_SECRET",
-    "REDIS_URL",
-    "DATABASE_URL",
-    "GROQ_API_KEY",
-  ] as const;
+  const result = AppConfigSchema.safeParse({
+    githubAppId:         process.env.GITHUB_APP_ID,
+    githubPrivateKey:    process.env.GITHUB_APP_PRIVATE_KEY,
+    githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET,
+    redisUrl:            process.env.REDIS_URL,
+    databaseUrl:         process.env.DATABASE_URL,
+    groqApiKey:          process.env.GROQ_API_KEY,
+    port:                process.env.PORT,
+    nodeEnv:             process.env.NODE_ENV,
+  });
 
-  const missing = required.filter((key) => !process.env[key]);
-  if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((i) => `  ${i.path.join(".")}: ${i.message}`)
+      .join("\n");
+    throw new Error(`Configuration error — fix these before starting Vigil:\n${issues}`);
   }
 
-  return {
-    githubAppId: process.env.GITHUB_APP_ID!,
-    githubPrivateKey: process.env.GITHUB_APP_PRIVATE_KEY!,
-    githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET!,
-    redisUrl: process.env.REDIS_URL!,
-    databaseUrl: process.env.DATABASE_URL!,
-    groqApiKey: process.env.GROQ_API_KEY!,
-    port: (() => {
-      const rawPort = process.env.PORT ?? "3200";
-      const parsed = Number.parseInt(rawPort, 10);
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
-        throw new Error(`Invalid PORT: "${rawPort}" — must be an integer between 1 and 65535`);
-      }
-      return parsed;
-    })(),
-    nodeEnv: process.env.NODE_ENV ?? "development",
-  };
+  return result.data;
 }
