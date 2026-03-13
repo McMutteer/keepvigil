@@ -1,8 +1,10 @@
 import type { ReportItem, ReportSummary } from "./reporter.js";
 
 const COMMENT_MARKER = "<!-- vigil-results -->";
-const MAX_EVIDENCE_BLOCK_CHARS = 2000;
-const MAX_COMMENT_CHARS = 60_000;
+/** GitHub PR comment body limit is ~262,144 bytes. We target 60,000 bytes to stay safe. */
+const MAX_COMMENT_BYTES = 60_000;
+const MAX_EVIDENCE_BLOCK_BYTES = 2000;
+const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
 export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string): string {
@@ -34,10 +36,7 @@ export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pi
   parts.push("", "---", footer);
 
   let body = parts.join("\n");
-
-  if (body.length > MAX_COMMENT_CHARS) {
-    body = body.slice(0, MAX_COMMENT_CHARS - 20) + "\n\n...(truncated)";
-  }
+  body = truncateToBytes(body, MAX_COMMENT_BYTES, TRUNCATION_SUFFIX);
 
   return body;
 }
@@ -86,9 +85,9 @@ export function buildEvidenceBlock(item: ReportItem): string {
 
   let block = `<details>\n<summary>:${icon}: ${label}</summary>\n\n${meta}\n\n${evidence}\n\n</details>`;
 
-  const truncSuffix = "\n\n...(truncated)\n\n</details>";
-  if (block.length > MAX_EVIDENCE_BLOCK_CHARS) {
-    block = block.slice(0, MAX_EVIDENCE_BLOCK_CHARS - truncSuffix.length) + truncSuffix;
+  const evidenceSuffix = "\n\n...(truncated)\n\n</details>";
+  if (Buffer.byteLength(block, "utf8") > MAX_EVIDENCE_BLOCK_BYTES) {
+    block = truncateToBytes(block, MAX_EVIDENCE_BLOCK_BYTES - Buffer.byteLength(evidenceSuffix, "utf8"), "") + evidenceSuffix;
   }
 
   return block;
@@ -114,23 +113,23 @@ export function formatEvidence(item: ReportItem): string {
 
 function formatShellEvidence(ev: Record<string, unknown>): string {
   const parts: string[] = [];
-  const commands = ev.commands as string[] | undefined;
+  const commands = Array.isArray(ev.commands) ? (ev.commands as string[]) : undefined;
   if (commands?.length) {
     parts.push(`**Commands:** \`${commands.join("; ")}\``);
   }
-  const exitCode = ev.exitCode as number | undefined;
+  const exitCode = typeof ev.exitCode === "number" ? ev.exitCode : undefined;
   if (exitCode !== undefined) {
     parts.push(`**Exit code:** ${exitCode}`);
   }
-  const stdout = ev.stdout as string | undefined;
+  const stdout = typeof ev.stdout === "string" ? ev.stdout : undefined;
   if (stdout) {
     parts.push("```\n" + truncate(stdout, 500) + "\n```");
   }
-  const stderr = ev.stderr as string | undefined;
+  const stderr = typeof ev.stderr === "string" ? ev.stderr : undefined;
   if (stderr) {
     parts.push("**stderr:**\n```\n" + truncate(stderr, 500) + "\n```");
   }
-  const reason = ev.reason as string | undefined;
+  const reason = typeof ev.reason === "string" ? ev.reason : undefined;
   if (reason) {
     parts.push(`**Reason:** ${reason}`);
   }
@@ -138,9 +137,9 @@ function formatShellEvidence(ev: Record<string, unknown>): string {
 }
 
 function formatApiEvidence(ev: Record<string, unknown>): string {
-  const requests = ev.requests as Array<Record<string, unknown>> | undefined;
+  const requests = Array.isArray(ev.requests) ? (ev.requests as Array<Record<string, unknown>>) : undefined;
   if (!requests?.length) {
-    const error = ev.error as string | undefined;
+    const error = typeof ev.error === "string" ? ev.error : undefined;
     return error ? `**Error:** ${error}` : "No evidence captured.";
   }
 
@@ -168,18 +167,18 @@ function formatApiEvidence(ev: Record<string, unknown>): string {
 function formatBrowserEvidence(ev: Record<string, unknown>): string {
   const parts: string[] = [];
 
-  const actions = ev.actions as Array<Record<string, unknown>> | undefined;
+  const actions = Array.isArray(ev.actions) ? (ev.actions as Array<Record<string, unknown>>) : undefined;
   if (actions?.length) {
     for (const action of actions) {
       const desc = action.description ?? action.spec ?? "action";
-      const passed = action.passed as boolean | undefined;
-      const failReason = action.failReason as string | undefined;
+      const passed = typeof action.passed === "boolean" ? action.passed : undefined;
+      const failReason = typeof action.failReason === "string" ? action.failReason : undefined;
       const icon = passed ? "pass" : "fail";
       parts.push(`- [${icon}] ${typeof desc === "string" ? desc : JSON.stringify(desc)}${failReason ? ` — ${failReason}` : ""}`);
     }
   }
 
-  const consoleErrors = ev.consoleErrors as string[] | undefined;
+  const consoleErrors = Array.isArray(ev.consoleErrors) ? (ev.consoleErrors as string[]) : undefined;
   if (consoleErrors?.length) {
     parts.push(`\n**Console errors:** ${consoleErrors.length}\n\`\`\`\n${truncate(consoleErrors.join("\n"), 300)}\n\`\`\``);
   }
@@ -242,6 +241,22 @@ function escapeHtml(str: string): string {
 function truncate(str: string, max: number): string {
   if (str.length <= max) return str;
   return str.slice(0, max - 3) + "...";
+}
+
+/**
+ * Truncate a string so that its UTF-8 byte length stays within `maxBytes`.
+ * Handles multi-byte chars (emoji, CJK, etc) correctly via Buffer.
+ */
+function truncateToBytes(str: string, maxBytes: number, suffix: string = ""): string {
+  const suffixBytes = Buffer.byteLength(suffix, "utf8");
+  const buf = Buffer.from(str, "utf8");
+  if (buf.byteLength <= maxBytes) return str;
+
+  const limit = maxBytes - suffixBytes;
+  let truncated = buf.slice(0, limit).toString("utf8");
+  // Remove trailing replacement character from a split codepoint
+  truncated = truncated.replace(/\uFFFD$/, "");
+  return truncated + suffix;
 }
 
 export { COMMENT_MARKER };

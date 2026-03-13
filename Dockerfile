@@ -1,5 +1,6 @@
 # Pinned to Node 22.14 Alpine — update periodically for security patches
-FROM node:22.14-alpine AS base
+# SHA: node:22.14-alpine (amd64) — re-pin when updating the version
+FROM node:22.14-alpine@sha256:01393fe5a51489b63da0ab51aa8e0a7ff9990132917cf20cfc3d46f5e36c0e48 AS base
 RUN npm i -g corepack@latest && corepack enable
 WORKDIR /app
 
@@ -18,7 +19,7 @@ COPY packages/ ./packages/
 RUN pnpm build
 
 # --- Production ---
-FROM base AS production
+FROM node:22.14-alpine@sha256:01393fe5a51489b63da0ab51aa8e0a7ff9990132917cf20cfc3d46f5e36c0e48 AS production
 ENV NODE_ENV=production
 
 # Install Chromium for Playwright (system browser avoids glibc issues on Alpine)

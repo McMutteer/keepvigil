@@ -841,3 +841,128 @@ describe("reportResults", () => {
     expect(checkCall.conclusion).toBe("neutral");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Array.isArray guards — defensive formatting with malformed evidence (L9)
+// ---------------------------------------------------------------------------
+
+describe("formatEvidence — defensive type guards", () => {
+  it("shell: does not crash when commands is not an array", () => {
+    const item: ReportItem = {
+      classified: makeClassified("build", { executorType: "shell" }),
+      result: makeResult("tp-0", false, { commands: "npm run build" as unknown as string[], exitCode: 1 }),
+      verdict: "failed",
+    };
+    expect(() => formatEvidence(item)).not.toThrow();
+    const text = formatEvidence(item);
+    // commands guard: string is not an array → falls through, exit code still shown
+    expect(text).toContain("Exit code");
+  });
+
+  it("shell: does not crash when commands is a number", () => {
+    const item: ReportItem = {
+      classified: makeClassified("build", { executorType: "shell" }),
+      result: makeResult("tp-0", false, { commands: 42 as unknown as string[], exitCode: 0 }),
+      verdict: "failed",
+    };
+    expect(() => formatEvidence(item)).not.toThrow();
+  });
+
+  it("api: returns error string when requests is not an array", () => {
+    const item: ReportItem = {
+      classified: makeClassified("api test", { executorType: "api", category: "api" }),
+      result: makeResult("tp-0", false, { requests: { some: "object" } as unknown as Array<Record<string, unknown>>, error: "timeout" }),
+      verdict: "failed",
+    };
+    expect(() => formatEvidence(item)).not.toThrow();
+    const text = formatEvidence(item);
+    expect(text).toContain("timeout");
+  });
+
+  it("api: returns no evidence when requests is missing entirely", () => {
+    const item: ReportItem = {
+      classified: makeClassified("api test", { executorType: "api", category: "api" }),
+      result: makeResult("tp-0", false, {}),
+      verdict: "failed",
+    };
+    expect(() => formatEvidence(item)).not.toThrow();
+    const text = formatEvidence(item);
+    expect(text).toBe("No evidence captured.");
+  });
+
+  it("browser: does not crash when actions is not an array", () => {
+    const item: ReportItem = {
+      classified: makeClassified("ui test", { executorType: "browser", category: "ui-flow" }),
+      result: makeResult("tp-0", false, { actions: "click button" as unknown as Array<Record<string, unknown>>, consoleErrors: [] }),
+      verdict: "failed",
+    };
+    expect(() => formatEvidence(item)).not.toThrow();
+  });
+
+  it("browser: does not crash when consoleErrors is not an array", () => {
+    const item: ReportItem = {
+      classified: makeClassified("ui test", { executorType: "browser", category: "ui-flow" }),
+      result: makeResult("tp-0", false, { actions: [], consoleErrors: "error string" as unknown as string[] }),
+      verdict: "failed",
+    };
+    expect(() => formatEvidence(item)).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// truncateToBytes — byte-aware truncation (L8)
+// ---------------------------------------------------------------------------
+
+import { truncateToBytes } from "../services/check-run-updater.js";
+
+describe("truncateToBytes", () => {
+  it("returns the string unchanged when within byte limit", () => {
+    expect(truncateToBytes("hello", 100)).toBe("hello");
+  });
+
+  it("truncates ASCII string to byte limit with suffix", () => {
+    const result = truncateToBytes("a".repeat(100), 50, "...");
+    expect(Buffer.byteLength(result, "utf8")).toBeLessThanOrEqual(50);
+    expect(result).toContain("...");
+  });
+
+  it("handles multi-byte emoji correctly — does not exceed byte limit", () => {
+    // Each emoji is 4 bytes in UTF-8
+    const str = "🔥".repeat(20); // 80 bytes
+    const result = truncateToBytes(str, 40, "...");
+    expect(Buffer.byteLength(result, "utf8")).toBeLessThanOrEqual(40);
+  });
+
+  it("does not produce replacement characters from split codepoints", () => {
+    // Create a string where naive byte-slicing would split a multi-byte char
+    const str = "hello" + "ñ".repeat(10) + "world"; // ñ is 2 bytes
+    const result = truncateToBytes(str, 8, "");
+    expect(result).not.toContain("\uFFFD");
+  });
+
+  it("returns string as-is when empty suffix and within limit", () => {
+    expect(truncateToBytes("abc", 10, "")).toBe("abc");
+  });
+
+  it("buildCommentBody byte count stays within 60,000 bytes with emoji content", () => {
+    // Items with emoji in text — each emoji = 4 bytes
+    const items: ReportItem[] = Array.from({ length: 20 }, (_, i) => ({
+      classified: makeClassified(`🔥 test item ${"🚀".repeat(50)} ${i}`, { id: `tp-${i}`, executorType: "shell" }),
+      result: makeResult(`tp-${i}`, false, { stdout: "🎯".repeat(500), exitCode: 1, commands: ["test"] }),
+      verdict: "failed" as const,
+    }));
+    const summary: ReportSummary = { total: 20, passed: 0, failed: 20, skipped: 0, needsReview: 0 };
+    const body = buildCommentBody(items, summary);
+    expect(Buffer.byteLength(body, "utf8")).toBeLessThanOrEqual(60_000);
+  });
+
+  it("buildCheckRunText byte count stays within 60,000 bytes with emoji content", () => {
+    const items: ReportItem[] = Array.from({ length: 30 }, (_, i) => ({
+      classified: makeClassified(`🔥 item ${i}`, { id: `tp-${i}`, confidence: "HIGH" as const, executorType: "api" as const }),
+      result: makeResult(`tp-${i}`, false, { data: "🎯".repeat(1000) }),
+      verdict: "failed" as const,
+    }));
+    const text = buildCheckRunText(items);
+    expect(Buffer.byteLength(text, "utf8")).toBeLessThanOrEqual(60_000);
+  });
+});
