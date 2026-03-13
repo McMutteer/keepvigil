@@ -6,7 +6,7 @@
 
 import { randomUUID } from "node:crypto";
 import type { Probot, ProbotOctokit } from "probot";
-import type { ClassifiedItem, ExecutionResult, ParsedTestPlan, VerifyTestPlanJob } from "@vigil/core";
+import type { ClassifiedItem, ExecutionResult, ParsedTestPlan, VerifyTestPlanJob, VigilConfig } from "@vigil/core";
 import { parseTestPlan, classifyItems, createLogger, runWithCorrelationId } from "@vigil/core";
 import { reportResults } from "./reporter.js";
 import { cloneRepo, cleanupRepo } from "./repo-clone.js";
@@ -102,8 +102,9 @@ async function stageExecute(
   repoPath: string | null,
   previewUrl: string | null,
   groqApiKey: string,
+  vigiConfig?: VigilConfig,
 ): Promise<ExecutionResult[]> {
-  return routeToExecutors({ classifiedItems, repoPath, previewUrl, groqApiKey });
+  return routeToExecutors({ classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig });
 }
 
 // ---------------------------------------------------------------------------
@@ -116,7 +117,7 @@ async function _runPipeline(
   groqApiKey: string,
   correlationId: string,
 ): Promise<void> {
-  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId } = job;
+  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig } = job;
 
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
@@ -145,7 +146,7 @@ async function _runPipeline(
     const previewUrl = await stageDetectPreviewUrl(classifiedItems, job, octokit);
 
     // Stage 6: Execute
-    executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, groqApiKey);
+    executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig);
   } catch (err) {
     pipelineError = `Pipeline error: ${err instanceof Error ? err.message : String(err)}`;
     log.error({ err, owner, repo, pullNumber }, "Pipeline error");

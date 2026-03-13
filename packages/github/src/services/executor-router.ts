@@ -4,7 +4,7 @@
  * Follows the error-as-evidence model — never throws, always returns ExecutionResult.
  */
 
-import type { ClassifiedItem, ExecutionResult, ExecutorType } from "@vigil/core";
+import type { ClassifiedItem, ExecutionResult, ExecutorType, VigilConfig } from "@vigil/core";
 import { createLogger } from "@vigil/core";
 import {
   executeShellItem,
@@ -21,6 +21,8 @@ export interface RouterOptions {
   /** Preview deployment URL, required for api/browser items */
   previewUrl: string | null;
   groqApiKey: string;
+  /** Parsed .vigil.yml config — applied as overrides on top of hardcoded defaults */
+  vigiConfig?: VigilConfig;
 }
 
 /**
@@ -30,11 +32,11 @@ export interface RouterOptions {
 export async function routeToExecutors(
   options: RouterOptions,
 ): Promise<ExecutionResult[]> {
-  const { classifiedItems, repoPath, previewUrl, groqApiKey } = options;
+  const { classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig } = options;
 
   const settled = await Promise.allSettled(
     classifiedItems.map((item) =>
-      executeItem(item, { repoPath, previewUrl, groqApiKey }),
+      executeItem(item, { repoPath, previewUrl, groqApiKey, vigiConfig }),
     ),
   );
 
@@ -65,21 +67,39 @@ const EXECUTOR_REGISTRY = new Map<ExecutorType, ExecutorFn>([
     "shell",
     (item, ctx) => {
       if (!ctx.repoPath) return Promise.resolve(noRepoResult(item.item.id));
-      return executeShellItem(item, { repoPath: ctx.repoPath, timeoutMs: 300_000 });
+      const timeoutMs = ctx.vigiConfig?.timeouts?.shell
+        ? ctx.vigiConfig.timeouts.shell * 1000
+        : 300_000;
+      return executeShellItem(item, {
+        repoPath: ctx.repoPath,
+        timeoutMs,
+        extraAllowPrefixes: ctx.vigiConfig?.shell?.allow,
+      });
     },
   ],
   [
     "api",
     (item, ctx) => {
       if (!ctx.previewUrl) return Promise.resolve(noPreviewResult(item.item.id));
-      return executeApiItem(item, { baseUrl: ctx.previewUrl, groqApiKey: ctx.groqApiKey, timeoutMs: 30_000 });
+      const timeoutMs = ctx.vigiConfig?.timeouts?.api
+        ? ctx.vigiConfig.timeouts.api * 1000
+        : 30_000;
+      return executeApiItem(item, { baseUrl: ctx.previewUrl, groqApiKey: ctx.groqApiKey, timeoutMs });
     },
   ],
   [
     "browser",
     (item, ctx) => {
       if (!ctx.previewUrl) return Promise.resolve(noPreviewResult(item.item.id));
-      return executeBrowserItem(item, { baseUrl: ctx.previewUrl, groqApiKey: ctx.groqApiKey, timeoutMs: 60_000 });
+      const timeoutMs = ctx.vigiConfig?.timeouts?.browser
+        ? ctx.vigiConfig.timeouts.browser * 1000
+        : 60_000;
+      return executeBrowserItem(item, {
+        baseUrl: ctx.previewUrl,
+        groqApiKey: ctx.groqApiKey,
+        timeoutMs,
+        viewports: ctx.vigiConfig?.viewports,
+      });
     },
   ],
 ]);
@@ -94,6 +114,16 @@ async function executeItem(
       passed: true,
       duration: 0,
       evidence: { skipped: true, reason: "Item marked as manual or vague" },
+    };
+  }
+
+  const skipCategories = ctx.vigiConfig?.skip?.categories;
+  if (skipCategories && skipCategories.includes(item.category)) {
+    return {
+      itemId: item.item.id,
+      passed: true,
+      duration: 0,
+      evidence: { skipped: true, reason: `Category "${item.category}" is disabled in .vigil.yml` },
     };
   }
 

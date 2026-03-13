@@ -2,6 +2,8 @@ import type { Context } from "probot";
 import { hasTestPlan } from "../utils/has-test-plan.js";
 import { createPendingCheckRun } from "../services/check-run.js";
 import { enqueueVerification } from "../services/queue.js";
+import { parseVigilConfig } from "../services/vigil-config.js";
+import type { VigilConfig } from "@vigil/core/types";
 
 type PullRequestContext = Context<
   "pull_request.opened" | "pull_request.synchronize" | "pull_request.edited"
@@ -38,6 +40,24 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
     "Test plan detected — creating check run",
   );
 
+  // Fetch .vigil.yml from the head commit (best-effort — never blocks the job)
+  let vigiConfig: VigilConfig | undefined;
+  try {
+    const response = await context.octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path: ".vigil.yml",
+      ref: pr.head.sha,
+    });
+    const data = response.data;
+    if (!Array.isArray(data) && data.type === "file" && "content" in data) {
+      const yaml = Buffer.from(data.content, "base64").toString("utf-8");
+      vigiConfig = parseVigilConfig(yaml);
+    }
+  } catch {
+    // File not found (404) or permission error — use defaults
+  }
+
   let checkRunId: number | undefined;
 
   try {
@@ -56,6 +76,7 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
       headSha: pr.head.sha,
       checkRunId,
       prBody,
+      vigiConfig,
     });
 
     context.log.info(

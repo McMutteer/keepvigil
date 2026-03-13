@@ -1,3 +1,5 @@
+import type { VigilConfig } from "./types.js";
+
 /** Queue name constants shared across producer and worker packages */
 export const QUEUE_NAMES = {
   VERIFY_TEST_PLAN: "verify-test-plan",
@@ -13,4 +15,6 @@ export interface VerifyTestPlanJob {
   headSha: string;
   checkRunId: number;
   prBody: string;
+  /** Parsed .vigil.yml config from the head commit, or undefined if not present */
+  vigiConfig?: VigilConfig;
 }

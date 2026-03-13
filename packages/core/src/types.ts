@@ -116,6 +116,8 @@ export interface ShellExecutionContext {
   timeoutMs?: number;
   /** Docker image to use for the sandbox (default: "node:22-alpine") */
   sandboxImage?: string;
+  /** Additional command prefixes allowed beyond the built-in allowlist (from .vigil.yml) */
+  extraAllowPrefixes?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -189,4 +191,35 @@ export interface MetadataExecutionContext {
   baseUrl: string;
   /** Timeout per HTTP request in milliseconds (default: 15_000) */
   timeoutMs?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Per-repo configuration (.vigil.yml)
+// ---------------------------------------------------------------------------
+
+/**
+ * Parsed and validated contents of a repo's `.vigil.yml` file.
+ * All fields are optional — omitted fields use hardcoded defaults.
+ */
+export interface VigilConfig {
+  /** Timeout overrides per executor type (values in seconds) */
+  timeouts?: {
+    /** Shell executor timeout in seconds (default: 300) */
+    shell?: number;
+    /** API executor timeout in seconds (default: 30) */
+    api?: number;
+    /** Browser executor timeout in seconds (default: 60) */
+    browser?: number;
+  };
+  /** Categories to skip entirely — items are returned as skipped, not executed */
+  skip?: {
+    categories?: CategoryLabel[];
+  };
+  /** Custom viewport list for browser visual checks */
+  viewports?: ViewportSpec[];
+  /** Shell executor overrides */
+  shell?: {
+    /** Additional command prefixes allowed beyond the built-in allowlist */
+    allow?: string[];
+  };
 }

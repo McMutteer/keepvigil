@@ -53,7 +53,7 @@ export async function executeShellItem(
   let lastExitCode = 0;
 
   for (const command of commands) {
-    const validation = validateCommand(command);
+    const validation = validateCommand(command, context.extraAllowPrefixes);
 
     if (!validation.allowed) {
       return {
