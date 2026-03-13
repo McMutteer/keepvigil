@@ -14,7 +14,9 @@ describe("loadConfig", () => {
   beforeEach(() => {
     // Stub only required vars; PORT and NODE_ENV are intentionally omitted
     // so Zod defaults (3200 and "development") apply unless a test overrides them.
-    Object.entries(validEnv).forEach(([k, v]) => vi.stubEnv(k, v));
+    for (const [k, v] of Object.entries(validEnv)) {
+      vi.stubEnv(k, v);
+    }
   });
 
   afterEach(() => {
