@@ -1,6 +1,6 @@
 # Vigil Roadmap
 
-Backlog de mejoras priorizadas. Referencia principal para cualquier sesion de trabajo.
+Backlog de mejoras priorizadas. Referencia principal para cualquier sesión de trabajo.
 
 ---
 
@@ -30,7 +30,7 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesion de tr
 - [x] **Structured logging**: pino con correlation IDs — done PR #17
 - [x] **Metrics/observability**: Prometheus endpoint — done PR #17
 - [x] **Test coverage**: 417 tests, coverage thresholds enforced — done PR #19
-- [ ] **CI pipeline**: GitHub Actions para build/test/lint/typecheck en PRs
+- [x] **CI pipeline**: GitHub Actions para build/test/lint/typecheck en PRs — done PR #20
 - [ ] **Integration tests**: E2E con PR real (mock GitHub o test repo)
 - [ ] **Graceful degradation**: si Groq esta caido, clasificar todo como "manual"
 
@@ -52,6 +52,6 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesion de tr
 ## Notas
 
 - P0/P1 todos resueltos (PRs #14, #15)
-- P3 CI pipeline es el siguiente paso natural — enforces los 417 tests en cada PR
+- P3 CI pipeline completado — garantiza los 417 tests en cada PR
 - P2 features requieren product decisions — empezar con `.vigil.yml` config file
 - Cuando se complete un item, marcarlo aqui Y en el GitHub Issue correspondiente
