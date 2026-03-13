@@ -419,6 +419,74 @@ describe("prompts", () => {
 });
 
 // ============================================================
+// Edge cases — false positive and boundary tests
+// ============================================================
+
+describe("applyRules — status code false positive prevention", () => {
+  it("does NOT classify 'returns 200 results' as api (count, not status code)", () => {
+    // The negative lookahead (?!\s+results?) prevents this false positive
+    const item = makeItem("Function returns 200 results from the database");
+    const result = applyRules(item);
+    // Should NOT match as api — it's a count
+    expect(result?.executorType).not.toBe("api");
+  });
+
+  it("does NOT classify 'returns 100 items' as api (100 is out of HTTP range 2xx-5xx)", () => {
+    const item = makeItem("Pagination returns 100 items per page");
+    const result = applyRules(item);
+    expect(result?.executorType).not.toBe("api");
+  });
+
+  it("DOES classify 'returns 5xx errors properly' as api (error handling test)", () => {
+    // "errors" is NOT in the exclusion list — this is a legitimate API test
+    const item = makeItem("The retry handler returns 5xx errors properly");
+    const result = applyRules(item);
+    expect(result).not.toBeNull();
+    expect(result!.executorType).toBe("api");
+  });
+
+  it("DOES classify 'returns 4xx errors' as api", () => {
+    const item = makeItem("Invalid auth returns 4xx errors from the API");
+    const result = applyRules(item);
+    expect(result).not.toBeNull();
+    expect(result!.executorType).toBe("api");
+  });
+
+  it("does NOT classify 'returns 200 rows' as api (count, not status code)", () => {
+    const item = makeItem("Query returns 200 rows from the orders table");
+    const result = applyRules(item);
+    expect(result?.executorType).not.toBe("api");
+  });
+
+  it("SKIP item has confidence SKIP and executorType none", () => {
+    const item = makeItem("Do the thing", { isManual: true });
+    const result = applyRules(item);
+    expect(result).not.toBeNull();
+    expect(result!.confidence).toBe("SKIP");
+    expect(result!.executorType).toBe("none");
+    expect(result!.category).toBe("manual");
+  });
+
+  it("rule-matched item preserves item reference", () => {
+    const item = makeItem("Run `npm test`", { codeBlocks: ["npm test"] });
+    const result = applyRules(item);
+    expect(result).not.toBeNull();
+    expect(result!.item).toBe(item);
+  });
+
+  it("rule takes priority — rule-matched item is never sent to LLM", async () => {
+    // Item matches a rule (shell), LLM mock should NOT be called for it
+    mockCreate.mockReset();
+    const items = [
+      makeItem("Run `npm test`", { codeBlocks: ["npm test"] }, "tp-0"),
+    ];
+    await classifyItems(items, { apiKey: "test-key", rulesOnly: false });
+    // LLM should not have been called since rule matched
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+});
+
+// ============================================================
 // Integration: parse → classify (using real fixtures)
 // ============================================================
 
