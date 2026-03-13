@@ -12,7 +12,7 @@
  * Covers: semicolons, ampersands, pipes, backticks, $() substitution,
  * redirects, and newlines.
  */
-const SHELL_METACHARACTERS = /[;&|`$<>\n\r(){}]/;
+export const SHELL_METACHARACTERS = /[;&|`$<>\n\r(){}]/;
 
 /** Patterns that match safe, known build/test commands. */
 const ALLOWED_PATTERNS: RegExp[] = [

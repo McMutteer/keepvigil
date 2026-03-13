@@ -13,14 +13,12 @@
 
 import { parse as parseYaml } from "yaml";
 import type { CategoryLabel, ViewportSpec, VigilConfig } from "@vigil/core/types";
+import { SHELL_METACHARACTERS } from "@vigil/executors";
 
 /** Valid category labels (must stay in sync with CategoryLabel type) */
 const VALID_CATEGORIES = new Set<string>([
   "build", "api", "ui-flow", "visual", "metadata", "manual", "vague",
 ]);
-
-/** Shell metacharacters — same set used in allowlist.ts */
-const SHELL_METACHARACTERS = /[;&|`$<>\n\r(){}]/;
 
 /** Maximum values to prevent abuse */
 const MAX_TIMEOUT_SHELL_S = 3600;   // 1 hour

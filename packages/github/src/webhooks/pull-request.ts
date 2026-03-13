@@ -40,14 +40,27 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
     "Test plan detected — creating check run",
   );
 
-  // Fetch .vigil.yml from the head commit (best-effort — never blocks the job)
+  // Fetch .vigil.yml (best-effort — never blocks the job).
+  // Trust policy: only load config from the PR head ref when the PR comes from
+  // the same repo AND the author has explicit repo permissions. Fork PRs and
+  // untrusted contributors read from the default branch instead, so they cannot
+  // expand the shell allowlist via their own PR.
   let vigiConfig: VigilConfig | undefined;
   try {
+    const isSameRepoPr = pr.head.repo?.full_name === repository.full_name;
+    const isTrustedAuthor = ["OWNER", "MEMBER", "COLLABORATOR"].includes(
+      pr.author_association,
+    );
+    const configRef =
+      isSameRepoPr && isTrustedAuthor
+        ? pr.head.sha
+        : repository.default_branch;
+
     const response = await context.octokit.rest.repos.getContent({
       owner,
       repo,
       path: ".vigil.yml",
-      ref: pr.head.sha,
+      ref: configRef,
     });
     const data = response.data;
     if (!Array.isArray(data) && data.type === "file" && "content" in data) {

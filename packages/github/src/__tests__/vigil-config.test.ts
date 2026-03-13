@@ -69,6 +69,12 @@ describe("parseVigilConfig", () => {
     expect(config.timeouts?.shell).toBeUndefined();
   });
 
+  it("rejects negative shell timeout", () => {
+    const yaml = "timeouts:\n  shell: -10\n";
+    const config = parseVigilConfig(yaml);
+    expect(config.timeouts?.shell).toBeUndefined();
+  });
+
   it("rejects shell timeout above 3600", () => {
     const yaml = "timeouts:\n  shell: 3601\n";
     const config = parseVigilConfig(yaml);
@@ -152,6 +158,12 @@ describe("parseVigilConfig", () => {
 
   it("rejects viewport with width exceeding 3840", () => {
     const yaml = "viewports:\n  - label: huge\n    width: 4000\n    height: 768\n";
+    const config = parseVigilConfig(yaml);
+    expect(config.viewports).toBeUndefined();
+  });
+
+  it("rejects viewport with height exceeding 2160", () => {
+    const yaml = "viewports:\n  - label: tall\n    width: 1920\n    height: 2200\n";
     const config = parseVigilConfig(yaml);
     expect(config.viewports).toBeUndefined();
   });
