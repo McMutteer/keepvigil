@@ -10,7 +10,7 @@ const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
 export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[]): string {
-  const isRetry = retryItemIds !== undefined;
+  const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
   const parts: string[] = [
     COMMENT_MARKER,
     isRetry ? "## Vigil Test Plan Results _(retry)_" : "## Vigil Test Plan Results",
@@ -18,8 +18,8 @@ export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pi
     buildSummaryLine(summary),
   ];
 
-  if (isRetry && retryItemIds.length > 0) {
-    parts.push("", `> **Retry:** re-ran ${retryItemIds.join(", ")} — other items not re-executed.`);
+  if (isRetry) {
+    parts.push("", `> **Retry:** re-ran ${retryItemIds!.join(", ")} — other items not re-executed.`);
   }
 
   if (pipelineError) {

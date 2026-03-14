@@ -135,6 +135,13 @@ describe("handleIssueComment", () => {
     expect(job.retryItemIds).toEqual(["tp-1", "tp-5"]);
   });
 
+  it("falls back to full re-run when all supplied IDs are invalid", async () => {
+    const { context } = makeContext({ body: "/vigil retry badid1 badid2", authorAssociation: "OWNER" });
+    await handleIssueComment(context as never);
+    const job = (enqueueVerification as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(job.retryItemIds).toBeUndefined();
+  });
+
   it("accepts MEMBER association", async () => {
     const { context } = makeContext({ authorAssociation: "MEMBER" });
     await handleIssueComment(context as never);

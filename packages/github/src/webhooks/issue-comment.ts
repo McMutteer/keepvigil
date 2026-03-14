@@ -51,10 +51,13 @@ export async function handleIssueComment(context: IssueCommentContext): Promise<
   }
 
   // Parse optional item IDs from the command: /vigil retry tp-1 tp-3
+  // If the user supplied tokens but none matched the tp-N format, fall back to
+  // undefined (full re-run) rather than skipping all items.
   const afterCommand = body.slice(RETRY_COMMAND.length).trim();
-  const retryItemIds = afterCommand.length > 0
+  const parsed = afterCommand.length > 0
     ? afterCommand.split(/\s+/).filter((s) => /^tp-\d+$/.test(s))
-    : undefined; // undefined = re-run all
+    : [];
+  const retryItemIds = parsed.length > 0 ? parsed : undefined; // undefined = re-run all
 
   const owner = repository.owner.login;
   const repo = repository.name;
