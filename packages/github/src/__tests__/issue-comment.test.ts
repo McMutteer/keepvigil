@@ -56,7 +56,7 @@ function makeContext(overrides: {
       installation: { id: 123 },
       sender: { login: "dev" },
     },
-    octokit: Promise.resolve(octokit),
+    octokit,
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 

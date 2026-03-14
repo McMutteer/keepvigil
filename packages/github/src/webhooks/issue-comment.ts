@@ -41,7 +41,7 @@ export async function handleIssueComment(context: IssueCommentContext): Promise<
 
   // Trust gate: only repo members/owners/collaborators can trigger retries
   const trustedRoles = ["OWNER", "MEMBER", "COLLABORATOR"];
-  const authorAssociation = (context.payload as unknown as { comment: { author_association: string } }).comment.author_association;
+  const authorAssociation = comment.author_association as string;
   if (!trustedRoles.includes(authorAssociation)) {
     log.info(
       { pr: issue.number, user: sender.login, association: authorAssociation },
@@ -67,7 +67,7 @@ export async function handleIssueComment(context: IssueCommentContext): Promise<
 
   try {
     // Fetch the current PR to get head SHA and body
-    const octokit = await context.octokit;
+    const octokit = context.octokit;
     const { data: pr } = await octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
 
     const prBody = pr.body ?? "";
