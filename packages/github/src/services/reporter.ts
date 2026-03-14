@@ -48,6 +48,8 @@ export interface ReportContext {
   correlationId?: string;
   /** Parsed .vigil.yml config — included in PR comment when present. */
   vigiConfig?: VigilConfig;
+  /** Validation warnings from parsing .vigil.yml — surfaced in the PR comment. */
+  configWarnings?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -192,6 +194,7 @@ export async function reportResults(context: ReportContext): Promise<void> {
       context.pipelineError ?? undefined,
       context.correlationId,
       context.vigiConfig,
+      context.configWarnings,
     );
     await postOrUpdateComment(
       context.octokit,

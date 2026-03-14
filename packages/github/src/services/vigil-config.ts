@@ -5,10 +5,11 @@
  *  - Lenient: malformed YAML or unknown fields never throw — fall back to defaults
  *  - Secure: shell allow-prefixes are validated against the metacharacter blocklist
  *  - Bounded: all array/value inputs are clamped to prevent abuse
+ *  - Transparent: all rejected values are collected in `warnings` for user feedback
  *
  * Usage:
- *   const config = parseVigilConfig(yamlString);   // always returns a valid VigilConfig
- *   const config = parseVigilConfig(undefined);     // returns {} (all defaults)
+ *   const { config, warnings } = parseVigilConfig(yamlString);
+ *   const { config } = parseVigilConfig(undefined);  // returns { config: {}, warnings: [] }
  */
 
 import { parse as parseYaml } from "yaml";
@@ -38,30 +39,48 @@ function toBoundedInt(value: unknown, max: number): number | undefined {
   return n >= 1 && n <= max ? n : undefined;
 }
 
+/** Result of parsing a .vigil.yml file. */
+export interface VigilConfigResult {
+  /** The validated configuration — only fields that were present and valid. */
+  config: VigilConfig;
+  /**
+   * Human-readable warnings for each field that was rejected or clamped.
+   * Empty when the config is fully valid (or absent).
+   */
+  warnings: string[];
+}
+
 /**
  * Parse and validate a `.vigil.yml` YAML string.
  *
- * Returns a `VigilConfig` with only the fields that were present and valid.
- * Fields that are absent, invalid, or out of range are silently omitted
- * so executors fall back to their hardcoded defaults.
+ * Returns a `VigilConfigResult` with:
+ * - `config`: fields that were present and valid (invalid/out-of-range fields omitted)
+ * - `warnings`: one message per rejected value, suitable for display in a PR comment
  */
-export function parseVigilConfig(yamlStr: string | undefined): VigilConfig {
-  if (!yamlStr?.trim()) return {};
+export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult {
+  if (!yamlStr?.trim()) return { config: {}, warnings: [] };
 
   let raw: unknown;
   try {
     raw = parseYaml(yamlStr);
   } catch {
-    // Malformed YAML — ignore, use defaults
-    return {};
+    return { config: {}, warnings: ["`.vigil.yml` has invalid YAML syntax — using defaults"] };
   }
 
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return { config: {}, warnings: ["`.vigil.yml` root must be a YAML mapping — using defaults"] };
+  }
 
   const obj = raw as Record<string, unknown>;
+  const warnings: string[] = [];
 
   // Reject unsupported versions
-  if (obj.version !== undefined && obj.version !== 1) return {};
+  if (obj.version !== undefined && obj.version !== 1) {
+    return {
+      config: {},
+      warnings: [`\`.vigil.yml\` version ${String(obj.version)} is not supported (only version 1) — using defaults`],
+    };
+  }
 
   const config: VigilConfig = {};
 
@@ -70,12 +89,32 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfig {
     const t = obj.timeouts as Record<string, unknown>;
     const timeouts: VigilConfig["timeouts"] = {};
 
-    const shell = toBoundedInt(t.shell, MAX_TIMEOUT_SHELL_S);
-    if (shell !== undefined) timeouts.shell = shell;
-    const api = toBoundedInt(t.api, MAX_TIMEOUT_API_S);
-    if (api !== undefined) timeouts.api = api;
-    const browser = toBoundedInt(t.browser, MAX_TIMEOUT_BROWSER_S);
-    if (browser !== undefined) timeouts.browser = browser;
+    if (t.shell !== undefined) {
+      const shell = toBoundedInt(t.shell, MAX_TIMEOUT_SHELL_S);
+      if (shell !== undefined) {
+        timeouts.shell = shell;
+      } else {
+        warnings.push(`\`timeouts.shell\`: ${JSON.stringify(t.shell)} is invalid (must be 1–${MAX_TIMEOUT_SHELL_S}s) — using default`);
+      }
+    }
+
+    if (t.api !== undefined) {
+      const api = toBoundedInt(t.api, MAX_TIMEOUT_API_S);
+      if (api !== undefined) {
+        timeouts.api = api;
+      } else {
+        warnings.push(`\`timeouts.api\`: ${JSON.stringify(t.api)} is invalid (must be 1–${MAX_TIMEOUT_API_S}s) — using default`);
+      }
+    }
+
+    if (t.browser !== undefined) {
+      const browser = toBoundedInt(t.browser, MAX_TIMEOUT_BROWSER_S);
+      if (browser !== undefined) {
+        timeouts.browser = browser;
+      } else {
+        warnings.push(`\`timeouts.browser\`: ${JSON.stringify(t.browser)} is invalid (must be 1–${MAX_TIMEOUT_BROWSER_S}s) — using default`);
+      }
+    }
 
     if (Object.keys(timeouts).length > 0) config.timeouts = timeouts;
   }
@@ -84,35 +123,53 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfig {
   if (typeof obj.skip === "object" && obj.skip !== null && !Array.isArray(obj.skip)) {
     const s = obj.skip as Record<string, unknown>;
     if (Array.isArray(s.categories)) {
-      const cats = s.categories
-        .filter((c): c is string => typeof c === "string" && VALID_CATEGORIES.has(c))
-        .map((c) => c as CategoryLabel);
-      if (cats.length > 0) config.skip = { categories: cats };
+      const validCats: CategoryLabel[] = [];
+      for (const c of s.categories) {
+        if (typeof c === "string" && VALID_CATEGORIES.has(c)) {
+          validCats.push(c as CategoryLabel);
+        } else {
+          warnings.push(`\`skip.categories\`: ${JSON.stringify(c)} is not a recognized category — ignored`);
+        }
+      }
+      if (validCats.length > 0) config.skip = { categories: validCats };
     }
   }
 
   // --- viewports ---
   if (Array.isArray(obj.viewports)) {
-    const vps: ViewportSpec[] = obj.viewports
-      .filter(
-        (vp): vp is Record<string, unknown> =>
-          typeof vp === "object" &&
-          vp !== null &&
-          !Array.isArray(vp) &&
-          typeof (vp as Record<string, unknown>).label === "string" &&
-          ((vp as Record<string, unknown>).label as string).trim().length > 0 &&
-          typeof (vp as Record<string, unknown>).width === "number" &&
-          typeof (vp as Record<string, unknown>).height === "number" &&
-          toBoundedInt((vp as Record<string, unknown>).width, 3840) !== undefined &&
-          toBoundedInt((vp as Record<string, unknown>).height, 2160) !== undefined,
-      )
-      .slice(0, MAX_VIEWPORTS)
-      .map((vp) => ({
-        label: String(vp.label),
-        width: toBoundedInt(vp.width, 3840) as number,
-        height: toBoundedInt(vp.height, 2160) as number,
-      }));
+    const vps: ViewportSpec[] = [];
+    for (let i = 0; i < obj.viewports.length; i++) {
+      const vp = obj.viewports[i];
+      if (typeof vp !== "object" || vp === null || Array.isArray(vp)) {
+        warnings.push(`\`viewports[${i}]\`: must be an object — ignored`);
+        continue;
+      }
+      const v = vp as Record<string, unknown>;
+      const label = v.label;
+      const width = v.width;
+      const height = v.height;
 
+      if (typeof label !== "string" || label.trim().length === 0) {
+        warnings.push(`\`viewports[${i}]\`: label must be a non-empty string — ignored`);
+        continue;
+      }
+      const w = toBoundedInt(width, 3840);
+      if (w === undefined) {
+        warnings.push(`\`viewports[${i}]\` (${label}): width ${JSON.stringify(width)} is invalid (must be 1–3840) — ignored`);
+        continue;
+      }
+      const h = toBoundedInt(height, 2160);
+      if (h === undefined) {
+        warnings.push(`\`viewports[${i}]\` (${label}): height ${JSON.stringify(height)} is invalid (must be 1–2160) — ignored`);
+        continue;
+      }
+
+      if (vps.length >= MAX_VIEWPORTS) {
+        warnings.push(`\`viewports\`: limited to ${MAX_VIEWPORTS} entries — remaining entries ignored`);
+        break;
+      }
+      vps.push({ label: label.trim(), width: w, height: h });
+    }
     if (vps.length > 0) config.viewports = vps;
   }
 
@@ -120,19 +177,26 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfig {
   if (typeof obj.shell === "object" && obj.shell !== null && !Array.isArray(obj.shell)) {
     const s = obj.shell as Record<string, unknown>;
     if (Array.isArray(s.allow)) {
-      const allowed = s.allow
-        .filter(
-          (cmd): cmd is string =>
-            typeof cmd === "string" &&
-            cmd.trim().length > 0 &&
-            !SHELL_METACHARACTERS.test(cmd),
-        )
-        .slice(0, MAX_SHELL_ALLOW)
-        .map((cmd) => cmd.trim());
-
+      const allowed: string[] = [];
+      for (let i = 0; i < s.allow.length; i++) {
+        const cmd = s.allow[i];
+        if (typeof cmd !== "string" || cmd.trim().length === 0) {
+          warnings.push(`\`shell.allow[${i}]\`: must be a non-empty string — ignored`);
+          continue;
+        }
+        if (SHELL_METACHARACTERS.test(cmd)) {
+          warnings.push(`\`shell.allow[${i}]\`: \`${cmd}\` contains shell metacharacters — rejected for security`);
+          continue;
+        }
+        if (allowed.length >= MAX_SHELL_ALLOW) {
+          warnings.push(`\`shell.allow\`: limited to ${MAX_SHELL_ALLOW} entries — remaining entries ignored`);
+          break;
+        }
+        allowed.push(cmd.trim());
+      }
       if (allowed.length > 0) config.shell = { allow: allowed };
     }
   }
 
-  return config;
+  return { config, warnings };
 }

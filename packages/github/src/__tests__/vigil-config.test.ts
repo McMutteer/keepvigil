@@ -5,136 +5,159 @@ describe("parseVigilConfig", () => {
   // --- happy path ---
 
   it("returns empty config for undefined input", () => {
-    expect(parseVigilConfig(undefined)).toEqual({});
+    const { config, warnings } = parseVigilConfig(undefined);
+    expect(config).toEqual({});
+    expect(warnings).toEqual([]);
   });
 
   it("returns empty config for empty string", () => {
-    expect(parseVigilConfig("")).toEqual({});
+    const { config, warnings } = parseVigilConfig("");
+    expect(config).toEqual({});
+    expect(warnings).toEqual([]);
   });
 
   it("returns empty config for whitespace-only string", () => {
-    expect(parseVigilConfig("   \n  ")).toEqual({});
+    const { config, warnings } = parseVigilConfig("   \n  ");
+    expect(config).toEqual({});
+    expect(warnings).toEqual([]);
   });
 
   it("returns empty config for valid YAML with no recognized fields", () => {
     const yaml = "foo: bar\nbaz: 123\n";
-    expect(parseVigilConfig(yaml)).toEqual({});
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config).toEqual({});
+    expect(warnings).toEqual([]);
   });
 
   it("parses version: 1 and ignores it (just a marker)", () => {
     const yaml = "version: 1\n";
-    expect(parseVigilConfig(yaml)).toEqual({});
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config).toEqual({});
+    expect(warnings).toEqual([]);
   });
 
-  it("rejects unsupported version", () => {
+  it("rejects unsupported version with a warning", () => {
     const yaml = "version: 2\ntimeouts:\n  shell: 60\n";
-    expect(parseVigilConfig(yaml)).toEqual({});
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config).toEqual({});
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/version 2/);
   });
 
   // --- timeouts ---
 
   it("parses valid shell timeout", () => {
     const yaml = "timeouts:\n  shell: 120\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.timeouts?.shell).toBe(120);
   });
 
   it("parses valid api timeout", () => {
     const yaml = "timeouts:\n  api: 15\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.timeouts?.api).toBe(15);
   });
 
   it("parses valid browser timeout", () => {
     const yaml = "timeouts:\n  browser: 90\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.timeouts?.browser).toBe(90);
   });
 
   it("parses all three timeouts together", () => {
     const yaml = "timeouts:\n  shell: 300\n  api: 30\n  browser: 60\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.timeouts).toEqual({ shell: 300, api: 30, browser: 60 });
   });
 
   it("floors decimal timeout values", () => {
     const yaml = "timeouts:\n  shell: 90.9\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.timeouts?.shell).toBe(90);
   });
 
-  it("rejects shell timeout between 0 and 1 (floors to 0)", () => {
+  it("rejects shell timeout between 0 and 1 (floors to 0) and emits a warning", () => {
     const yaml = "timeouts:\n  shell: 0.4\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.timeouts?.shell).toBeUndefined();
+    expect(warnings.some(w => w.includes("timeouts.shell"))).toBe(true);
   });
 
-  it("rejects shell timeout of 0", () => {
+  it("rejects shell timeout of 0 and emits a warning", () => {
     const yaml = "timeouts:\n  shell: 0\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.timeouts?.shell).toBeUndefined();
+    expect(warnings.some(w => w.includes("timeouts.shell"))).toBe(true);
   });
 
-  it("rejects negative shell timeout", () => {
+  it("rejects negative shell timeout and emits a warning", () => {
     const yaml = "timeouts:\n  shell: -10\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.timeouts?.shell).toBeUndefined();
+    expect(warnings.some(w => w.includes("timeouts.shell"))).toBe(true);
   });
 
-  it("rejects shell timeout above 3600", () => {
+  it("rejects shell timeout above 3600 and emits a warning", () => {
     const yaml = "timeouts:\n  shell: 3601\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.timeouts?.shell).toBeUndefined();
+    expect(warnings.some(w => w.includes("timeouts.shell"))).toBe(true);
   });
 
-  it("rejects api timeout above 300", () => {
+  it("rejects api timeout above 300 and emits a warning", () => {
     const yaml = "timeouts:\n  api: 301\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.timeouts?.api).toBeUndefined();
+    expect(warnings.some(w => w.includes("timeouts.api"))).toBe(true);
   });
 
-  it("rejects browser timeout above 600", () => {
+  it("rejects browser timeout above 600 and emits a warning", () => {
     const yaml = "timeouts:\n  browser: 601\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.timeouts?.browser).toBeUndefined();
+    expect(warnings.some(w => w.includes("timeouts.browser"))).toBe(true);
   });
 
   it("omits timeouts key entirely when all timeout values are invalid", () => {
     const yaml = "timeouts:\n  shell: 0\n  api: 0\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.timeouts).toBeUndefined();
+    expect(warnings).toHaveLength(2);
   });
 
-  it("rejects non-numeric timeout values", () => {
+  it("rejects non-numeric timeout values and emits a warning", () => {
     const yaml = "timeouts:\n  shell: \"fast\"\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.timeouts?.shell).toBeUndefined();
+    expect(warnings.some(w => w.includes("timeouts.shell"))).toBe(true);
   });
 
   // --- skip.categories ---
 
   it("parses valid skip categories", () => {
     const yaml = "skip:\n  categories:\n    - visual\n    - metadata\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.skip?.categories).toEqual(["visual", "metadata"]);
   });
 
-  it("ignores unknown category names", () => {
+  it("ignores unknown category names and emits a warning", () => {
     const yaml = "skip:\n  categories:\n    - visual\n    - unknown-category\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.skip?.categories).toEqual(["visual"]);
+    expect(warnings.some(w => w.includes("unknown-category"))).toBe(true);
   });
 
   it("omits skip key when all categories are invalid", () => {
     const yaml = "skip:\n  categories:\n    - not-a-category\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.skip).toBeUndefined();
+    expect(warnings).toHaveLength(1);
   });
 
   it("accepts all valid category labels", () => {
     const yaml =
       "skip:\n  categories:\n    - build\n    - api\n    - ui-flow\n    - visual\n    - metadata\n    - manual\n    - vague\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.skip?.categories).toHaveLength(7);
   });
 
@@ -143,7 +166,7 @@ describe("parseVigilConfig", () => {
   it("parses valid viewports", () => {
     const yaml =
       "viewports:\n  - label: mobile\n    width: 390\n    height: 844\n  - label: desktop\n    width: 1440\n    height: 900\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.viewports).toEqual([
       { label: "mobile", width: 390, height: 844 },
       { label: "desktop", width: 1440, height: 900 },
@@ -152,126 +175,146 @@ describe("parseVigilConfig", () => {
 
   it("floors decimal viewport dimensions", () => {
     const yaml = "viewports:\n  - label: test\n    width: 390.7\n    height: 844.2\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.viewports?.[0]).toEqual({ label: "test", width: 390, height: 844 });
   });
 
-  it("rejects viewport with fractional dimensions that floor to 0", () => {
+  it("rejects viewport with fractional dimensions that floor to 0 and emits a warning", () => {
     const yaml = "viewports:\n  - label: tiny\n    width: 0.4\n    height: 0.9\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.viewports).toBeUndefined();
+    expect(warnings).toHaveLength(1);
   });
 
-  it("rejects viewport with width of 0", () => {
+  it("rejects viewport with width of 0 and emits a warning", () => {
     const yaml = "viewports:\n  - label: bad\n    width: 0\n    height: 768\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.viewports).toBeUndefined();
+    expect(warnings).toHaveLength(1);
   });
 
-  it("rejects viewport with width exceeding 3840", () => {
+  it("rejects viewport with width exceeding 3840 and emits a warning", () => {
     const yaml = "viewports:\n  - label: huge\n    width: 4000\n    height: 768\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.viewports).toBeUndefined();
+    expect(warnings).toHaveLength(1);
   });
 
-  it("rejects viewport with height exceeding 2160", () => {
+  it("rejects viewport with height exceeding 2160 and emits a warning", () => {
     const yaml = "viewports:\n  - label: tall\n    width: 1920\n    height: 2200\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.viewports).toBeUndefined();
+    expect(warnings).toHaveLength(1);
   });
 
-  it("limits viewports to 10 entries", () => {
+  it("limits viewports to 10 entries and emits a warning", () => {
     const entries = Array.from({ length: 15 }, (_, i) =>
       `  - label: vp${i}\n    width: ${320 + i}\n    height: 568`,
     ).join("\n");
     const yaml = `viewports:\n${entries}\n`;
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.viewports).toHaveLength(10);
+    expect(warnings.some(w => w.includes("limited to 10"))).toBe(true);
   });
 
   it("omits viewports key when all entries are invalid", () => {
     const yaml = "viewports:\n  - label: bad\n    width: 0\n    height: 0\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.viewports).toBeUndefined();
+    expect(warnings).toHaveLength(1);
   });
 
-  it("rejects viewport with empty label", () => {
+  it("rejects viewport with empty label and emits a warning", () => {
     const yaml = "viewports:\n  - label: \"\"\n    width: 390\n    height: 844\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.viewports).toBeUndefined();
+    expect(warnings.some(w => w.includes("viewports[0]"))).toBe(true);
   });
 
-  it("rejects viewport with whitespace-only label", () => {
+  it("rejects viewport with whitespace-only label and emits a warning", () => {
     const yaml = "viewports:\n  - label: \"   \"\n    width: 390\n    height: 844\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.viewports).toBeUndefined();
+    expect(warnings.some(w => w.includes("viewports[0]"))).toBe(true);
   });
 
   // --- shell.allow ---
 
   it("parses valid shell allow prefixes", () => {
     const yaml = "shell:\n  allow:\n    - \"python manage.py test\"\n    - \"bundle exec rspec\"\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.shell?.allow).toEqual(["python manage.py test", "bundle exec rspec"]);
   });
 
   it("trims whitespace from shell allow prefixes", () => {
     const yaml = "shell:\n  allow:\n    - \"  python manage.py  \"\n";
-    const config = parseVigilConfig(yaml);
+    const { config } = parseVigilConfig(yaml);
     expect(config.shell?.allow?.[0]).toBe("python manage.py");
   });
 
-  it("rejects shell allow prefix with metacharacters", () => {
+  it("rejects shell allow prefix with metacharacters and emits a warning", () => {
     const yaml = "shell:\n  allow:\n    - \"rm -rf /; echo pwned\"\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.shell?.allow).toBeUndefined();
+    expect(warnings.some(w => w.includes("shell.allow[0]"))).toBe(true);
   });
 
-  it("rejects empty shell allow prefix", () => {
+  it("rejects empty shell allow prefix and emits a warning", () => {
     const yaml = "shell:\n  allow:\n    - \"\"\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.shell?.allow).toBeUndefined();
+    expect(warnings.some(w => w.includes("shell.allow[0]"))).toBe(true);
   });
 
-  it("limits shell allow to 20 entries", () => {
+  it("limits shell allow to 20 entries and emits a warning", () => {
     const entries = Array.from({ length: 25 }, (_, i) => `  - "cmd${i} run"`).join("\n");
     const yaml = `shell:\n  allow:\n${entries}\n`;
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.shell?.allow).toHaveLength(20);
+    expect(warnings.some(w => w.includes("limited to 20"))).toBe(true);
   });
 
-  it("rejects shell allow prefix with pipe metacharacter", () => {
+  it("rejects shell allow prefix with pipe metacharacter and emits a warning", () => {
     const yaml = "shell:\n  allow:\n    - \"cat /etc/passwd | base64\"\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.shell?.allow).toBeUndefined();
+    expect(warnings.some(w => w.includes("shell.allow[0]"))).toBe(true);
   });
 
-  it("rejects shell allow prefix with backtick", () => {
+  it("rejects shell allow prefix with backtick and emits a warning", () => {
     const yaml = "shell:\n  allow:\n    - \"`whoami`\"\n";
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config.shell?.allow).toBeUndefined();
+    expect(warnings.some(w => w.includes("shell.allow[0]"))).toBe(true);
   });
 
   // --- malformed input ---
 
-  it("returns empty config for invalid YAML", () => {
+  it("returns empty config with warning for invalid YAML", () => {
     const yaml = "{ this: is: not: valid: yaml";
-    expect(parseVigilConfig(yaml)).toEqual({});
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config).toEqual({});
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/invalid YAML/i);
   });
 
-  it("returns empty config when root is an array", () => {
+  it("returns empty config with warning when root is an array", () => {
     const yaml = "- item1\n- item2\n";
-    expect(parseVigilConfig(yaml)).toEqual({});
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config).toEqual({});
+    expect(warnings).toHaveLength(1);
   });
 
-  it("returns empty config when root is a scalar", () => {
+  it("returns empty config with warning when root is a scalar", () => {
     const yaml = "just a string\n";
-    expect(parseVigilConfig(yaml)).toEqual({});
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config).toEqual({});
+    expect(warnings).toHaveLength(1);
   });
 
   // --- full config round-trip ---
 
-  it("parses a full .vigil.yml config correctly", () => {
+  it("parses a full .vigil.yml config correctly with no warnings", () => {
     const yaml = `
 version: 1
 timeouts:
@@ -293,7 +336,7 @@ shell:
     - "python manage.py test"
     - "bundle exec rspec"
 `;
-    const config = parseVigilConfig(yaml);
+    const { config, warnings } = parseVigilConfig(yaml);
     expect(config).toEqual({
       timeouts: { shell: 120, api: 20, browser: 45 },
       skip: { categories: ["visual"] },
@@ -303,5 +346,23 @@ shell:
       ],
       shell: { allow: ["python manage.py test", "bundle exec rspec"] },
     });
+    expect(warnings).toEqual([]);
+  });
+
+  it("collects multiple warnings when several fields are invalid", () => {
+    const yaml = `
+timeouts:
+  shell: 9999
+  api: 999
+skip:
+  categories:
+    - valid-but-not-real
+shell:
+  allow:
+    - "echo; rm -rf /"
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config).toEqual({});
+    expect(warnings.length).toBeGreaterThanOrEqual(3);
   });
 });

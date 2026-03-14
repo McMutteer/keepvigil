@@ -46,6 +46,7 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
   // untrusted contributors read from the default branch instead, so they cannot
   // expand the shell allowlist via their own PR.
   let vigiConfig: VigilConfig | undefined;
+  let configWarnings: string[] | undefined;
   try {
     const isSameRepoPr = pr.head.repo?.full_name === repository.full_name;
     const isTrustedAuthor = ["OWNER", "MEMBER", "COLLABORATOR"].includes(
@@ -65,7 +66,9 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
     const data = response.data;
     if (!Array.isArray(data) && data.type === "file" && "content" in data) {
       const yaml = Buffer.from(data.content, "base64").toString("utf-8");
-      vigiConfig = parseVigilConfig(yaml);
+      const result = parseVigilConfig(yaml);
+      vigiConfig = result.config;
+      if (result.warnings.length > 0) configWarnings = result.warnings;
     }
   } catch {
     // File not found (404) or permission error — use defaults
@@ -90,6 +93,7 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
       checkRunId,
       prBody,
       vigiConfig,
+      configWarnings,
     });
 
     context.log.info(

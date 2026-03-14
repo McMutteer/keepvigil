@@ -730,6 +730,38 @@ describe("buildConfigBlock", () => {
     });
     expect(block).toContain("pipe\\|label");
   });
+
+  it("returns empty string when config is undefined and no warnings", () => {
+    expect(buildConfigBlock(undefined, undefined)).toBe("");
+    expect(buildConfigBlock(undefined, [])).toBe("");
+  });
+
+  it("renders warnings section when config is valid but has warnings", () => {
+    const block = buildConfigBlock(
+      { timeouts: { shell: 120 } },
+      ["`timeouts.api`: 999 is invalid (must be 1–300s) — using default"],
+    );
+    expect(block).toContain("Config warnings");
+    expect(block).toContain("timeouts.api");
+    expect(block).toContain("Shell timeout");
+  });
+
+  it("renders warnings-only block when no settings were applied", () => {
+    const block = buildConfigBlock(undefined, ["`timeouts.shell`: 9999 is invalid — using default"]);
+    expect(block).toContain("no valid settings applied");
+    expect(block).toContain("Config warnings");
+    expect(block).toContain("timeouts.shell");
+  });
+
+  it("renders multiple warnings as a list", () => {
+    const warnings = [
+      "`timeouts.shell`: 9999 is invalid — using default",
+      "`timeouts.api`: -1 is invalid — using default",
+    ];
+    const block = buildConfigBlock(undefined, warnings);
+    expect(block).toContain("timeouts.shell");
+    expect(block).toContain("timeouts.api");
+  });
 });
 
 // ---------------------------------------------------------------------------

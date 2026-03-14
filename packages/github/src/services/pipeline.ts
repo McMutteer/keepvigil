@@ -117,7 +117,7 @@ async function _runPipeline(
   groqApiKey: string,
   correlationId: string,
 ): Promise<void> {
-  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig } = job;
+  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig, configWarnings } = job;
 
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
@@ -165,6 +165,7 @@ async function _runPipeline(
         pipelineError,
         correlationId,
         vigiConfig,
+        configWarnings,
       });
     } catch (reportErr) {
       log.error({ err: reportErr }, "Failed to report results");
