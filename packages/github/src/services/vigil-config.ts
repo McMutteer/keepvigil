@@ -27,6 +27,8 @@ const MAX_TIMEOUT_API_S = 300;      // 5 minutes
 const MAX_TIMEOUT_BROWSER_S = 600;  // 10 minutes
 const MAX_VIEWPORTS = 10;
 const MAX_SHELL_ALLOW = 20;
+const MAX_NOTIFICATION_URLS = 5;
+const VALID_NOTIFICATION_ON = new Set(["failure", "always"]);
 
 /**
  * Convert a raw numeric value to a bounded positive integer.
@@ -196,6 +198,43 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult
       }
       if (allowed.length > 0) config.shell = { allow: allowed };
     }
+  }
+
+  // --- notifications ---
+  if (typeof obj.notifications === "object" && obj.notifications !== null && !Array.isArray(obj.notifications)) {
+    const n = obj.notifications as Record<string, unknown>;
+    const notifications: NonNullable<VigilConfig["notifications"]> = {};
+
+    if (n.on !== undefined) {
+      if (typeof n.on === "string" && VALID_NOTIFICATION_ON.has(n.on)) {
+        notifications.on = n.on as "failure" | "always";
+      } else {
+        warnings.push(`\`notifications.on\`: ${JSON.stringify(n.on)} is invalid (must be "failure" or "always") — using default "failure"`);
+      }
+    }
+
+    if (Array.isArray(n.urls)) {
+      const validUrls: string[] = [];
+      for (let i = 0; i < n.urls.length; i++) {
+        const url = n.urls[i];
+        if (typeof url !== "string" || url.trim().length === 0) {
+          warnings.push(`\`notifications.urls[${i}]\`: must be a non-empty string — ignored`);
+          continue;
+        }
+        if (!url.trim().startsWith("https://")) {
+          warnings.push(`\`notifications.urls[${i}]\`: must start with https:// — ignored`);
+          continue;
+        }
+        if (validUrls.length >= MAX_NOTIFICATION_URLS) {
+          warnings.push(`\`notifications.urls\`: limited to ${MAX_NOTIFICATION_URLS} entries — remaining entries ignored`);
+          break;
+        }
+        validUrls.push(url.trim());
+      }
+      if (validUrls.length > 0) notifications.urls = validUrls;
+    }
+
+    if (Object.keys(notifications).length > 0) config.notifications = notifications;
   }
 
   return { config, warnings };

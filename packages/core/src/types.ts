@@ -222,4 +222,11 @@ export interface VigilConfig {
     /** Additional command prefixes allowed beyond the built-in allowlist */
     allow?: string[];
   };
+  /** Webhook notification settings */
+  notifications?: {
+    /** When to send notifications: "failure" (default) or "always" */
+    on?: "failure" | "always";
+    /** Webhook URLs (Slack, Discord, or generic HTTPS endpoints). Max 5. */
+    urls?: string[];
+  };
 }
