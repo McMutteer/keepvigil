@@ -22,6 +22,8 @@ RUN pnpm build
 # --- Production ---
 FROM ${NODE_IMAGE} AS production
 ENV NODE_ENV=production
+RUN npm i -g corepack@latest && corepack enable
+WORKDIR /app
 
 # Install Chromium for Playwright (system browser avoids glibc issues on Alpine)
 RUN apk add --no-cache \
