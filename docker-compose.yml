@@ -1,3 +1,9 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
 services:
   vigil:
     build: .
@@ -20,6 +26,7 @@ services:
     networks:
       - default
       - dokploy-network
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/health"]
       interval: 30s
@@ -40,6 +47,7 @@ services:
       POSTGRES_DB: vigil
     volumes:
       - pgdata:/var/lib/postgresql/data
+    logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U vigil"]
       interval: 10s
@@ -57,6 +65,7 @@ services:
     command: redis-server --appendonly yes --maxmemory 150mb --maxmemory-policy allkeys-lru
     volumes:
       - redisdata:/data
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
