@@ -20,8 +20,6 @@ function makeContext(overrides: {
     headSha = "abc123",
   } = overrides;
 
-  const enqueueVerification = vi.fn().mockResolvedValue("job-id-1");
-  const createPendingCheckRun = vi.fn().mockResolvedValue(42);
   const getContent = vi.fn().mockRejectedValue(Object.assign(new Error("Not Found"), { status: 404 }));
   const getPull = vi.fn().mockResolvedValue({
     data: {
@@ -61,7 +59,7 @@ function makeContext(overrides: {
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 
-  return { context, enqueueVerification, createPendingCheckRun, octokit };
+  return { context, octokit };
 }
 
 // ---------------------------------------------------------------------------
