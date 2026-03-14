@@ -349,6 +349,113 @@ shell:
     expect(warnings).toEqual([]);
   });
 
+  // --- notifications ---
+
+  it("parses valid notifications config", () => {
+    const yaml = `
+notifications:
+  on: always
+  urls:
+    - "https://hooks.slack.com/services/T/B/x"
+    - "https://discord.com/api/webhooks/123/abc"
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.notifications?.on).toBe("always");
+    expect(config.notifications?.urls).toEqual([
+      "https://hooks.slack.com/services/T/B/x",
+      "https://discord.com/api/webhooks/123/abc",
+    ]);
+    expect(warnings).toEqual([]);
+  });
+
+  it("defaults on to undefined (reporter treats as 'failure')", () => {
+    const yaml = `
+notifications:
+  urls:
+    - "https://hooks.slack.com/services/T/B/x"
+`;
+    const { config } = parseVigilConfig(yaml);
+    expect(config.notifications?.on).toBeUndefined();
+    expect(config.notifications?.urls).toHaveLength(1);
+  });
+
+  it("rejects invalid on value with warning", () => {
+    const yaml = `
+notifications:
+  on: sometimes
+  urls:
+    - "https://hooks.slack.com/services/T/B/x"
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.notifications?.on).toBeUndefined();
+    expect(warnings.some(w => w.includes("notifications.on"))).toBe(true);
+  });
+
+  it("rejects malformed https-like URLs with warning", () => {
+    const yaml = `
+notifications:
+  urls:
+    - "https://"
+    - "https://valid.example.com/hook"
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.notifications?.urls).toEqual(["https://valid.example.com/hook"]);
+    expect(warnings.some(w => w.includes("notifications.urls[0]"))).toBe(true);
+  });
+
+  it("rejects non-https URLs with warning", () => {
+    const yaml = `
+notifications:
+  urls:
+    - "http://insecure.example.com/hook"
+    - "https://valid.example.com/hook"
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.notifications?.urls).toEqual(["https://valid.example.com/hook"]);
+    expect(warnings.some(w => w.includes("notifications.urls[0]"))).toBe(true);
+  });
+
+  it("rejects empty string URLs with warning", () => {
+    const yaml = `
+notifications:
+  urls:
+    - ""
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.notifications?.urls).toBeUndefined();
+    expect(warnings.some(w => w.includes("notifications.urls[0]"))).toBe(true);
+  });
+
+  it("limits URLs to 5 entries with warning", () => {
+    const entries = Array.from({ length: 8 }, (_, i) =>
+      `    - "https://example.com/hook/${i}"`,
+    ).join("\n");
+    const yaml = `notifications:\n  urls:\n${entries}\n`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.notifications?.urls).toHaveLength(5);
+    expect(warnings.some(w => w.includes("limited to 5"))).toBe(true);
+  });
+
+  it("trims whitespace from URLs", () => {
+    const yaml = `
+notifications:
+  urls:
+    - "  https://hooks.slack.com/services/T/B/x  "
+`;
+    const { config } = parseVigilConfig(yaml);
+    expect(config.notifications?.urls?.[0]).toBe("https://hooks.slack.com/services/T/B/x");
+  });
+
+  it("omits notifications when no valid fields", () => {
+    const yaml = `
+notifications:
+  on: invalid
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.notifications).toBeUndefined();
+    expect(warnings).toHaveLength(1);
+  });
+
   it("collects multiple warnings when several fields are invalid", () => {
     const yaml = `
 timeouts:

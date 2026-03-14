@@ -297,6 +297,11 @@ export function buildConfigBlock(vigiConfig?: VigilConfig, configWarnings?: stri
       const count = vigiConfig!.shell.allow.length;
       rows.push(`| Shell allowlist | +${count} custom prefix${count === 1 ? "" : "es"} |`);
     }
+    if (vigiConfig!.notifications?.urls?.length) {
+      const urlCount = vigiConfig!.notifications.urls.length;
+      const trigger = vigiConfig!.notifications.on ?? "failure";
+      rows.push(`| Notifications | ${urlCount} webhook${urlCount === 1 ? "" : "s"} (on: ${trigger}) |`);
+    }
   }
 
   const parts: string[] = [];
