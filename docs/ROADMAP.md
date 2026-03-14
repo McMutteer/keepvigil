@@ -21,8 +21,8 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesión de t
 ## P2 — Features de alto valor
 
 - [x] **Config file** (`.vigil.yml`): timeouts, categorias ignoradas, custom shell allowlist por repo — done PR #22
-- [ ] **Config file UX**: exponer en el check run / comentario del PR qué config se aplicó realmente (feedback cuando un valor se rechaza silenciosamente por estar fuera de rango)
-- [ ] **Retry individual items**: re-ejecutar un solo test item que fallo (flaky)
+- [x] **Config file UX**: warnings de valores rechazados en el comentario del PR, bloque collapsible con config aplicada — done PR #23
+- [x] **Retry individual items**: `/vigil retry` (full re-run) y `/vigil retry tp-N` (items específicos) via comment command — done PR #24
 - [ ] **Webhook notificaciones**: enviar resultado a Slack/Discord cuando un plan falla
 - [ ] **GitHub App Marketplace listing**: publicar para que otros instalen
 
@@ -55,5 +55,6 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesión de t
 - P0/P1 todos resueltos (PRs #14, #15)
 - P3 CI pipeline + graceful degradation completos (PRs #20, #21)
 - P4 100% completo — todos los items resueltos
-- P2 features requieren product decisions — empezar con `.vigil.yml` config file
+- P2: config file (#22), config UX (#23), retry (#24) completos — quedan webhooks y Marketplace
+- Siguiente recomendado: Webhook notificaciones (Slack/Discord) — feature independiente, scope acotado
 - Cuando se complete un item, marcarlo aqui Y en el GitHub Issue correspondiente
