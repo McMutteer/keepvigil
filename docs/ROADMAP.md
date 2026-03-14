@@ -20,7 +20,8 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesión de t
 
 ## P2 — Features de alto valor
 
-- [ ] **Config file** (`.vigil.yml`): timeouts, categorias ignoradas, custom shell allowlist por repo
+- [x] **Config file** (`.vigil.yml`): timeouts, categorias ignoradas, custom shell allowlist por repo — done PR #22
+- [ ] **Config file UX**: exponer en el check run / comentario del PR qué config se aplicó realmente (feedback cuando un valor se rechaza silenciosamente por estar fuera de rango)
 - [ ] **Retry individual items**: re-ejecutar un solo test item que fallo (flaky)
 - [ ] **Webhook notificaciones**: enviar resultado a Slack/Discord cuando un plan falla
 - [ ] **GitHub App Marketplace listing**: publicar para que otros instalen
