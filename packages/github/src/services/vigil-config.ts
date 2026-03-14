@@ -100,6 +100,7 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfig {
           vp !== null &&
           !Array.isArray(vp) &&
           typeof (vp as Record<string, unknown>).label === "string" &&
+          ((vp as Record<string, unknown>).label as string).trim().length > 0 &&
           typeof (vp as Record<string, unknown>).width === "number" &&
           typeof (vp as Record<string, unknown>).height === "number" &&
           toBoundedInt((vp as Record<string, unknown>).width, 3840) !== undefined &&

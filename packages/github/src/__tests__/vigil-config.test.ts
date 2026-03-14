@@ -195,6 +195,18 @@ describe("parseVigilConfig", () => {
     expect(config.viewports).toBeUndefined();
   });
 
+  it("rejects viewport with empty label", () => {
+    const yaml = "viewports:\n  - label: \"\"\n    width: 390\n    height: 844\n";
+    const config = parseVigilConfig(yaml);
+    expect(config.viewports).toBeUndefined();
+  });
+
+  it("rejects viewport with whitespace-only label", () => {
+    const yaml = "viewports:\n  - label: \"   \"\n    width: 390\n    height: 844\n";
+    const config = parseVigilConfig(yaml);
+    expect(config.viewports).toBeUndefined();
+  });
+
   // --- shell.allow ---
 
   it("parses valid shell allow prefixes", () => {
