@@ -1,5 +1,6 @@
 import type { Probot } from "probot";
 import { handlePullRequest } from "./webhooks/pull-request.js";
+import { handleIssueComment } from "./webhooks/issue-comment.js";
 import {
   handleInstallationCreated,
   handleInstallationDeleted,
@@ -14,6 +15,8 @@ export function vigilApp(app: Probot): void {
     ["pull_request.opened", "pull_request.synchronize", "pull_request.edited"],
     handlePullRequest,
   );
+
+  app.on("issue_comment.created", handleIssueComment);
 
   app.on("installation.created", handleInstallationCreated);
   app.on("installation.deleted", handleInstallationDeleted);

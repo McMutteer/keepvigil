@@ -19,4 +19,9 @@ export interface VerifyTestPlanJob {
   vigiConfig?: VigilConfig;
   /** Validation warnings from parsing .vigil.yml — surfaced in the PR comment */
   configWarnings?: string[];
+  /**
+   * When set, only the listed item IDs are executed; all others are surfaced
+   * as "not retried" in the PR comment. Undefined means run everything.
+   */
+  retryItemIds?: string[];
 }
