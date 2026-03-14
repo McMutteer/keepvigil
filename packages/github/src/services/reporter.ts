@@ -3,6 +3,7 @@ import type { ClassifiedItem, ExecutionResult, VigilConfig } from "@vigil/core";
 import { createLogger } from "@vigil/core";
 import { updateCheckRun, determineConclusion } from "./check-run-updater.js";
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
+import { notifyWebhooks } from "./webhook-notifier.js";
 
 const log = createLogger("reporter");
 
@@ -208,5 +209,27 @@ export async function reportResults(context: ReportContext): Promise<void> {
     );
   } catch (err) {
     log.error({ err }, "Failed to post/update PR comment");
+  }
+
+  // Tertiary — webhook notifications (fire-and-forget, never re-trigger the job)
+  const notifConfig = context.vigiConfig?.notifications;
+  if (notifConfig?.urls?.length) {
+    const shouldNotify = notifConfig.on === "always" || conclusion !== "success";
+    if (shouldNotify) {
+      try {
+        await notifyWebhooks({
+          urls: notifConfig.urls,
+          conclusion,
+          summary,
+          items,
+          owner: context.owner,
+          repo: context.repo,
+          pullNumber: context.pullNumber,
+          isRetry: Array.isArray(context.retryItemIds) && context.retryItemIds.length > 0,
+        });
+      } catch (err) {
+        log.error({ err }, "Webhook notification failed");
+      }
+    }
   }
 }
