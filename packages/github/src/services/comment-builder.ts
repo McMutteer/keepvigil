@@ -1,3 +1,4 @@
+import type { VigilConfig } from "@vigil/core";
 import type { ReportItem, ReportSummary } from "./reporter.js";
 import { truncateToBytes } from "./check-run-updater.js";
 
@@ -8,7 +9,7 @@ const MAX_EVIDENCE_BLOCK_BYTES = 2000;
 const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
-export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string): string {
+export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[]): string {
   const parts: string[] = [
     COMMENT_MARKER,
     "## Vigil Test Plan Results",
@@ -29,6 +30,11 @@ export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pi
 
   if (evidenceBlocks.length > 0) {
     parts.push("", ...evidenceBlocks);
+  }
+
+  const configBlock = buildConfigBlock(vigiConfig, configWarnings);
+  if (configBlock) {
+    parts.push("", configBlock);
   }
 
   const footer = correlationId
@@ -246,6 +252,65 @@ function escapeHtml(str: string): string {
 function truncate(str: string, max: number): string {
   if (str.length <= max) return str;
   return str.slice(0, max - 3) + "...";
+}
+
+/**
+ * Build a collapsible config summary block for the PR comment.
+ * Shows applied settings and any validation warnings from parsing .vigil.yml.
+ * Returns an empty string when nothing was applied and there are no warnings.
+ */
+export function buildConfigBlock(vigiConfig?: VigilConfig, configWarnings?: string[]): string {
+  const hasConfig = !!vigiConfig;
+  const hasWarnings = !!configWarnings?.length;
+
+  if (!hasConfig && !hasWarnings) return "";
+
+  const rows: string[] = [];
+
+  if (hasConfig) {
+    if (vigiConfig!.timeouts?.shell !== undefined) {
+      rows.push(`| Shell timeout | ${vigiConfig!.timeouts.shell}s |`);
+    }
+    if (vigiConfig!.timeouts?.api !== undefined) {
+      rows.push(`| API timeout | ${vigiConfig!.timeouts.api}s |`);
+    }
+    if (vigiConfig!.timeouts?.browser !== undefined) {
+      rows.push(`| Browser timeout | ${vigiConfig!.timeouts.browser}s |`);
+    }
+    if (vigiConfig!.skip?.categories?.length) {
+      const categories = vigiConfig!.skip.categories.map((c) => escapeTableCell(c)).join(", ");
+      rows.push(`| Skip categories | ${categories} |`);
+    }
+    if (vigiConfig!.viewports?.length) {
+      const vpStr = vigiConfig!.viewports
+        .map((vp) => `${escapeTableCell(vp.label)} (${vp.width}×${vp.height})`)
+        .join(", ");
+      rows.push(`| Viewports | ${vpStr} |`);
+    }
+    if (vigiConfig!.shell?.allow?.length) {
+      const count = vigiConfig!.shell.allow.length;
+      rows.push(`| Shell allowlist | +${count} custom prefix${count === 1 ? "" : "es"} |`);
+    }
+  }
+
+  const parts: string[] = [];
+
+  if (rows.length > 0) {
+    parts.push(`| Setting | Value |\n|---------|-------|\n${rows.join("\n")}`);
+  }
+
+  if (hasWarnings) {
+    const warningLines = configWarnings!.map((w) => `- ⚠️ ${w}`).join("\n");
+    parts.push(`**Config warnings:**\n${warningLines}`);
+  }
+
+  if (parts.length === 0) return "";
+
+  const title = rows.length > 0
+    ? "⚙️ Config applied from <code>.vigil.yml</code>"
+    : "⚙️ <code>.vigil.yml</code> found — no valid settings applied";
+
+  return `<details>\n<summary>${title}</summary>\n\n${parts.join("\n\n")}\n\n</details>`;
 }
 
 export { COMMENT_MARKER };

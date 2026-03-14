@@ -17,4 +17,6 @@ export interface VerifyTestPlanJob {
   prBody: string;
   /** Parsed .vigil.yml config from the head commit, or undefined if not present */
   vigiConfig?: VigilConfig;
+  /** Validation warnings from parsing .vigil.yml — surfaced in the PR comment */
+  configWarnings?: string[];
 }
