@@ -221,15 +221,23 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult
           warnings.push(`\`notifications.urls[${i}]\`: must be a non-empty string — ignored`);
           continue;
         }
-        if (!url.trim().startsWith("https://")) {
-          warnings.push(`\`notifications.urls[${i}]\`: must start with https:// — ignored`);
+        const trimmed = url.trim();
+        let parsed: URL;
+        try {
+          parsed = new URL(trimmed);
+        } catch {
+          warnings.push(`\`notifications.urls[${i}]\`: must be a valid URL — ignored`);
+          continue;
+        }
+        if (parsed.protocol !== "https:") {
+          warnings.push(`\`notifications.urls[${i}]\`: must use https:// — ignored`);
           continue;
         }
         if (validUrls.length >= MAX_NOTIFICATION_URLS) {
           warnings.push(`\`notifications.urls\`: limited to ${MAX_NOTIFICATION_URLS} entries — remaining entries ignored`);
           break;
         }
-        validUrls.push(url.trim());
+        validUrls.push(trimmed);
       }
       if (validUrls.length > 0) notifications.urls = validUrls;
     }

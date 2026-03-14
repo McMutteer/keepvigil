@@ -391,6 +391,18 @@ notifications:
     expect(warnings.some(w => w.includes("notifications.on"))).toBe(true);
   });
 
+  it("rejects malformed https-like URLs with warning", () => {
+    const yaml = `
+notifications:
+  urls:
+    - "https://"
+    - "https://valid.example.com/hook"
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.notifications?.urls).toEqual(["https://valid.example.com/hook"]);
+    expect(warnings.some(w => w.includes("notifications.urls[0]"))).toBe(true);
+  });
+
   it("rejects non-https URLs with warning", () => {
     const yaml = `
 notifications:

@@ -142,7 +142,8 @@ export function buildGenericPayload(params: WebhookNotifyParams): Record<string,
     },
     failedItems: params.items
       .filter(i => i.verdict === "failed" || i.verdict === "error")
-      .map(i => ({ id: i.classified.item.id, text: i.classified.item.text })),
+      .slice(0, 50)
+      .map(i => ({ id: i.classified.item.id, text: truncate(i.classified.item.text, 200) })),
   };
 }
 

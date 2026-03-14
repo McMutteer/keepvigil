@@ -216,20 +216,18 @@ export async function reportResults(context: ReportContext): Promise<void> {
   if (notifConfig?.urls?.length) {
     const shouldNotify = notifConfig.on === "always" || conclusion !== "success";
     if (shouldNotify) {
-      try {
-        await notifyWebhooks({
-          urls: notifConfig.urls,
-          conclusion,
-          summary,
-          items,
-          owner: context.owner,
-          repo: context.repo,
-          pullNumber: context.pullNumber,
-          isRetry: Array.isArray(context.retryItemIds) && context.retryItemIds.length > 0,
-        });
-      } catch (err) {
+      void notifyWebhooks({
+        urls: notifConfig.urls,
+        conclusion,
+        summary,
+        items,
+        owner: context.owner,
+        repo: context.repo,
+        pullNumber: context.pullNumber,
+        isRetry: Array.isArray(context.retryItemIds) && context.retryItemIds.length > 0,
+      }).catch((err) => {
         log.error({ err }, "Webhook notification failed");
-      }
+      });
     }
   }
 }
