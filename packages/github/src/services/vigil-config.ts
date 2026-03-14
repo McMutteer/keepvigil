@@ -28,6 +28,17 @@ const MAX_VIEWPORTS = 10;
 const MAX_SHELL_ALLOW = 20;
 
 /**
+ * Convert a raw numeric value to a bounded positive integer.
+ * Returns undefined if the value is not a number, not finite, floors to 0,
+ * or falls outside [1, max]. Prevents 0.4 → floor(0.4) = 0 silent failures.
+ */
+function toBoundedInt(value: unknown, max: number): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  const n = Math.floor(value);
+  return n >= 1 && n <= max ? n : undefined;
+}
+
+/**
  * Parse and validate a `.vigil.yml` YAML string.
  *
  * Returns a `VigilConfig` with only the fields that were present and valid.
@@ -59,15 +70,12 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfig {
     const t = obj.timeouts as Record<string, unknown>;
     const timeouts: VigilConfig["timeouts"] = {};
 
-    if (typeof t.shell === "number" && t.shell > 0 && t.shell <= MAX_TIMEOUT_SHELL_S) {
-      timeouts.shell = Math.floor(t.shell);
-    }
-    if (typeof t.api === "number" && t.api > 0 && t.api <= MAX_TIMEOUT_API_S) {
-      timeouts.api = Math.floor(t.api);
-    }
-    if (typeof t.browser === "number" && t.browser > 0 && t.browser <= MAX_TIMEOUT_BROWSER_S) {
-      timeouts.browser = Math.floor(t.browser);
-    }
+    const shell = toBoundedInt(t.shell, MAX_TIMEOUT_SHELL_S);
+    if (shell !== undefined) timeouts.shell = shell;
+    const api = toBoundedInt(t.api, MAX_TIMEOUT_API_S);
+    if (api !== undefined) timeouts.api = api;
+    const browser = toBoundedInt(t.browser, MAX_TIMEOUT_BROWSER_S);
+    if (browser !== undefined) timeouts.browser = browser;
 
     if (Object.keys(timeouts).length > 0) config.timeouts = timeouts;
   }
@@ -94,16 +102,14 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfig {
           typeof (vp as Record<string, unknown>).label === "string" &&
           typeof (vp as Record<string, unknown>).width === "number" &&
           typeof (vp as Record<string, unknown>).height === "number" &&
-          (vp as Record<string, unknown>).width > 0 &&
-          (vp as Record<string, unknown>).width <= 3840 &&
-          (vp as Record<string, unknown>).height > 0 &&
-          (vp as Record<string, unknown>).height <= 2160,
+          toBoundedInt((vp as Record<string, unknown>).width, 3840) !== undefined &&
+          toBoundedInt((vp as Record<string, unknown>).height, 2160) !== undefined,
       )
       .slice(0, MAX_VIEWPORTS)
       .map((vp) => ({
         label: String(vp.label),
-        width: Math.floor(Number(vp.width)),
-        height: Math.floor(Number(vp.height)),
+        width: toBoundedInt(vp.width, 3840) as number,
+        height: toBoundedInt(vp.height, 2160) as number,
       }));
 
     if (vps.length > 0) config.viewports = vps;

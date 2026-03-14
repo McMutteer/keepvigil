@@ -87,9 +87,11 @@ export function validateCommand(command: string, extraAllowPrefixes: string[] = 
     }
   }
 
-  // Check custom prefixes from .vigil.yml (after metacharacter check above)
+  // Check custom prefixes from .vigil.yml (after metacharacter check above).
+  // Require a word boundary after the prefix: the command must equal the prefix
+  // exactly, or be followed by whitespace. This prevents "echo" from matching "echoevil".
   for (const prefix of extraAllowPrefixes) {
-    if (trimmed.startsWith(prefix)) {
+    if (trimmed === prefix || trimmed.startsWith(prefix + " ")) {
       return { allowed: true, reason: `Matches custom allowlist prefix` };
     }
   }
