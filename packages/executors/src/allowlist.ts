@@ -12,7 +12,7 @@
  * Covers: semicolons, ampersands, pipes, backticks, $() substitution,
  * redirects, and newlines.
  */
-const SHELL_METACHARACTERS = /[;&|`$<>\n\r(){}]/;
+export const SHELL_METACHARACTERS = /[;&|`$<>\n\r(){}]/;
 
 /** Patterns that match safe, known build/test commands. */
 const ALLOWED_PATTERNS: RegExp[] = [
@@ -53,15 +53,19 @@ export interface ValidationResult {
  * Validate a shell command against the allowlist.
  *
  * Pure function — no side effects. Returns `allowed: true` if the command
- * matches any known-safe pattern, `allowed: false` otherwise.
+ * matches any known-safe pattern or an extra prefix from .vigil.yml.
+ *
+ * @param command - The shell command to validate
+ * @param extraAllowPrefixes - Additional command prefixes from .vigil.yml shell.allow
  */
-export function validateCommand(command: string): ValidationResult {
+export function validateCommand(command: string, extraAllowPrefixes: string[] = []): ValidationResult {
   const trimmed = command.trim();
 
   if (!trimmed) {
     return { allowed: false, reason: "Empty command" };
   }
 
+  // Metacharacter check always applies — even for custom allow-prefixes
   if (SHELL_METACHARACTERS.test(trimmed)) {
     return { allowed: false, reason: "Command contains shell control characters" };
   }
@@ -80,6 +84,15 @@ export function validateCommand(command: string): ValidationResult {
         }
       }
       return { allowed: true, reason: `Matches allowlist pattern` };
+    }
+  }
+
+  // Check custom prefixes from .vigil.yml (after metacharacter check above).
+  // Require a word boundary after the prefix: the command must equal the prefix
+  // exactly, or be followed by whitespace. This prevents "echo" from matching "echoevil".
+  for (const prefix of extraAllowPrefixes) {
+    if (trimmed === prefix || trimmed.startsWith(prefix + " ")) {
+      return { allowed: true, reason: `Matches custom allowlist prefix` };
     }
   }
 
