@@ -30,9 +30,10 @@ export async function handleIssueComment(context: IssueCommentContext): Promise<
   // Only act on PR comments (issues don't have a pull_request field)
   if (!issue.pull_request) return;
 
-  // Only act on /vigil retry commands
+  // Only act on /vigil retry commands — require word boundary after "retry"
+  // so "/vigil retrying" or "/vigil retry-foo" are not treated as commands.
   const body = comment.body.trim();
-  if (!body.startsWith(RETRY_COMMAND)) return;
+  if (!/^\/vigil retry(\s|$)/.test(body)) return;
 
   if (!installation) {
     log.warn("Received comment event without installation — skipping");
@@ -109,21 +110,38 @@ export async function handleIssueComment(context: IssueCommentContext): Promise<
       pullNumber,
     });
 
-    const jobId = await enqueueVerification({
-      installationId: String(installation.id),
-      owner,
-      repo,
-      pullNumber,
-      headSha,
-      checkRunId,
-      prBody,
-      vigiConfig,
-      configWarnings,
-      retryItemIds,
-    });
+    try {
+      const jobId = await enqueueVerification({
+        installationId: String(installation.id),
+        owner,
+        repo,
+        pullNumber,
+        headSha,
+        checkRunId,
+        prBody,
+        vigiConfig,
+        configWarnings,
+        retryItemIds,
+      });
 
-    log.info({ owner, repo, pullNumber, jobId, retryItemIds }, "Retry job enqueued");
+      log.info({ owner, repo, pullNumber, jobId, retryItemIds }, "Retry job enqueued");
+    } catch (enqueueErr) {
+      log.error({ err: enqueueErr, owner, repo, pullNumber }, "Failed to enqueue retry");
+      // Mark the check run as failed so it doesn't stay pending forever.
+      await octokit.rest.checks.update({
+        owner,
+        repo,
+        check_run_id: checkRunId,
+        status: "completed",
+        conclusion: "failure",
+        completed_at: new Date().toISOString(),
+        output: {
+          title: "Retry failed",
+          summary: "Vigil could not enqueue the retry job. Please try again.",
+        },
+      }).catch(() => {}); // non-fatal — best-effort
+    }
   } catch (err) {
-    log.error({ err, owner, repo, pullNumber }, "Failed to enqueue retry");
+    log.error({ err, owner, repo, pullNumber }, "Retry setup failed");
   }
 }

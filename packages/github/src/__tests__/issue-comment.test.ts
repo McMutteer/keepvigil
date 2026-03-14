@@ -99,6 +99,18 @@ describe("handleIssueComment", () => {
     expect(enqueueVerification).not.toHaveBeenCalled();
   });
 
+  it("ignores near-prefix commands like /vigil retrying", async () => {
+    const { context } = makeContext({ body: "/vigil retrying" });
+    await handleIssueComment(context as never);
+    expect(enqueueVerification).not.toHaveBeenCalled();
+  });
+
+  it("ignores near-prefix commands like /vigil retry-foo", async () => {
+    const { context } = makeContext({ body: "/vigil retry-foo" });
+    await handleIssueComment(context as never);
+    expect(enqueueVerification).not.toHaveBeenCalled();
+  });
+
   it("ignores comments from untrusted authors (NONE association)", async () => {
     const { context } = makeContext({ authorAssociation: "NONE" });
     await handleIssueComment(context as never);
