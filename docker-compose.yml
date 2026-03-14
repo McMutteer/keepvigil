@@ -6,7 +6,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3200
-      - DATABASE_URL=${DATABASE_URL?DATABASE_URL is required}
+      - DATABASE_URL=postgresql://vigil:${POSTGRES_PASSWORD}@postgres:5432/vigil
       - REDIS_URL=redis://redis:6379
       - GITHUB_APP_ID=${GITHUB_APP_ID?GITHUB_APP_ID is required}
       - GITHUB_APP_PRIVATE_KEY=${GITHUB_APP_PRIVATE_KEY?GITHUB_APP_PRIVATE_KEY is required}
@@ -17,6 +17,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - default
+      - dokploy-network
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/health"]
       interval: 30s
@@ -68,4 +71,10 @@ services:
 
 volumes:
   pgdata:
+    name: vigil_pgdata
   redisdata:
+    name: vigil_redisdata
+
+networks:
+  dokploy-network:
+    external: true
