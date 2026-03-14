@@ -98,8 +98,9 @@ export async function handleIssueComment(context: IssueCommentContext): Promise<
         vigiConfig = result.config;
         if (result.warnings.length > 0) configWarnings = result.warnings;
       }
-    } catch {
-      // File not found or permission error — use defaults
+    } catch (err) {
+      // File not found (404), permission error, or transient API error — use defaults.
+      log.debug({ err, owner, repo, pullNumber }, "Could not load .vigil.yml — using defaults");
     }
 
     // Create a new pending check run for this retry

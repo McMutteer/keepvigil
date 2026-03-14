@@ -34,6 +34,7 @@ function makeContext(overrides: {
     rest: {
       pulls: { get: getPull },
       repos: { getContent },
+      checks: { update: vi.fn().mockResolvedValue({}) },
     },
   };
 
@@ -187,5 +188,17 @@ describe("handleIssueComment", () => {
     (context.payload as Record<string, unknown>).installation = undefined;
     await expect(handleIssueComment(context as never)).resolves.not.toThrow();
     expect(enqueueVerification).not.toHaveBeenCalled();
+  });
+
+  it("marks check run as failed when enqueue throws", async () => {
+    const { context } = makeContext();
+    vi.mocked(enqueueVerification).mockRejectedValueOnce(new Error("queue down"));
+
+    await expect(handleIssueComment(context as never)).resolves.not.toThrow();
+
+    expect(context.octokit.rest.checks.update).toHaveBeenCalledOnce();
+    expect(context.octokit.rest.checks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "completed", conclusion: "failure" }),
+    );
   });
 });
