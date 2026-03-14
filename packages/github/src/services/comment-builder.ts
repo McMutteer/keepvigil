@@ -278,7 +278,8 @@ export function buildConfigBlock(vigiConfig?: VigilConfig, configWarnings?: stri
       rows.push(`| Browser timeout | ${vigiConfig!.timeouts.browser}s |`);
     }
     if (vigiConfig!.skip?.categories?.length) {
-      rows.push(`| Skip categories | ${vigiConfig!.skip.categories.join(", ")} |`);
+      const categories = vigiConfig!.skip.categories.map((c) => escapeTableCell(c)).join(", ");
+      rows.push(`| Skip categories | ${categories} |`);
     }
     if (vigiConfig!.viewports?.length) {
       const vpStr = vigiConfig!.viewports
