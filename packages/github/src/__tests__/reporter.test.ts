@@ -16,7 +16,7 @@ import {
 } from "../services/reporter.js";
 import type { ReportItem, ReportSummary, ReportContext } from "../services/reporter.js";
 import { updateCheckRun as updateCheckRunFn, determineConclusion, buildCheckRunTitle, buildCheckRunSummary, buildCheckRunText, truncateToBytes } from "../services/check-run-updater.js";
-import { buildCommentBody, buildSummaryLine, buildResultsTable, buildEvidenceBlock, formatEvidence, COMMENT_MARKER } from "../services/comment-builder.js";
+import { buildCommentBody, buildSummaryLine, buildResultsTable, buildEvidenceBlock, formatEvidence, buildConfigBlock, COMMENT_MARKER } from "../services/comment-builder.js";
 
 // ---------------------------------------------------------------------------
 // Factory helpers
@@ -642,6 +642,93 @@ describe("buildCommentBody", () => {
     const summary: ReportSummary = { total: 0, passed: 0, failed: 0, skipped: 0, needsReview: 0 };
     const body = buildCommentBody(items, summary);
     expect(body).toContain("keepvigil.dev");
+  });
+
+  it("includes config block when vigiConfig is provided", () => {
+    const items: ReportItem[] = [];
+    const summary: ReportSummary = { total: 0, passed: 0, failed: 0, skipped: 0, needsReview: 0 };
+    const body = buildCommentBody(items, summary, undefined, undefined, { timeouts: { shell: 120 } });
+    expect(body).toContain("⚙️ Config applied");
+    expect(body).toContain("120s");
+  });
+
+  it("omits config block when vigiConfig is undefined", () => {
+    const items: ReportItem[] = [];
+    const summary: ReportSummary = { total: 0, passed: 0, failed: 0, skipped: 0, needsReview: 0 };
+    const body = buildCommentBody(items, summary);
+    expect(body).not.toContain("⚙️ Config applied");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildConfigBlock
+// ---------------------------------------------------------------------------
+
+describe("buildConfigBlock", () => {
+  it("returns empty string for undefined", () => {
+    expect(buildConfigBlock(undefined)).toBe("");
+  });
+
+  it("returns empty string for empty config object", () => {
+    expect(buildConfigBlock({})).toBe("");
+  });
+
+  it("renders shell timeout", () => {
+    const block = buildConfigBlock({ timeouts: { shell: 120 } });
+    expect(block).toContain("Shell timeout");
+    expect(block).toContain("120s");
+  });
+
+  it("renders api and browser timeouts", () => {
+    const block = buildConfigBlock({ timeouts: { api: 15, browser: 90 } });
+    expect(block).toContain("API timeout");
+    expect(block).toContain("15s");
+    expect(block).toContain("Browser timeout");
+    expect(block).toContain("90s");
+  });
+
+  it("renders skip categories", () => {
+    const block = buildConfigBlock({ skip: { categories: ["visual", "metadata"] } });
+    expect(block).toContain("Skip categories");
+    expect(block).toContain("visual, metadata");
+  });
+
+  it("renders viewports with dimensions", () => {
+    const block = buildConfigBlock({
+      viewports: [
+        { label: "mobile", width: 390, height: 844 },
+        { label: "desktop", width: 1440, height: 900 },
+      ],
+    });
+    expect(block).toContain("Viewports");
+    expect(block).toContain("mobile (390×844)");
+    expect(block).toContain("desktop (1440×900)");
+  });
+
+  it("renders shell allowlist with singular label for 1 prefix", () => {
+    const block = buildConfigBlock({ shell: { allow: ["npm test"] } });
+    expect(block).toContain("Shell allowlist");
+    expect(block).toContain("+1 custom prefix");
+    expect(block).not.toContain("prefixes");
+  });
+
+  it("renders shell allowlist with plural label for multiple prefixes", () => {
+    const block = buildConfigBlock({ shell: { allow: ["npm test", "bundle exec rspec"] } });
+    expect(block).toContain("+2 custom prefixes");
+  });
+
+  it("wraps output in a collapsible details block", () => {
+    const block = buildConfigBlock({ timeouts: { shell: 60 } });
+    expect(block).toContain("<details>");
+    expect(block).toContain("</details>");
+    expect(block).toContain("<summary>");
+  });
+
+  it("escapes pipe characters in viewport labels", () => {
+    const block = buildConfigBlock({
+      viewports: [{ label: "pipe|label", width: 800, height: 600 }],
+    });
+    expect(block).toContain("pipe\\|label");
   });
 });
 

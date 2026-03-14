@@ -1,5 +1,5 @@
 import type { ProbotOctokit } from "probot";
-import type { ClassifiedItem, ExecutionResult } from "@vigil/core";
+import type { ClassifiedItem, ExecutionResult, VigilConfig } from "@vigil/core";
 import { createLogger } from "@vigil/core";
 import { updateCheckRun, determineConclusion } from "./check-run-updater.js";
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
@@ -46,6 +46,8 @@ export interface ReportContext {
   pipelineError?: string | null;
   /** Correlation ID for this pipeline run — included in check run footer. */
   correlationId?: string;
+  /** Parsed .vigil.yml config — included in PR comment when present. */
+  vigiConfig?: VigilConfig;
 }
 
 // ---------------------------------------------------------------------------
@@ -189,6 +191,7 @@ export async function reportResults(context: ReportContext): Promise<void> {
       summary,
       context.pipelineError ?? undefined,
       context.correlationId,
+      context.vigiConfig,
     );
     await postOrUpdateComment(
       context.octokit,

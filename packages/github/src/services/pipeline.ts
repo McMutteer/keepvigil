@@ -164,6 +164,7 @@ async function _runPipeline(
         executionResults,
         pipelineError,
         correlationId,
+        vigiConfig,
       });
     } catch (reportErr) {
       log.error({ err: reportErr }, "Failed to report results");
