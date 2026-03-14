@@ -103,8 +103,9 @@ async function stageExecute(
   previewUrl: string | null,
   groqApiKey: string,
   vigiConfig?: VigilConfig,
+  retryItemIds?: string[],
 ): Promise<ExecutionResult[]> {
-  return routeToExecutors({ classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig });
+  return routeToExecutors({ classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds });
 }
 
 // ---------------------------------------------------------------------------
@@ -117,7 +118,7 @@ async function _runPipeline(
   groqApiKey: string,
   correlationId: string,
 ): Promise<void> {
-  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig, configWarnings } = job;
+  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig, configWarnings, retryItemIds } = job;
 
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
@@ -146,7 +147,7 @@ async function _runPipeline(
     const previewUrl = await stageDetectPreviewUrl(classifiedItems, job, octokit);
 
     // Stage 6: Execute
-    executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig);
+    executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds);
   } catch (err) {
     pipelineError = `Pipeline error: ${err instanceof Error ? err.message : String(err)}`;
     log.error({ err, owner, repo, pullNumber }, "Pipeline error");
@@ -166,6 +167,7 @@ async function _runPipeline(
         correlationId,
         vigiConfig,
         configWarnings,
+        retryItemIds,
       });
     } catch (reportErr) {
       log.error({ err: reportErr }, "Failed to report results");

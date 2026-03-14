@@ -50,6 +50,8 @@ export interface ReportContext {
   vigiConfig?: VigilConfig;
   /** Validation warnings from parsing .vigil.yml — surfaced in the PR comment. */
   configWarnings?: string[];
+  /** Item IDs included in this retry run — shown in comment header when set. */
+  retryItemIds?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -195,6 +197,7 @@ export async function reportResults(context: ReportContext): Promise<void> {
       context.correlationId,
       context.vigiConfig,
       context.configWarnings,
+      context.retryItemIds,
     );
     await postOrUpdateComment(
       context.octokit,

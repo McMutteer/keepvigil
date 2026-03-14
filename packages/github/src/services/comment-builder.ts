@@ -9,13 +9,18 @@ const MAX_EVIDENCE_BLOCK_BYTES = 2000;
 const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
-export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[]): string {
+export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[]): string {
+  const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
   const parts: string[] = [
     COMMENT_MARKER,
-    "## Vigil Test Plan Results",
+    isRetry ? "## Vigil Test Plan Results _(retry)_" : "## Vigil Test Plan Results",
     "",
     buildSummaryLine(summary),
   ];
+
+  if (isRetry) {
+    parts.push("", `> **Retry:** re-ran ${retryItemIds!.join(", ")} — other items not re-executed.`);
+  }
 
   if (pipelineError) {
     parts.push("", `> **Note:** ${pipelineError}`);
@@ -229,6 +234,7 @@ function isNeedsReview(item: ReportItem): boolean {
 }
 
 function verdictToStatus(item: ReportItem): string {
+  if (item.verdict === "skipped" && item.result?.evidence?.notRetried) return ":next_track_button: Not retried";
   if (item.verdict === "skipped") return ":construction: Human";
   if (item.verdict === "passed") return ":white_check_mark: Passed";
   if (isNeedsReview(item)) return ":warning: Needs Review";

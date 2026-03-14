@@ -23,6 +23,11 @@ export interface RouterOptions {
   groqApiKey: string;
   /** Parsed .vigil.yml config — applied as overrides on top of hardcoded defaults */
   vigiConfig?: VigilConfig;
+  /**
+   * When set, only items whose IDs are in this set are executed.
+   * All other items are returned as "not retried" skipped results.
+   */
+  retryItemIds?: string[];
 }
 
 /**
@@ -32,11 +37,12 @@ export interface RouterOptions {
 export async function routeToExecutors(
   options: RouterOptions,
 ): Promise<ExecutionResult[]> {
-  const { classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig } = options;
+  const { classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds } = options;
+  const retrySet = retryItemIds ? new Set(retryItemIds) : undefined;
 
   const settled = await Promise.allSettled(
     classifiedItems.map((item) =>
-      executeItem(item, { repoPath, previewUrl, groqApiKey, vigiConfig }),
+      executeItem(item, { repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds: retrySet }),
     ),
   );
 
@@ -55,7 +61,9 @@ export async function routeToExecutors(
   });
 }
 
-type ExecutorContext = Omit<RouterOptions, "classifiedItems">;
+type ExecutorContext = Omit<RouterOptions, "classifiedItems" | "retryItemIds"> & {
+  retryItemIds?: Set<string>;
+};
 type ExecutorFn = (item: ClassifiedItem, ctx: ExecutorContext) => Promise<ExecutionResult>;
 
 /**
@@ -108,6 +116,15 @@ async function executeItem(
   item: ClassifiedItem,
   ctx: ExecutorContext,
 ): Promise<ExecutionResult> {
+  if (ctx.retryItemIds && !ctx.retryItemIds.has(item.item.id)) {
+    return {
+      itemId: item.item.id,
+      passed: true,
+      duration: 0,
+      evidence: { skipped: true, notRetried: true, reason: "Not included in retry — use `/vigil retry` to re-run all items" },
+    };
+  }
+
   if (item.confidence === "SKIP" || item.executorType === "none") {
     return {
       itemId: item.item.id,

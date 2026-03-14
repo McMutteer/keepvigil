@@ -263,3 +263,80 @@ describe("routeToExecutors", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// retryItemIds filtering
+// ---------------------------------------------------------------------------
+
+describe("routeToExecutors — retryItemIds", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockExecuteShellItem.mockResolvedValue({ itemId: "tp-0", passed: true, duration: 100, evidence: {} });
+    mockExecuteApiItem.mockResolvedValue({ itemId: "tp-1", passed: false, duration: 50, evidence: {} });
+  });
+
+  it("runs all items when retryItemIds is undefined", async () => {
+    const shellItem = makeShellItem("tp-0");
+    const apiItem = makeApiItem("tp-1");
+    await routeToExecutors({
+      classifiedItems: [shellItem, apiItem],
+      repoPath: "/tmp/repo",
+      previewUrl: "https://preview.example.com",
+      groqApiKey: API_KEY,
+      retryItemIds: undefined,
+    });
+    expect(mockExecuteShellItem).toHaveBeenCalledOnce();
+    expect(mockExecuteApiItem).toHaveBeenCalledOnce();
+  });
+
+  it("skips items not in retryItemIds and marks them as notRetried", async () => {
+    const shellItem = makeShellItem("tp-0");
+    const apiItem = makeApiItem("tp-1");
+    const results = await routeToExecutors({
+      classifiedItems: [shellItem, apiItem],
+      repoPath: "/tmp/repo",
+      previewUrl: "https://preview.example.com",
+      groqApiKey: API_KEY,
+      retryItemIds: ["tp-0"],
+    });
+
+    expect(mockExecuteShellItem).toHaveBeenCalledOnce();
+    expect(mockExecuteApiItem).not.toHaveBeenCalled();
+
+    const apiResult = results.find((r) => r.itemId === "tp-1");
+    expect(apiResult?.passed).toBe(true);
+    expect(apiResult?.evidence).toMatchObject({ skipped: true, notRetried: true });
+  });
+
+  it("only executes the specified items", async () => {
+    const shellItem = makeShellItem("tp-0");
+    const apiItem = makeApiItem("tp-1");
+    const results = await routeToExecutors({
+      classifiedItems: [shellItem, apiItem],
+      repoPath: "/tmp/repo",
+      previewUrl: "https://preview.example.com",
+      groqApiKey: API_KEY,
+      retryItemIds: ["tp-1"],
+    });
+
+    expect(mockExecuteApiItem).toHaveBeenCalledOnce();
+    expect(mockExecuteShellItem).not.toHaveBeenCalled();
+
+    const shellResult = results.find((r) => r.itemId === "tp-0");
+    expect(shellResult?.evidence).toMatchObject({ notRetried: true });
+  });
+
+  it("runs everything when retryItemIds is an empty array", async () => {
+    const shellItem = makeShellItem("tp-0");
+    const results = await routeToExecutors({
+      classifiedItems: [shellItem],
+      repoPath: "/tmp/repo",
+      previewUrl: null,
+      groqApiKey: API_KEY,
+      retryItemIds: [],
+    });
+    // empty retryItemIds means every item is NOT in the set, all get notRetried
+    expect(mockExecuteShellItem).not.toHaveBeenCalled();
+    expect(results[0].evidence).toMatchObject({ notRetried: true });
+  });
+});
