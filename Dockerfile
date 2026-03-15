@@ -27,6 +27,7 @@ WORKDIR /app
 
 # Install Chromium for Playwright (system browser avoids glibc issues on Alpine)
 RUN apk add --no-cache \
+    git \
     chromium \
     nss \
     freetype \
