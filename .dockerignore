@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.git/
+.env*
+coverage/
+.vscode/
+.idea/
+*.tsbuildinfo
+.DS_Store
+docs/
+*.md
+!packages/*/package.json

@@ -185,6 +185,26 @@ describe("notifyWebhooks", () => {
     vi.restoreAllMocks();
   });
 
+  it("skips URLs that fail SSRF validation (localhost, private IPs, cloud metadata)", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok", { status: 200 }));
+    await notifyWebhooks(makeParams({
+      urls: [
+        "https://localhost/hook",
+        "https://127.0.0.1/hook",
+        "https://10.0.0.1/internal",
+        "https://172.16.0.10/internal",
+        "https://192.168.1.1/admin",
+        "https://169.254.169.254/latest/meta-data",
+        "https://[::1]/hook",
+        "https://[fc00::1]/hook",
+        "https://hooks.slack.com/services/T/B/x",
+      ],
+    }));
+    // Only the Slack URL should be called — all others are blocked
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy.mock.calls[0][0]).toBe("https://hooks.slack.com/services/T/B/x");
+  });
+
   it("calls fetch for each URL", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok", { status: 200 }));
     await notifyWebhooks(makeParams({

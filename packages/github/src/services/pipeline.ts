@@ -79,7 +79,8 @@ async function stageCloneRepo(
       }
     }
   } catch (err) {
-    log.warn({ err, owner: job.owner, repo: job.repo }, "Could not get GitHub token — attempting unauthenticated clone");
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ error: msg.replace(/ghs_[A-Za-z0-9]+/g, "***"), owner: job.owner, repo: job.repo }, "Could not get GitHub token — attempting unauthenticated clone");
   }
 
   return cloneRepo({ owner: job.owner, repo: job.repo, sha: job.headSha, githubToken });

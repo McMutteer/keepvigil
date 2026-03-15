@@ -62,7 +62,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: redis-server --appendonly yes --maxmemory 150mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 200mb --maxmemory-policy noeviction
     volumes:
       - redisdata:/data
     logging: *default-logging
