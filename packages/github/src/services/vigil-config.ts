@@ -196,7 +196,19 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult
         }
         allowed.push(cmd.trim());
       }
-      if (allowed.length > 0) config.shell = { allow: allowed };
+      if (allowed.length > 0) {
+        config.shell = { ...config.shell, allow: allowed };
+      }
+    }
+
+    if (typeof s.image === "string" && s.image.trim().length > 0) {
+      const image = s.image.trim();
+      // Same validation as sandbox.ts VALID_IMAGE_NAME
+      if (/^(?!-)[\w./-]+(:\w[\w.-]*)?(@sha256:[0-9a-f]{64})?$/.test(image)) {
+        config.shell = { ...config.shell, image };
+      } else {
+        warnings.push(`\`shell.image\`: \`${image}\` is not a valid Docker image name — using default`);
+      }
     }
   }
 
