@@ -221,6 +221,8 @@ export interface VigilConfig {
   shell?: {
     /** Additional command prefixes allowed beyond the built-in allowlist */
     allow?: string[];
+    /** Docker image for the sandbox (default: "node:22-alpine") */
+    image?: string;
   };
   /** Webhook notification settings */
   notifications?: {

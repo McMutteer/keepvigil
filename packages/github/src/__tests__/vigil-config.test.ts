@@ -288,6 +288,35 @@ describe("parseVigilConfig", () => {
     expect(warnings.some(w => w.includes("shell.allow[0]"))).toBe(true);
   });
 
+  // --- shell.image ---
+
+  it("parses valid shell image", () => {
+    const yaml = "shell:\n  image: \"python:3.12-slim\"\n";
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.shell?.image).toBe("python:3.12-slim");
+    expect(warnings).toEqual([]);
+  });
+
+  it("parses shell image with registry prefix", () => {
+    const yaml = "shell:\n  image: \"ghcr.io/org/custom-runner:latest\"\n";
+    const { config } = parseVigilConfig(yaml);
+    expect(config.shell?.image).toBe("ghcr.io/org/custom-runner:latest");
+  });
+
+  it("rejects shell image with shell metacharacters", () => {
+    const yaml = "shell:\n  image: \"--privileged\"\n";
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.shell?.image).toBeUndefined();
+    expect(warnings.some(w => w.includes("shell.image"))).toBe(true);
+  });
+
+  it("parses shell image alongside shell allow", () => {
+    const yaml = "shell:\n  image: \"python:3.12-slim\"\n  allow:\n    - \"pytest\"\n";
+    const { config } = parseVigilConfig(yaml);
+    expect(config.shell?.image).toBe("python:3.12-slim");
+    expect(config.shell?.allow).toEqual(["pytest"]);
+  });
+
   // --- malformed input ---
 
   it("returns empty config with warning for invalid YAML", () => {

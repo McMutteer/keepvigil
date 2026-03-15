@@ -82,6 +82,7 @@ const EXECUTOR_REGISTRY = new Map<ExecutorType, ExecutorFn>([
         repoPath: ctx.repoPath,
         timeoutMs,
         extraAllowPrefixes: ctx.vigiConfig?.shell?.allow,
+        sandboxImage: ctx.vigiConfig?.shell?.image,
       });
     },
   ],
