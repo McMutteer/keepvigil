@@ -56,5 +56,6 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesión de t
 - P3 CI pipeline + graceful degradation completos (PRs #20, #21)
 - P4 100% completo — todos los items resueltos
 - P2: config file (#22), config UX (#23), retry (#24), webhooks (#25) completos — queda Marketplace
+- Audit hardening round 2 completo (PR #26) — SSRF, .dockerignore, token redaction, queue race, Redis noeviction
 - Siguiente recomendado: GitHub App Marketplace listing o Integration tests E2E
 - Cuando se complete un item, marcarlo aqui Y en el GitHub Issue correspondiente
