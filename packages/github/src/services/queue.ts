@@ -10,7 +10,9 @@ export function initQueue(redisUrl: string): Promise<void> {
   if (verifyQueue) return Promise.resolve();
   if (initPromise) return initPromise;
 
-  initPromise = new Promise<void>((resolve, reject) => {
+  // Assign initPromise synchronously before any async work to prevent
+  // concurrent callers from creating duplicate Queue instances.
+  initPromise = (async () => {
     try {
       const url = new URL(redisUrl);
       verifyQueue = new Queue<VerifyTestPlanJob>(QUEUE_NAMES.VERIFY_TEST_PLAN, {
@@ -20,12 +22,11 @@ export function initQueue(redisUrl: string): Promise<void> {
           password: url.password || undefined,
         },
       });
-      resolve();
     } catch (err) {
       initPromise = null;
-      reject(err);
+      throw err;
     }
-  });
+  })();
 
   return initPromise;
 }
