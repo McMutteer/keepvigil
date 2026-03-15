@@ -159,7 +159,7 @@ export async function notifyWebhooks(params: WebhookNotifyParams): Promise<void>
       try {
         validateBaseUrl(url);
       } catch (err) {
-        log.warn({ url: redactUrl(url), reason: err instanceof Error ? err.message : String(err) }, "Webhook URL blocked by SSRF validation");
+        log.warn({ url: redactUrl(url) }, "Webhook URL blocked by SSRF validation");
         return;
       }
 
