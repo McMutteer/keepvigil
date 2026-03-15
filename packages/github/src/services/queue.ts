@@ -47,7 +47,7 @@ export async function enqueueVerification(job: VerifyTestPlanJob): Promise<strin
 
   // Deduplicate by PR — if a new push arrives while a job is queued, BullMQ
   // recognises the same jobId and won't add a duplicate.
-  const jobId = `${job.installationId}:${job.owner}/${job.repo}#${job.pullNumber}`;
+  const jobId = `${job.installationId}-${job.owner}-${job.repo}-${job.pullNumber}`;
 
   const added = await verifyQueue.add("verify", job, {
     jobId,
