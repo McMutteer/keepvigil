@@ -11,6 +11,7 @@
  */
 
 import { createLogger } from "@vigil/core";
+import { validateBaseUrl } from "@vigil/executors";
 import type { ReportSummary, ReportItem, CheckConclusion } from "./reporter.js";
 
 const log = createLogger("webhook-notifier");
@@ -154,6 +155,14 @@ export function buildGenericPayload(params: WebhookNotifyParams): Record<string,
 export async function notifyWebhooks(params: WebhookNotifyParams): Promise<void> {
   const results = await Promise.allSettled(
     params.urls.map(async (url) => {
+      // SSRF protection: block localhost, private IPs, cloud metadata endpoints
+      try {
+        validateBaseUrl(url);
+      } catch (err) {
+        log.warn({ url: redactUrl(url), reason: err instanceof Error ? err.message : String(err) }, "Webhook URL blocked by SSRF validation");
+        return;
+      }
+
       const provider = detectProvider(url);
       let payload: Record<string, unknown>;
 
@@ -169,21 +178,14 @@ export async function notifyWebhooks(params: WebhookNotifyParams): Promise<void>
           break;
       }
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
-
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        });
-        if (!response.ok) {
-          log.warn({ url: redactUrl(url), status: response.status }, "Webhook returned non-OK status");
-        }
-      } finally {
-        clearTimeout(timer);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
+      });
+      if (!response.ok) {
+        log.warn({ url: redactUrl(url), status: response.status }, "Webhook returned non-OK status");
       }
     }),
   );
