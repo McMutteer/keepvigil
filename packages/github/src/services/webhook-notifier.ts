@@ -158,7 +158,7 @@ export async function notifyWebhooks(params: WebhookNotifyParams): Promise<void>
       // SSRF protection: block localhost, private IPs, cloud metadata endpoints
       try {
         validateBaseUrl(url);
-      } catch (err) {
+      } catch {
         log.warn({ url: redactUrl(url) }, "Webhook URL blocked by SSRF validation");
         return;
       }

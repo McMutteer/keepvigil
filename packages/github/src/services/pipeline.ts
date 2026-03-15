@@ -150,8 +150,10 @@ async function _runPipeline(
     // Stage 6: Execute
     executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds);
   } catch (err) {
-    pipelineError = `Pipeline error: ${err instanceof Error ? err.message : String(err)}`;
-    log.error({ err, owner, repo, pullNumber }, "Pipeline error");
+    const rawMsg = err instanceof Error ? err.message : String(err);
+    const safeMsg = rawMsg.replace(/ghs_[A-Za-z0-9]+/g, "***");
+    pipelineError = `Pipeline error: ${safeMsg}`;
+    log.error({ error: safeMsg, owner, repo, pullNumber }, "Pipeline error");
   } finally {
     // Stage 7: Always report — partial results are better than silence
     try {
