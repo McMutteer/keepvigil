@@ -5,19 +5,14 @@ import { applyRules } from "../classifier/rules.js";
 import { classifyItems } from "../classifier/index.js";
 import { buildUserPrompt, FEW_SHOT_EXAMPLES } from "../classifier/prompts.js";
 import { parseTestPlan } from "../parser/index.js";
-import type { TestPlanItem, TestPlanHints } from "../types.js";
+import type { TestPlanItem, TestPlanHints, LLMClient } from "../types.js";
 
-/** Shared mock for the Anthropic messages.create method */
-const mockCreate = vi.fn();
-
-// Mock the Anthropic SDK with a proper class
-vi.mock("openai", () => {
-  return {
-    default: class MockAnthropic {
-      chat = { completions: { create: mockCreate } };
-    },
-  };
-});
+/** Mock LLM client used by classifyWithLLM and classifyItems */
+const mockLLM: LLMClient = {
+  model: "test-model",
+  provider: "groq",
+  chat: vi.fn(),
+};
 
 function loadFixture(name: string): string {
   return readFileSync(resolve(import.meta.dirname, "fixtures", name), "utf-8");
@@ -219,16 +214,14 @@ describe("applyRules", () => {
 
 describe("classifyWithLLM (mocked)", () => {
   beforeEach(() => {
-    mockCreate.mockReset();
+    vi.mocked(mockLLM.chat).mockReset();
   });
 
   it("classifies a batch of items via LLM", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify([
-        { category: "ui-flow", confidence: "HIGH", executorType: "browser", reasoning: "UI interaction test" },
-        { category: "visual", confidence: "MEDIUM", executorType: "browser", reasoning: "Visual rendering check" },
-      ]) } }],
-    });
+    vi.mocked(mockLLM.chat).mockResolvedValue(JSON.stringify([
+      { category: "ui-flow", confidence: "HIGH", executorType: "browser", reasoning: "UI interaction test" },
+      { category: "visual", confidence: "MEDIUM", executorType: "browser", reasoning: "Visual rendering check" },
+    ]));
 
     const { classifyWithLLM } = await import(
       "../classifier/llm-classifier.js"
@@ -239,7 +232,7 @@ describe("classifyWithLLM (mocked)", () => {
       makeItem("Skeleton appears before content", {}, "tp-1"),
     ];
 
-    const results = await classifyWithLLM(items, "test-key");
+    const results = await classifyWithLLM(items, mockLLM);
     expect(results).toHaveLength(2);
     expect(results[0].confidence).toBe("HIGH");
     expect(results[0].executorType).toBe("browser");
@@ -249,14 +242,14 @@ describe("classifyWithLLM (mocked)", () => {
   });
 
   it("falls back to SKIP/manual on API error", async () => {
-    mockCreate.mockRejectedValue(new Error("API timeout"));
+    vi.mocked(mockLLM.chat).mockRejectedValue(new Error("API timeout"));
 
     const { classifyWithLLM } = await import(
       "../classifier/llm-classifier.js"
     );
 
     const items = [makeItem("Some ambiguous item")];
-    const results = await classifyWithLLM(items, "test-key");
+    const results = await classifyWithLLM(items, mockLLM);
     expect(results).toHaveLength(1);
     expect(results[0].confidence).toBe("SKIP");
     expect(results[0].executorType).toBe("none");
@@ -265,27 +258,23 @@ describe("classifyWithLLM (mocked)", () => {
   });
 
   it("falls back to SKIP/manual on invalid JSON response", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: "not json at all" } }],
-    });
+    vi.mocked(mockLLM.chat).mockResolvedValue("not json at all");
 
     const { classifyWithLLM } = await import(
       "../classifier/llm-classifier.js"
     );
 
     const items = [makeItem("Another item")];
-    const results = await classifyWithLLM(items, "test-key");
+    const results = await classifyWithLLM(items, mockLLM);
     expect(results[0].confidence).toBe("SKIP");
     expect(results[0].category).toBe("manual");
     expect(results[0].reasoning).toContain("invalid JSON");
   });
 
   it("falls back when array length mismatches", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify([
-        { category: "api", confidence: "HIGH", executorType: "api", reasoning: "test" },
-      ]) } }],
-    });
+    vi.mocked(mockLLM.chat).mockResolvedValue(JSON.stringify([
+      { category: "api", confidence: "HIGH", executorType: "api", reasoning: "test" },
+    ]));
 
     const { classifyWithLLM } = await import(
       "../classifier/llm-classifier.js"
@@ -293,7 +282,7 @@ describe("classifyWithLLM (mocked)", () => {
 
     // Send 2 items but mock returns 1 → parseLLMResponse returns null → all items fall back
     const items = [makeItem("Item 1"), makeItem("Item 2")];
-    const results = await classifyWithLLM(items, "test-key");
+    const results = await classifyWithLLM(items, mockLLM);
     expect(results).toHaveLength(2);
     expect(results[0].confidence).toBe("SKIP"); // fallback
     expect(results[0].category).toBe("manual");
@@ -303,22 +292,20 @@ describe("classifyWithLLM (mocked)", () => {
     const { classifyWithLLM } = await import(
       "../classifier/llm-classifier.js"
     );
-    const results = await classifyWithLLM([], "test-key");
+    const results = await classifyWithLLM([], mockLLM);
     expect(results).toEqual([]);
   });
 
   it("normalizes invalid confidence/executor values", async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify([
-        { category: "vague", confidence: "INVALID_TIER", executorType: "invalid_executor", reasoning: "bad values" },
-      ]) } }],
-    });
+    vi.mocked(mockLLM.chat).mockResolvedValue(JSON.stringify([
+      { category: "vague", confidence: "INVALID_TIER", executorType: "invalid_executor", reasoning: "bad values" },
+    ]));
 
     const { classifyWithLLM } = await import(
       "../classifier/llm-classifier.js"
     );
 
-    const results = await classifyWithLLM([makeItem("Test")], "test-key");
+    const results = await classifyWithLLM([makeItem("Test")], mockLLM);
     expect(results[0].confidence).toBe("LOW"); // normalized from invalid
     expect(results[0].executorType).toBe("none"); // normalized from invalid
   });
@@ -330,7 +317,7 @@ describe("classifyWithLLM (mocked)", () => {
 
 describe("classifyItems", () => {
   beforeEach(() => {
-    mockCreate.mockReset();
+    vi.mocked(mockLLM.chat).mockReset();
   });
 
   it("returns empty array for empty input", async () => {
@@ -363,15 +350,15 @@ describe("classifyItems", () => {
     expect(results[0].confidence).toBe("LOW");
     expect(results[0].reasoning).toContain("Rules-only");
     expect(results[1].confidence).toBe("LOW");
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockLLM.chat).not.toHaveBeenCalled();
   });
 
-  it("classifies deferred items as LOW/none when no apiKey", async () => {
+  it("classifies deferred items as LOW/none when no llm", async () => {
     const items = [makeItem("Navigate to /settings", {}, "tp-0")];
     const results = await classifyItems(items);
     expect(results[0].confidence).toBe("LOW");
-    expect(results[0].reasoning).toContain("No API key");
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(results[0].reasoning).toContain("No LLM client provided");
+    expect(mockLLM.chat).not.toHaveBeenCalled();
   });
 
   it("preserves order with mixed rule and deferred items", async () => {
@@ -479,13 +466,13 @@ describe("applyRules — status code false positive prevention", () => {
 
   it("rule takes priority — rule-matched item is never sent to LLM", async () => {
     // Item matches a rule (shell), LLM mock should NOT be called for it
-    mockCreate.mockReset();
+    vi.mocked(mockLLM.chat).mockReset();
     const items = [
       makeItem("Run `npm test`", { codeBlocks: ["npm test"] }, "tp-0"),
     ];
-    await classifyItems(items, { apiKey: "test-key", rulesOnly: false });
+    await classifyItems(items, { llm: mockLLM, rulesOnly: false });
     // LLM should not have been called since rule matched
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockLLM.chat).not.toHaveBeenCalled();
   });
 });
 
@@ -551,14 +538,14 @@ describe("parse → classify integration", () => {
 
 describe("LLM fallback — SKIP/manual when Groq unavailable", () => {
   it("falls back to SKIP/manual when LLM throws (API error)", async () => {
-    mockCreate.mockRejectedValueOnce(new Error("Connection refused"));
+    vi.mocked(mockLLM.chat).mockRejectedValueOnce(new Error("Connection refused"));
 
     const items = [
       makeItem("Check that the login page loads correctly"),
       makeItem("Verify that the API returns 200 for GET /health"),
     ];
 
-    const results = await classifyItems(items, { apiKey: "gsk_invalid_key" });
+    const results = await classifyItems(items, { llm: mockLLM });
 
     // Items that fail rule-based classification go to LLM; on LLM error → SKIP/manual
     for (const result of results) {
@@ -570,12 +557,10 @@ describe("LLM fallback — SKIP/manual when Groq unavailable", () => {
   });
 
   it("falls back to SKIP/manual when LLM returns invalid JSON", async () => {
-    mockCreate.mockResolvedValueOnce({
-      choices: [{ message: { content: "not valid json at all" } }],
-    });
+    vi.mocked(mockLLM.chat).mockResolvedValueOnce("not valid json at all");
 
     const items = [makeItem("Verify the dashboard renders without errors")];
-    const results = await classifyItems(items, { apiKey: "gsk_test" });
+    const results = await classifyItems(items, { llm: mockLLM });
 
     // If rule doesn't match and LLM returns invalid JSON → SKIP/manual fallback
     const unmatched = results.filter(r => r.confidence === "SKIP");
@@ -586,10 +571,10 @@ describe("LLM fallback — SKIP/manual when Groq unavailable", () => {
   });
 
   it("fallback items do not have confidence LOW or category vague", async () => {
-    mockCreate.mockRejectedValueOnce(new Error("timeout"));
+    vi.mocked(mockLLM.chat).mockRejectedValueOnce(new Error("timeout"));
 
     const items = [makeItem("Check that the dashboard loads within 2 seconds")];
-    const results = await classifyItems(items, { apiKey: "gsk_test" });
+    const results = await classifyItems(items, { llm: mockLLM });
 
     for (const result of results) {
       // After fallback: no LOW/vague — those are from old behavior

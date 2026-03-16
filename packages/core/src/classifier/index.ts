@@ -1,4 +1,4 @@
-import type { TestPlanItem, ClassifiedItem } from "../types.js";
+import type { TestPlanItem, ClassifiedItem, LLMClient } from "../types.js";
 import { applyRules } from "./rules.js";
 import { classifyWithLLM } from "./llm-classifier.js";
 
@@ -11,8 +11,8 @@ export {
 } from "./prompts.js";
 
 export interface ClassifyOptions {
-  /** Groq API key for the LLM pass. If omitted, LLM pass is skipped. */
-  apiKey?: string;
+  /** LLM client for the classification pass. If omitted, LLM pass is skipped. */
+  llm?: LLMClient;
   /** Skip the LLM pass entirely — only use rule-based classification. */
   rulesOnly?: boolean;
 }
@@ -23,10 +23,10 @@ export interface ClassifyOptions {
  * 1. **Rule-based pass** — Fast, free, deterministic. Handles items with
  *    clear signals (Manual: prefix, shell commands, HTTP verbs).
  *
- * 2. **LLM pass** — Sends remaining items to Groq in a single
+ * 2. **LLM pass** — Sends remaining items to the configured LLM in a single
  *    batched API call for classification.
  *
- * Items that the rule-based pass cannot classify and no API key is
+ * Items that the rule-based pass cannot classify and no LLM client is
  * provided are classified as LOW/none.
  */
 export async function classifyItems(
@@ -52,7 +52,7 @@ export async function classifyItems(
   if (deferredIndices.length > 0) {
     const deferredItems = deferredIndices.map((i) => items[i]);
 
-    if (options.rulesOnly || !options.apiKey) {
+    if (options.rulesOnly || !options.llm) {
       // No LLM available — classify as LOW/none
       for (const idx of deferredIndices) {
         results[idx] = {
@@ -62,12 +62,12 @@ export async function classifyItems(
           category: "vague",
           reasoning: options.rulesOnly
             ? "Rules-only mode — no LLM classification"
-            : "No API key provided — LLM classification skipped",
+            : "No LLM client provided — LLM classification skipped",
         };
       }
     } else {
       try {
-        const llmResults = await classifyWithLLM(deferredItems, options.apiKey);
+        const llmResults = await classifyWithLLM(deferredItems, options.llm);
         for (let j = 0; j < deferredIndices.length; j++) {
           results[deferredIndices[j]] = llmResults[j];
         }

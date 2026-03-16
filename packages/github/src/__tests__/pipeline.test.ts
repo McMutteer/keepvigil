@@ -15,6 +15,7 @@ const mockRouteToExecutors = vi.hoisted(() => vi.fn());
 vi.mock("@vigil/core", () => ({
   parseTestPlan: mockParseTestPlan,
   classifyItems: mockClassifyItems,
+  createLLMClient: () => ({ model: "test-model", provider: "groq", chat: vi.fn() }),
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(), debug: vi.fn() }),
   runWithCorrelationId: (_id: string, fn: () => unknown) => fn(),
 }));
@@ -311,7 +312,7 @@ describe("runPipeline", () => {
     );
   });
 
-  it("passes groqApiKey to router", async () => {
+  it("passes llm client to router", async () => {
     const apiItem = makeApiItem();
     mockParseTestPlan.mockReturnValue({ items: [apiItem.item], sectionTitle: "Test Plan", raw: "" });
     mockClassifyItems.mockResolvedValue([apiItem]);
@@ -322,7 +323,7 @@ describe("runPipeline", () => {
     await runPipeline(makeJob(), probot as never, API_KEY);
 
     expect(mockRouteToExecutors).toHaveBeenCalledWith(
-      expect.objectContaining({ groqApiKey: API_KEY }),
+      expect.objectContaining({ llm: expect.objectContaining({ model: expect.any(String), provider: expect.any(String) }) }),
     );
   });
 

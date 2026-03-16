@@ -6,8 +6,8 @@
 
 import { randomUUID } from "node:crypto";
 import type { Probot, ProbotOctokit } from "probot";
-import type { ClassifiedItem, ExecutionResult, ParsedTestPlan, VerifyTestPlanJob, VigilConfig } from "@vigil/core";
-import { parseTestPlan, classifyItems, createLogger, runWithCorrelationId } from "@vigil/core";
+import type { ClassifiedItem, ExecutionResult, LLMClient, ParsedTestPlan, VerifyTestPlanJob, VigilConfig } from "@vigil/core";
+import { parseTestPlan, classifyItems, createLLMClient, createLogger, runWithCorrelationId } from "@vigil/core";
 import { reportResults } from "./reporter.js";
 import { cloneRepo, cleanupRepo } from "./repo-clone.js";
 import { detectPreviewUrl } from "./preview-url.js";
@@ -38,6 +38,36 @@ export async function runPipeline(
 }
 
 // ---------------------------------------------------------------------------
+// LLM client creation
+// ---------------------------------------------------------------------------
+
+/**
+ * Create an LLM client from the job's vigiConfig or fall back to the
+ * platform Groq key. This is the single place where the LLM client is
+ * instantiated for a pipeline run.
+ */
+function createPipelineLLM(vigiConfig: VigilConfig | undefined, groqApiKey: string): LLMClient {
+  const llmConfig = vigiConfig?.llm;
+  if (llmConfig?.provider && llmConfig.model) {
+    // Ollama doesn't require an API key; other providers do
+    const needsKey = llmConfig.provider !== "ollama";
+    if (!needsKey || llmConfig.apiKey) {
+      return createLLMClient({
+        provider: llmConfig.provider,
+        model: llmConfig.model,
+        apiKey: llmConfig.apiKey ?? "",
+      });
+    }
+  }
+  // Fallback: platform Groq key
+  return createLLMClient({
+    provider: "groq",
+    model: "llama-3.3-70b-versatile",
+    apiKey: groqApiKey,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Stage functions
 // ---------------------------------------------------------------------------
 
@@ -54,9 +84,9 @@ function stageParse(prBody: string): { plan: ParsedTestPlan; emptyError: string 
 
 async function stageClassify(
   plan: ParsedTestPlan,
-  groqApiKey: string,
+  llm: LLMClient,
 ): Promise<ClassifiedItem[]> {
-  return classifyItems(plan.items, { apiKey: groqApiKey });
+  return classifyItems(plan.items, { llm });
 }
 
 async function stageCloneRepo(
@@ -102,11 +132,11 @@ async function stageExecute(
   classifiedItems: ClassifiedItem[],
   repoPath: string | null,
   previewUrl: string | null,
-  groqApiKey: string,
+  llm: LLMClient,
   vigiConfig?: VigilConfig,
   retryItemIds?: string[],
 ): Promise<ExecutionResult[]> {
-  return routeToExecutors({ classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds });
+  return routeToExecutors({ classifiedItems, repoPath, previewUrl, llm, vigiConfig, retryItemIds });
 }
 
 // ---------------------------------------------------------------------------
@@ -138,8 +168,11 @@ async function _runPipeline(
       return;
     }
 
+    // Create LLM client after parse — avoids failures on empty/no-op pipelines
+    const llm = createPipelineLLM(vigiConfig, groqApiKey);
+
     // Stage 3: Classify
-    classifiedItems = await stageClassify(plan, groqApiKey);
+    classifiedItems = await stageClassify(plan, llm);
 
     // Stage 4: Clone repo (only if there are shell items)
     repoPath = await stageCloneRepo(classifiedItems, job, octokit);
@@ -148,7 +181,7 @@ async function _runPipeline(
     const previewUrl = await stageDetectPreviewUrl(classifiedItems, job, octokit);
 
     // Stage 6: Execute
-    executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds);
+    executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, llm, vigiConfig, retryItemIds);
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);
     const safeMsg = rawMsg.replace(/ghs_[A-Za-z0-9]+/g, "***");

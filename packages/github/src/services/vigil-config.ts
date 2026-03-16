@@ -13,7 +13,7 @@
  */
 
 import { parse as parseYaml } from "yaml";
-import type { CategoryLabel, ViewportSpec, VigilConfig } from "@vigil/core/types";
+import type { CategoryLabel, LLMProvider, ViewportSpec, VigilConfig } from "@vigil/core/types";
 import { SHELL_METACHARACTERS } from "@vigil/executors";
 
 /** Valid category labels (must stay in sync with CategoryLabel type) */
@@ -29,6 +29,7 @@ const MAX_VIEWPORTS = 10;
 const MAX_SHELL_ALLOW = 20;
 const MAX_NOTIFICATION_URLS = 5;
 const VALID_NOTIFICATION_ON = new Set(["failure", "always"]);
+const VALID_LLM_PROVIDERS = new Set<string>(["openai", "groq", "ollama"]);
 
 /**
  * Convert a raw numeric value to a bounded positive integer.
@@ -209,6 +210,43 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult
       } else {
         warnings.push(`\`shell.image\`: \`${image}\` is not a valid Docker image name — using default`);
       }
+    }
+  }
+
+  // --- llm ---
+  if (typeof obj.llm === "object" && obj.llm !== null && !Array.isArray(obj.llm)) {
+    const l = obj.llm as Record<string, unknown>;
+    const llm: NonNullable<VigilConfig["llm"]> = {};
+
+    if (l.provider !== undefined) {
+      if (typeof l.provider === "string" && VALID_LLM_PROVIDERS.has(l.provider)) {
+        llm.provider = l.provider as LLMProvider;
+      } else {
+        warnings.push(`\`llm.provider\`: ${JSON.stringify(l.provider)} is invalid (must be "openai", "groq", or "ollama") — ignored`);
+      }
+    }
+
+    if (l.model !== undefined) {
+      if (typeof l.model === "string" && l.model.trim().length > 0) {
+        llm.model = l.model.trim();
+      } else {
+        warnings.push(`\`llm.model\`: must be a non-empty string — ignored`);
+      }
+    }
+
+    if (l.api_key !== undefined) {
+      if (typeof l.api_key === "string" && l.api_key.trim().length > 0) {
+        llm.apiKey = l.api_key.trim();
+      } else {
+        warnings.push(`\`llm.api_key\`: must be a non-empty string — ignored`);
+      }
+    }
+
+    // Only emit config.llm when provider + model are both present (minimum viable config)
+    if (llm.provider && llm.model) {
+      config.llm = llm;
+    } else if (Object.keys(llm).length > 0) {
+      warnings.push("`llm`: both `provider` and `model` are required — section ignored");
     }
   }
 

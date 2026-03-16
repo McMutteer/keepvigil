@@ -10,10 +10,8 @@
  * `BrowserExecutionContext`.
  */
 
-import OpenAI from "openai";
-import type { BrowserActionSpec, BrowserActionType } from "@vigil/core/types";
+import type { BrowserActionSpec, BrowserActionType, LLMClient } from "@vigil/core/types";
 
-const MODEL = "llama-3.3-70b-versatile";
 const TIMEOUT_MS = 15_000;
 const MAX_WAIT_MS = 10_000;
 
@@ -169,29 +167,13 @@ export function parseBrowserSpecResponse(raw: string): BrowserActionSpec[] {
  */
 export async function generateBrowserSpec(
   itemText: string,
-  apiKey: string,
+  llm: LLMClient,
 ): Promise<BrowserActionSpec[]> {
-  const client = new OpenAI({
-    apiKey,
-    baseURL: "https://api.groq.com/openai/v1",
+  const text = await llm.chat({
+    system: SYSTEM_PROMPT,
+    user: itemText,
+    timeoutMs: TIMEOUT_MS,
   });
-
-  const completion = await client.chat.completions.create(
-    {
-      model: MODEL,
-      max_tokens: 1024,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: itemText },
-      ],
-    },
-    { signal: AbortSignal.timeout(TIMEOUT_MS) },
-  );
-
-  const text = completion.choices[0]?.message?.content;
-  if (!text) {
-    throw new Error("LLM returned no text content");
-  }
 
   return parseBrowserSpecResponse(text);
 }
