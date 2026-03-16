@@ -1,8 +1,8 @@
 /**
- * Fetches the unified diff for a pull request via the GitHub API.
+ * Fetches PR diff and repo file listings via the GitHub API.
  *
  * The diff is used by multiple v2 signals (credential scanner, diff analyzer,
- * gap analyzer). Fetched once per pipeline run and shared across signals.
+ * gap analyzer, coverage mapper). Fetched once per pipeline run and shared.
  */
 
 import type { ProbotOctokit } from "probot";
@@ -57,5 +57,42 @@ export async function fetchPRDiff(options: FetchDiffOptions): Promise<string | n
   } catch (err) {
     log.warn({ err, owner, repo, pullNumber }, "Could not fetch PR diff");
     return null;
+  }
+}
+
+export interface FetchRepoFilesOptions {
+  octokit: ProbotOctokit;
+  owner: string;
+  repo: string;
+  headSha: string;
+}
+
+/**
+ * Fetch the list of all files in the repo at a given SHA.
+ *
+ * Uses the Git tree API with recursive mode. Returns file paths only (not dirs).
+ * Returns empty array on error — coverage mapper will produce a neutral signal.
+ */
+export async function fetchRepoFileList(options: FetchRepoFilesOptions): Promise<string[]> {
+  const { octokit, owner, repo, headSha } = options;
+
+  try {
+    const { data } = await octokit.rest.git.getTree({
+      owner,
+      repo,
+      tree_sha: headSha,
+      recursive: "true",
+    });
+
+    if (data.truncated) {
+      log.warn({ owner, repo, headSha }, "Git tree truncated — coverage mapper may miss test files in large repos");
+    }
+
+    return data.tree
+      .filter((entry) => entry.type === "blob" && entry.path)
+      .map((entry) => entry.path!);
+  } catch (err) {
+    log.warn({ err, owner, repo, headSha }, "Could not fetch repo file list");
+    return [];
   }
 }
