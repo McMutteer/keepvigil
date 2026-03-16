@@ -552,12 +552,10 @@ llm:
   api_key: sk-ant-test
 `;
     const { config, warnings } = parseVigilConfig(yaml);
-    expect(warnings).toHaveLength(1);
+    expect(warnings).toHaveLength(2);
     expect(warnings[0]).toContain("llm.provider");
-    expect(config.llm?.provider).toBeUndefined();
-    // model and api_key should still be parsed
-    expect(config.llm?.model).toBe("claude-3-haiku");
-    expect(config.llm?.apiKey).toBe("sk-ant-test");
+    expect(warnings[1]).toContain("both `provider` and `model` are required");
+    expect(config.llm).toBeUndefined();
   });
 
   it("rejects empty llm model with warning", () => {
@@ -567,9 +565,11 @@ llm:
   model: ""
   api_key: gsk_test
 `;
-    const { warnings } = parseVigilConfig(yaml);
-    expect(warnings).toHaveLength(1);
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(warnings).toHaveLength(2);
     expect(warnings[0]).toContain("llm.model");
+    expect(warnings[1]).toContain("both `provider` and `model` are required");
+    expect(config.llm).toBeUndefined();
   });
 
   it("rejects empty llm api_key with warning", () => {
@@ -594,13 +594,14 @@ llm:
     expect(config.llm).toBeUndefined();
   });
 
-  it("parses partial llm config (only provider)", () => {
+  it("rejects partial llm config (only provider, no model)", () => {
     const yaml = `
 llm:
   provider: groq
 `;
     const { config, warnings } = parseVigilConfig(yaml);
-    expect(warnings).toEqual([]);
-    expect(config.llm).toEqual({ provider: "groq" });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("both `provider` and `model` are required");
+    expect(config.llm).toBeUndefined();
   });
 });

@@ -48,12 +48,16 @@ export async function runPipeline(
  */
 function createPipelineLLM(vigiConfig: VigilConfig | undefined, groqApiKey: string): LLMClient {
   const llmConfig = vigiConfig?.llm;
-  if (llmConfig?.provider && llmConfig.model && llmConfig.apiKey) {
-    return createLLMClient({
-      provider: llmConfig.provider,
-      model: llmConfig.model,
-      apiKey: llmConfig.apiKey,
-    });
+  if (llmConfig?.provider && llmConfig.model) {
+    // Ollama doesn't require an API key; other providers do
+    const needsKey = llmConfig.provider !== "ollama";
+    if (!needsKey || llmConfig.apiKey) {
+      return createLLMClient({
+        provider: llmConfig.provider,
+        model: llmConfig.model,
+        apiKey: llmConfig.apiKey ?? "",
+      });
+    }
   }
   // Fallback: platform Groq key
   return createLLMClient({
@@ -150,7 +154,6 @@ async function _runPipeline(
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
   const octokit = await probot.auth(Number(installationId));
-  const llm = createPipelineLLM(vigiConfig, groqApiKey);
 
   let repoPath: string | null = null;
   let classifiedItems: ClassifiedItem[] = [];
@@ -164,6 +167,9 @@ async function _runPipeline(
       pipelineError = emptyError;
       return;
     }
+
+    // Create LLM client after parse — avoids failures on empty/no-op pipelines
+    const llm = createPipelineLLM(vigiConfig, groqApiKey);
 
     // Stage 3: Classify
     classifiedItems = await stageClassify(plan, llm);

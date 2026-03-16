@@ -242,7 +242,12 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult
       }
     }
 
-    if (Object.keys(llm).length > 0) config.llm = llm;
+    // Only emit config.llm when provider + model are both present (minimum viable config)
+    if (llm.provider && llm.model) {
+      config.llm = llm;
+    } else if (Object.keys(llm).length > 0) {
+      warnings.push("`llm`: both `provider` and `model` are required — section ignored");
+    }
   }
 
   // --- notifications ---
