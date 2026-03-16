@@ -133,7 +133,7 @@ describe("mapCoverage", () => {
       const changed = ["src/__tests__/foo.test.ts"];
       const signal = mapCoverage(changed, changed);
       expect(signal.score).toBe(100);
-      expect(signal.details[0].message).toContain("non-source");
+      expect(signal.details[0].message).toContain("test files");
     });
   });
 

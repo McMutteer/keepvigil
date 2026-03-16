@@ -84,9 +84,8 @@ function generateTestCandidates(filePath: string): string[] {
     // Top-level test dirs
     candidates.push(`test/${base}.test${ext}`);
     candidates.push(`tests/${base}.test${ext}`);
-    // Also try with .ts if ext is .tsx, etc
+    // Also try .ts variant if source is .tsx
     if (ext === ".tsx") {
-      candidates.push(path.join(dir, "__tests__", `${base}.test.tsx`));
       candidates.push(path.join(dir, "__tests__", `${base}.test.ts`));
     }
   }
