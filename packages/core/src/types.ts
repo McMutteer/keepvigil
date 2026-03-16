@@ -194,6 +194,62 @@ export interface MetadataExecutionContext {
 }
 
 // ---------------------------------------------------------------------------
+// Confidence score signals (v2)
+// ---------------------------------------------------------------------------
+
+/** Identifies which signal produced this result */
+export type SignalId =
+  | "ci-bridge"
+  | "credential-scan"
+  | "coverage-mapper"
+  | "executor"
+  | "diff-analyzer"
+  | "gap-analyzer";
+
+/** One detail line within a signal — explains a specific finding */
+export interface SignalDetail {
+  /** Short label for this detail (e.g., "npm run build", "src/auth.ts") */
+  label: string;
+  /** Outcome of this detail */
+  status: "pass" | "fail" | "warn" | "skip";
+  /** Human-readable explanation */
+  message: string;
+}
+
+/** A single signal contributing to the confidence score */
+export interface Signal {
+  /** Which signal produced this */
+  id: SignalId;
+  /** Human-readable name (e.g., "CI Bridge", "Credential Scan") */
+  name: string;
+  /** Score for this signal (0-100) */
+  score: number;
+  /** Relative importance — used for weighted average */
+  weight: number;
+  /** Binary: did this signal pass overall? false = found a problem */
+  passed: boolean;
+  /** Per-item breakdown */
+  details: SignalDetail[];
+  /** Whether this signal required an LLM to produce */
+  requiresLLM: boolean;
+}
+
+/** Merge recommendation derived from the confidence score */
+export type ScoreRecommendation = "safe" | "review" | "caution";
+
+/** The final computed confidence score for a PR */
+export interface ConfidenceScore {
+  /** Weighted average of all signals (0-100) */
+  score: number;
+  /** Human-readable merge recommendation */
+  recommendation: ScoreRecommendation;
+  /** All signals that contributed to the score */
+  signals: Signal[];
+  /** Signal IDs that couldn't run (no LLM, no repo, etc.) */
+  skippedSignals: SignalId[];
+}
+
+// ---------------------------------------------------------------------------
 // Per-repo configuration (.vigil.yml)
 // ---------------------------------------------------------------------------
 
