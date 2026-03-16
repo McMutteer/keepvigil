@@ -13,6 +13,7 @@ import { cloneRepo, cleanupRepo } from "./repo-clone.js";
 import { detectPreviewUrl } from "./preview-url.js";
 import { routeToExecutors } from "./executor-router.js";
 import { fetchPRDiff } from "./diff-fetcher.js";
+import { collectCISignal } from "./ci-bridge.js";
 
 const log = createLogger("pipeline");
 
@@ -194,6 +195,11 @@ async function _runPipeline(
       signals.push(credSignal);
       log.info({ signalId: credSignal.id, score: credSignal.score, passed: credSignal.passed, findings: credSignal.details.length }, "Credential scan complete");
     }
+
+    // Stage 6.6: CI Bridge (maps check runs to test plan items)
+    const ciSignal = await collectCISignal({ octokit, owner, repo, headSha, classifiedItems });
+    signals.push(ciSignal);
+    log.info({ signalId: ciSignal.id, score: ciSignal.score, passed: ciSignal.passed, matched: ciSignal.details.filter((d) => d.status !== "skip").length }, "CI Bridge complete");
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);
     const safeMsg = rawMsg.replace(/ghs_[A-Za-z0-9]+/g, "***");
