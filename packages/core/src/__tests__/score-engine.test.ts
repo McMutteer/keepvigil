@@ -247,6 +247,28 @@ describe("createSignal", () => {
     expect(signal.requiresLLM).toBe(true);
   });
 
+  it("clamps score above 100 to 100", () => {
+    const signal = createSignal({
+      id: "ci-bridge",
+      name: "CI Bridge",
+      score: 150,
+      passed: true,
+      details: [],
+    });
+    expect(signal.score).toBe(100);
+  });
+
+  it("clamps negative score to 0", () => {
+    const signal = createSignal({
+      id: "ci-bridge",
+      name: "CI Bridge",
+      score: -20,
+      passed: false,
+      details: [],
+    });
+    expect(signal.score).toBe(0);
+  });
+
   it("preserves all provided fields", () => {
     const details = [
       { label: "npm run build", status: "pass" as const, message: "CI job passed" },

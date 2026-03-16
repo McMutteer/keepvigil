@@ -96,12 +96,13 @@ export interface CreateSignalParams {
 /**
  * Factory function for building signals with sensible defaults.
  * Keeps signal creation consistent across all signal producers.
+ * Score is clamped to 0-100 to prevent out-of-range values.
  */
 export function createSignal(params: CreateSignalParams): Signal {
   return {
     id: params.id,
     name: params.name,
-    score: params.score,
+    score: Math.min(100, Math.max(0, params.score)),
     weight: params.weight ?? SIGNAL_WEIGHTS[params.id],
     passed: params.passed,
     details: params.details,
