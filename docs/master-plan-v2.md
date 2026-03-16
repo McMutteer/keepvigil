@@ -164,7 +164,7 @@ Each section is a self-contained unit of work. When starting a section, create a
 
 ---
 
-### Section 8: Executor Signal Adapter ⬜
+### Section 8: Executor Signal Adapter ✅
 
 **Goal:** Wrap existing v1 executor results into the `Signal` interface so they participate in the score.
 
@@ -272,6 +272,6 @@ Deferred to post-MVP:
 | S5: Coverage Mapper | ✅ Complete | `feat/v2-coverage-mapper` | #33 merged |
 | S6: Diff Analyzer | ⬜ Not started | — | — |
 | S7: Gap Analyzer | ⬜ Not started | — | — |
-| S8: Executor Adapter | ⬜ Not started | — | — |
+| S8: Executor Adapter | ✅ Complete | `feat/v2-executor-adapter` | #34 merged |
 | S9: Pipeline v2 | ⬜ Not started | — | — |
 | S10: Free/Pro | ⬜ Not started | — | — |
