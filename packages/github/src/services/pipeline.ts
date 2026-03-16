@@ -15,6 +15,7 @@ import { routeToExecutors } from "./executor-router.js";
 import { fetchPRDiff, fetchRepoFileList } from "./diff-fetcher.js";
 import { collectCISignal } from "./ci-bridge.js";
 import { buildExecutorSignal } from "./executor-adapter.js";
+import { analyzeDiff } from "./diff-analyzer.js";
 
 const log = createLogger("pipeline");
 
@@ -215,6 +216,13 @@ async function _runPipeline(
     const executorSignal = buildExecutorSignal(classifiedItems, executionResults);
     signals.push(executorSignal);
     log.info({ signalId: executorSignal.id, score: executorSignal.score, passed: executorSignal.passed }, "Executor adapter complete");
+
+    // Stage 6.9: Diff Analyzer — LLM compares diff vs test plan claims (Pro tier)
+    if (diff) {
+      const diffSignal = await analyzeDiff({ diff, classifiedItems, llm });
+      signals.push(diffSignal);
+      log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");
+    }
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);
     const safeMsg = rawMsg.replace(/ghs_[A-Za-z0-9]+/g, "***");
