@@ -4,7 +4,7 @@
  * Follows the error-as-evidence model — never throws, always returns ExecutionResult.
  */
 
-import type { ClassifiedItem, ExecutionResult, ExecutorType, VigilConfig } from "@vigil/core";
+import type { ClassifiedItem, ExecutionResult, ExecutorType, LLMClient, VigilConfig } from "@vigil/core";
 import { createLogger } from "@vigil/core";
 import {
   executeShellItem,
@@ -20,7 +20,8 @@ export interface RouterOptions {
   repoPath: string | null;
   /** Preview deployment URL, required for api/browser items */
   previewUrl: string | null;
-  groqApiKey: string;
+  /** LLM client for spec generation (api/browser executors) */
+  llm: LLMClient;
   /** Parsed .vigil.yml config — applied as overrides on top of hardcoded defaults */
   vigiConfig?: VigilConfig;
   /**
@@ -37,12 +38,12 @@ export interface RouterOptions {
 export async function routeToExecutors(
   options: RouterOptions,
 ): Promise<ExecutionResult[]> {
-  const { classifiedItems, repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds } = options;
+  const { classifiedItems, repoPath, previewUrl, llm, vigiConfig, retryItemIds } = options;
   const retrySet = retryItemIds ? new Set(retryItemIds) : undefined;
 
   const settled = await Promise.allSettled(
     classifiedItems.map((item) =>
-      executeItem(item, { repoPath, previewUrl, groqApiKey, vigiConfig, retryItemIds: retrySet }),
+      executeItem(item, { repoPath, previewUrl, llm, vigiConfig, retryItemIds: retrySet }),
     ),
   );
 
@@ -93,7 +94,7 @@ const EXECUTOR_REGISTRY = new Map<ExecutorType, ExecutorFn>([
       const timeoutMs = ctx.vigiConfig?.timeouts?.api
         ? ctx.vigiConfig.timeouts.api * 1000
         : 30_000;
-      return executeApiItem(item, { baseUrl: ctx.previewUrl, groqApiKey: ctx.groqApiKey, timeoutMs });
+      return executeApiItem(item, { baseUrl: ctx.previewUrl, llm: ctx.llm, timeoutMs });
     },
   ],
   [
@@ -105,7 +106,7 @@ const EXECUTOR_REGISTRY = new Map<ExecutorType, ExecutorFn>([
         : 60_000;
       return executeBrowserItem(item, {
         baseUrl: ctx.previewUrl,
-        groqApiKey: ctx.groqApiKey,
+        llm: ctx.llm,
         timeoutMs,
         viewports: ctx.vigiConfig?.viewports,
       });

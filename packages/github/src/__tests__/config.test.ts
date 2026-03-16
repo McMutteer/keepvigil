@@ -77,14 +77,14 @@ describe("loadConfig", () => {
     expect(() => loadConfig()).toThrow(/Configuration error/);
   });
 
-  it("throws when GROQ_API_KEY is missing", () => {
+  it("allows empty GROQ_API_KEY (optional)", () => {
     vi.stubEnv("GROQ_API_KEY", "");
-    expect(() => loadConfig()).toThrow(/Configuration error/);
+    const config = loadConfig();
+    expect(config.groqApiKey).toBe("");
   });
 
   it("reports all missing required vars in a single error (not just the first)", () => {
     vi.stubEnv("GITHUB_APP_ID", "");
-    vi.stubEnv("GROQ_API_KEY", "");
     vi.stubEnv("GITHUB_WEBHOOK_SECRET", "");
 
     let errorMessage = "";
@@ -94,10 +94,9 @@ describe("loadConfig", () => {
       errorMessage = err instanceof Error ? err.message : String(err);
     }
 
-    // All three issues should be reported together
+    // Both issues should be reported together
     expect(errorMessage).toMatch(/githubAppId/);
     expect(errorMessage).toMatch(/githubWebhookSecret/);
-    expect(errorMessage).toMatch(/groqApiKey/);
   });
 
   it("throws when REDIS_URL is not a valid URL", () => {

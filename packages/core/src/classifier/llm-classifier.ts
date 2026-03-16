@@ -1,17 +1,14 @@
-import OpenAI from "openai";
 import type {
   TestPlanItem,
   ClassifiedItem,
   ConfidenceTier,
   ExecutorType,
   CategoryLabel,
+  LLMClient,
 } from "../types.js";
 import { CLASSIFIER_SYSTEM_PROMPT, buildUserPrompt } from "./prompts.js";
 
-/** Model used for batch classification */
-const MODEL = "llama-3.3-70b-versatile";
-
-/** Timeout for the API call in milliseconds */
+/** Timeout for the classification API call in milliseconds */
 const TIMEOUT_MS = 10_000;
 
 /** Valid values for runtime validation */
@@ -105,7 +102,7 @@ function parseLLMResponse(
 }
 
 /**
- * Classify a batch of test plan items using Claude Haiku.
+ * Classify a batch of test plan items using an LLM.
  *
  * Sends all items in a single API call with few-shot examples.
  * On any error (timeout, invalid response, API failure), all items
@@ -113,37 +110,19 @@ function parseLLMResponse(
  */
 export async function classifyWithLLM(
   items: TestPlanItem[],
-  apiKey: string,
+  llm: LLMClient,
 ): Promise<ClassifiedItem[]> {
   if (items.length === 0) return [];
 
-  const client = new OpenAI({
-    apiKey,
-    baseURL: "https://api.groq.com/openai/v1",
-  });
   const itemTexts = items.map((item) => item.text);
 
   let responseText: string;
   try {
-    const completion = await client.chat.completions.create(
-      {
-        model: MODEL,
-        max_tokens: Math.max(1024, items.length * 150),
-        messages: [
-          { role: "system", content: CLASSIFIER_SYSTEM_PROMPT },
-          { role: "user", content: buildUserPrompt(itemTexts) },
-        ],
-      },
-      { signal: AbortSignal.timeout(TIMEOUT_MS) },
-    );
-
-    const text = completion.choices[0]?.message?.content;
-    if (!text) {
-      return items.map((item) =>
-        makeFallback(item, "LLM returned no text content"),
-      );
-    }
-    responseText = text;
+    responseText = await llm.chat({
+      system: CLASSIFIER_SYSTEM_PROMPT,
+      user: buildUserPrompt(itemTexts),
+      timeoutMs: TIMEOUT_MS,
+    });
   } catch {
     return items.map((item) =>
       makeFallback(item, "LLM classification unavailable"),

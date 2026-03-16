@@ -6,7 +6,7 @@ const AppConfigSchema = z.object({
   githubWebhookSecret: z.string().min(1, "GITHUB_WEBHOOK_SECRET is required"),
   redisUrl:            z.string().url("REDIS_URL must be a valid URL"),
   databaseUrl:         z.string().url("DATABASE_URL must be a valid URL"),
-  groqApiKey:          z.string().min(1, "GROQ_API_KEY is required"),
+  groqApiKey:          z.string().default(""),
   port:                z.coerce.number().int().min(1).max(65535).default(3200),
   nodeEnv:             z.string().default("development"),
 });

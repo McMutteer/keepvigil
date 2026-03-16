@@ -4,6 +4,7 @@ import type {
   TestPlanItem,
   TestPlanHints,
   BrowserExecutionContext,
+  LLMClient,
 } from "@vigil/core/types";
 
 // ---------------------------------------------------------------------------
@@ -11,7 +12,6 @@ import type {
 // ---------------------------------------------------------------------------
 
 const {
-  mockCreate,
   mockFetch,
   mockGoto,
   mockClick,
@@ -75,7 +75,6 @@ const {
   });
 
   return {
-    mockCreate: vi.fn(),
     mockFetch: vi.fn(),
     mockGoto,
     mockClick,
@@ -102,13 +101,14 @@ const {
 // Mocks — hoisted to top by Vitest
 // ---------------------------------------------------------------------------
 
-vi.mock("openai", () => ({
-  default: class MockAnthropic {
-    chat = { completions: { create: mockCreate } };
-  },
-}));
-
 vi.stubGlobal("fetch", mockFetch);
+
+/** Mock LLM client */
+const mockLLM: LLMClient = {
+  model: "test-model",
+  provider: "groq",
+  chat: vi.fn(),
+};
 
 vi.mock("../browser-launcher.js", () => ({
   launchBrowser: vi.fn().mockResolvedValue({
@@ -153,15 +153,13 @@ function makeBrowserItem(
 
 const baseContext: BrowserExecutionContext = {
   baseUrl: "https://pr-42.example.dev",
-  groqApiKey: "test-key",
+  llm: mockLLM,
   timeoutMs: 5000,
   maxRetries: 1,
 };
 
 function mockLlmResponse(specs: unknown[]): void {
-  mockCreate.mockResolvedValueOnce({
-    choices: [{ message: { content: JSON.stringify(specs) } }],
-  });
+  vi.mocked(mockLLM.chat).mockResolvedValueOnce(JSON.stringify(specs));
 }
 
 function mockFetchHtml(html: string, status = 200): void {
@@ -326,21 +324,19 @@ describe("generateBrowserSpec", () => {
       { action: "navigate", path: "/", description: "Open home" },
       { action: "assertVisible", selector: "h1", description: "Title visible" },
     ]);
-    const specs = await generateBrowserSpec("Verify the landing page loads", "test-key");
+    const specs = await generateBrowserSpec("Verify the landing page loads", mockLLM);
     expect(specs).toHaveLength(2);
-    expect(mockCreate).toHaveBeenCalledOnce();
+    expect(mockLLM.chat).toHaveBeenCalledOnce();
   });
 
-  it("throws when LLM returns no text content", async () => {
-    mockCreate.mockResolvedValueOnce({ choices: [] });
-    await expect(generateBrowserSpec("test", "key")).rejects.toThrow("no text content");
+  it("throws when LLM returns empty string", async () => {
+    vi.mocked(mockLLM.chat).mockResolvedValueOnce("");
+    await expect(generateBrowserSpec("test", mockLLM)).rejects.toThrow();
   });
 
   it("throws when LLM returns invalid JSON", async () => {
-    mockCreate.mockResolvedValueOnce({
-      choices: [{ message: { content: "not json" } }],
-    });
-    await expect(generateBrowserSpec("test", "key")).rejects.toThrow("invalid JSON");
+    vi.mocked(mockLLM.chat).mockResolvedValueOnce("not json");
+    await expect(generateBrowserSpec("test", mockLLM)).rejects.toThrow("invalid JSON");
   });
 });
 
@@ -566,7 +562,7 @@ describe("executeBrowserItem", () => {
   });
 
   it("returns error evidence when LLM spec generation fails", async () => {
-    mockCreate.mockRejectedValueOnce(new Error("API unavailable"));
+    vi.mocked(mockLLM.chat).mockRejectedValueOnce(new Error("API unavailable"));
     const item = makeBrowserItem("Verify something");
     const result = await executeBrowserItem(item, baseContext);
 

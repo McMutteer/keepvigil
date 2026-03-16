@@ -10,12 +10,10 @@
  * `ApiExecutionContext`, keeping host control out of the LLM's hands.
  */
 
-import OpenAI from "openai";
-import type { HttpMethod, HttpRequestSpec } from "@vigil/core/types";
+import type { HttpMethod, HttpRequestSpec, LLMClient } from "@vigil/core/types";
 
 const VALID_METHODS = new Set<string>(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]);
 
-const MODEL = "llama-3.3-70b-versatile";
 const TIMEOUT_MS = 15_000;
 
 const SYSTEM_PROMPT = `You extract HTTP request specifications from test plan items written in natural language.
@@ -112,29 +110,13 @@ function parseSpecResponse(raw: string): HttpRequestSpec[] {
  */
 export async function generateApiSpec(
   itemText: string,
-  apiKey: string,
+  llm: LLMClient,
 ): Promise<HttpRequestSpec[]> {
-  const client = new OpenAI({
-    apiKey,
-    baseURL: "https://api.groq.com/openai/v1",
+  const text = await llm.chat({
+    system: SYSTEM_PROMPT,
+    user: itemText,
+    timeoutMs: TIMEOUT_MS,
   });
-
-  const completion = await client.chat.completions.create(
-    {
-      model: MODEL,
-      max_tokens: 1024,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: itemText },
-      ],
-    },
-    { signal: AbortSignal.timeout(TIMEOUT_MS) },
-  );
-
-  const text = completion.choices[0]?.message?.content;
-  if (!text) {
-    throw new Error("LLM returned no text content");
-  }
 
   return parseSpecResponse(text);
 }

@@ -206,7 +206,7 @@ async function executeUiFlowItem(
   // Generate specs from NL
   let specs: BrowserActionSpec[];
   try {
-    specs = await generateBrowserSpec(item.item.text, context.groqApiKey);
+    specs = await generateBrowserSpec(item.item.text, context.llm);
   } catch (err) {
     return {
       itemId,
@@ -338,7 +338,7 @@ async function executeVisualItem(
   // Generate specs to find the target path
   let path = "/";
   try {
-    const specs = await generateBrowserSpec(item.item.text, context.groqApiKey);
+    const specs = await generateBrowserSpec(item.item.text, context.llm);
     const nav = specs.find((s) => s.action === "navigate");
     if (nav?.path) path = nav.path;
   } catch {

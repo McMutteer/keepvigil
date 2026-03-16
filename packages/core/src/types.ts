@@ -101,8 +101,8 @@ export interface ApiExecutionContext {
   baseUrl: string;
   /** Timeout per HTTP request in milliseconds (default: 30_000) */
   timeoutMs?: number;
-  /** Groq API key for LLM spec generation */
-  groqApiKey: string;
+  /** LLM client for spec generation */
+  llm: LLMClient;
 }
 
 /**
@@ -172,8 +172,8 @@ export interface ViewportSpec {
 export interface BrowserExecutionContext {
   /** Base URL of the preview deployment, e.g. "https://pr-42.keepvigil.dev" */
   baseUrl: string;
-  /** Groq API key for LLM spec generation */
-  groqApiKey: string;
+  /** LLM client for spec generation */
+  llm: LLMClient;
   /** Timeout per test item in milliseconds (default: 60_000) */
   timeoutMs?: number;
   /** Max retry attempts for flaky failures (default: 3) */
@@ -191,6 +191,35 @@ export interface MetadataExecutionContext {
   baseUrl: string;
   /** Timeout per HTTP request in milliseconds (default: 15_000) */
   timeoutMs?: number;
+}
+
+// ---------------------------------------------------------------------------
+// LLM client (v2 BYOLLM)
+// ---------------------------------------------------------------------------
+
+/** Supported LLM providers */
+export type LLMProvider = "openai" | "groq" | "ollama";
+
+/** Configuration for creating an LLM client */
+export interface LLMConfig {
+  provider: LLMProvider;
+  model: string;
+  apiKey: string;
+}
+
+/** Unified LLM client interface — all consumers use this */
+export interface LLMClient {
+  /** Send a chat completion request and return the response text */
+  chat(params: {
+    system: string;
+    user: string;
+    /** Per-request timeout in milliseconds (default: 15_000) */
+    timeoutMs?: number;
+  }): Promise<string>;
+  /** The model being used (for logging/debugging) */
+  readonly model: string;
+  /** The provider being used (for logging/debugging) */
+  readonly provider: LLMProvider;
 }
 
 // ---------------------------------------------------------------------------
@@ -279,6 +308,15 @@ export interface VigilConfig {
     allow?: string[];
     /** Docker image for the sandbox (default: "node:22-alpine") */
     image?: string;
+  };
+  /** LLM provider configuration (BYOLLM) */
+  llm?: {
+    /** LLM provider */
+    provider?: LLMProvider;
+    /** Model identifier (provider-specific) */
+    model?: string;
+    /** API key for the LLM provider */
+    apiKey?: string;
   };
   /** Webhook notification settings */
   notifications?: {

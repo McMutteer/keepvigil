@@ -1,21 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { ClassifiedItem, TestPlanItem, TestPlanHints, ApiExecutionContext } from "@vigil/core/types";
-
-// ---------------------------------------------------------------------------
-// Mock @anthropic-ai/sdk BEFORE any imports that use it.
-// Class-based mock is hoisted by JS — no vi.hoisted() needed here.
-// ---------------------------------------------------------------------------
-
-const mockCreate = vi.fn();
-vi.mock("openai", () => ({
-  default: class MockAnthropic {
-    chat = { completions: { create: mockCreate } };
-  },
-}));
+import type { ClassifiedItem, TestPlanItem, TestPlanHints, ApiExecutionContext, LLMClient } from "@vigil/core/types";
 
 // Mock globalThis.fetch before importing modules that use it.
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
+
+/** Mock LLM client */
+const mockLLM: LLMClient = {
+  model: "test-model",
+  provider: "groq",
+  chat: vi.fn(),
+};
 
 import { generateApiSpec } from "../api-spec-generator.js";
 import { makeRequest, validateBaseUrl } from "../http-client.js";
@@ -53,14 +48,12 @@ function makeClassified(text: string, id = "tp-0"): ClassifiedItem {
 const baseContext: ApiExecutionContext = {
   baseUrl: "https://pr-42.example.dev",
   timeoutMs: 5_000,
-  groqApiKey: "test-key",
+  llm: mockLLM,
 };
 
-/** Build the Anthropic-shaped text response the mock will return. */
+/** Build the LLM chat response the mock will return. */
 function mockLlmResponse(specs: unknown[]): void {
-  mockCreate.mockResolvedValueOnce({
-    choices: [{ message: { content: JSON.stringify(specs) } }],
-  });
+  vi.mocked(mockLLM.chat).mockResolvedValueOnce(JSON.stringify(specs));
 }
 
 /** Build a fetch Response-like mock. */
@@ -83,7 +76,7 @@ describe("generateApiSpec", () => {
 
   it("parses a simple GET spec from LLM response", async () => {
     mockLlmResponse([{ method: "GET", path: "/health", expectedStatus: 200 }]);
-    const specs = await generateApiSpec("GET /health returns 200", "key");
+    const specs = await generateApiSpec("GET /health returns 200", mockLLM);
     expect(specs).toHaveLength(1);
     expect(specs[0]).toMatchObject({ method: "GET", path: "/health", expectedStatus: 200 });
   });
@@ -97,7 +90,7 @@ describe("generateApiSpec", () => {
         expectedStatus: 201,
       },
     ]);
-    const specs = await generateApiSpec("POST /api/users with valid data returns 201", "key");
+    const specs = await generateApiSpec("POST /api/users with valid data returns 201", mockLLM);
     expect(specs[0].method).toBe("POST");
     expect(specs[0].path).toBe("/api/users");
     expect(specs[0].expectedStatus).toBe(201);
@@ -106,47 +99,43 @@ describe("generateApiSpec", () => {
 
   it("returns empty array when LLM returns []", async () => {
     mockLlmResponse([]);
-    const specs = await generateApiSpec("Verify that users can log in manually", "key");
+    const specs = await generateApiSpec("Verify that users can log in manually", mockLLM);
     expect(specs).toHaveLength(0);
   });
 
   it("throws when LLM returns invalid JSON", async () => {
-    mockCreate.mockResolvedValueOnce({
-      choices: [{ message: { content: "not json at all" } }],
-    });
-    await expect(generateApiSpec("anything", "key")).rejects.toThrow("invalid JSON");
+    vi.mocked(mockLLM.chat).mockResolvedValueOnce("not json at all");
+    await expect(generateApiSpec("anything", mockLLM)).rejects.toThrow("invalid JSON");
   });
 
   it("throws when LLM returns non-array JSON", async () => {
-    mockCreate.mockResolvedValueOnce({
-      choices: [{ message: { content: '{"method":"GET"}' } }],
-    });
-    await expect(generateApiSpec("anything", "key")).rejects.toThrow("not an array");
+    vi.mocked(mockLLM.chat).mockResolvedValueOnce('{"method":"GET"}');
+    await expect(generateApiSpec("anything", mockLLM)).rejects.toThrow("not an array");
   });
 
   it("throws when path is a full URL (security: SSRF prevention)", async () => {
     mockLlmResponse([{ method: "GET", path: "https://evil.com/steal", expectedStatus: 200 }]);
-    await expect(generateApiSpec("anything", "key")).rejects.toThrow("full URL in path");
+    await expect(generateApiSpec("anything", mockLLM)).rejects.toThrow("full URL in path");
   });
 
   it("throws when LLM returns an invalid HTTP method", async () => {
     mockLlmResponse([{ method: "OPTIONS", path: "/api/users", expectedStatus: 200 }]);
-    await expect(generateApiSpec("anything", "key")).rejects.toThrow(/method invalid/);
+    await expect(generateApiSpec("anything", mockLLM)).rejects.toThrow(/method invalid/);
   });
 
   it("throws when LLM returns a dangerous method (CONNECT)", async () => {
     mockLlmResponse([{ method: "CONNECT", path: "/api/users", expectedStatus: 200 }]);
-    await expect(generateApiSpec("anything", "key")).rejects.toThrow(/method invalid/);
+    await expect(generateApiSpec("anything", mockLLM)).rejects.toThrow(/method invalid/);
   });
 
   it("throws when path has path traversal", async () => {
     mockLlmResponse([{ method: "GET", path: "/../etc/passwd", expectedStatus: 200 }]);
-    await expect(generateApiSpec("anything", "key")).rejects.toThrow("traversal");
+    await expect(generateApiSpec("anything", mockLLM)).rejects.toThrow("traversal");
   });
 
   it("throws when path does not start with /", async () => {
     mockLlmResponse([{ method: "GET", path: "api/users", expectedStatus: 200 }]);
-    await expect(generateApiSpec("anything", "key")).rejects.toThrow("non-relative");
+    await expect(generateApiSpec("anything", mockLLM)).rejects.toThrow("non-relative");
   });
 
   it("parses expectedBodyContains when present", async () => {
@@ -158,13 +147,13 @@ describe("generateApiSpec", () => {
         expectedBodyContains: { status: "ok" },
       },
     ]);
-    const specs = await generateApiSpec("GET /api/status should return {status: ok}", "key");
+    const specs = await generateApiSpec("GET /api/status should return {status: ok}", mockLLM);
     expect(specs[0].expectedBodyContains).toEqual({ status: "ok" });
   });
 
-  it("throws when LLM returns no text content block", async () => {
-    mockCreate.mockResolvedValueOnce({ choices: [] });
-    await expect(generateApiSpec("anything", "key")).rejects.toThrow("no text content");
+  it("throws when LLM returns empty string", async () => {
+    vi.mocked(mockLLM.chat).mockResolvedValueOnce("");
+    await expect(generateApiSpec("anything", mockLLM)).rejects.toThrow();
   });
 });
 
@@ -354,7 +343,7 @@ describe("executeApiItem", () => {
   });
 
   it("returns passed: false with error when LLM call fails", async () => {
-    mockCreate.mockRejectedValueOnce(new Error("LLM API error"));
+    vi.mocked(mockLLM.chat).mockRejectedValueOnce(new Error("LLM API error"));
 
     const item = makeClassified("Some test");
     const result = await executeApiItem(item, baseContext);

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { LLMClient } from "@vigil/core/types";
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks — executor functions from @vigil/executors
@@ -25,7 +26,11 @@ import type { ClassifiedItem } from "@vigil/core";
 // Helpers
 // ---------------------------------------------------------------------------
 
-const API_KEY = "test-anthropic-key";
+const mockLLM: LLMClient = {
+  model: "test-model",
+  provider: "groq",
+  chat: vi.fn(),
+};
 
 function makeShellItem(id = "tp-0"): ClassifiedItem {
   return {
@@ -96,7 +101,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem],
       repoPath: "/tmp/repo",
       previewUrl: null,
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(mockExecuteShellItem).toHaveBeenCalledWith(
@@ -111,7 +116,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [apiItem],
       repoPath: null,
       previewUrl: "https://preview.example.com",
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(mockExecuteApiItem).toHaveBeenCalledWith(
@@ -126,7 +131,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [browserItem],
       repoPath: null,
       previewUrl: "https://preview.example.com",
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(mockExecuteBrowserItem).toHaveBeenCalledWith(
@@ -141,7 +146,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [apiItem],
       repoPath: null,
       previewUrl: null,
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(results[0].passed).toBe(false);
@@ -157,7 +162,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem],
       repoPath: null,
       previewUrl: null,
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(results[0].passed).toBe(false);
@@ -177,7 +182,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [skipItem],
       repoPath: null,
       previewUrl: null,
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(results[0].passed).toBe(true);
@@ -194,7 +199,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [noneItem],
       repoPath: null,
       previewUrl: null,
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(results[0].passed).toBe(true);
@@ -208,7 +213,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem],
       repoPath: "/tmp/repo",
       previewUrl: null,
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(results[0].passed).toBe(false);
@@ -225,7 +230,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem, apiItem],
       repoPath: "/tmp/repo",
       previewUrl: "https://preview.example.com",
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(results).toHaveLength(2);
@@ -239,7 +244,7 @@ describe("routeToExecutors", () => {
       classifiedItems: [shellItem],
       repoPath: "/tmp/repo",
       previewUrl: null,
-      groqApiKey: API_KEY,
+      llm: mockLLM,
     });
 
     expect(mockExecuteShellItem).toHaveBeenCalledWith(
@@ -248,18 +253,18 @@ describe("routeToExecutors", () => {
     );
   });
 
-  it("passes groqApiKey to api executor", async () => {
+  it("passes llm client to api executor", async () => {
     const apiItem = makeApiItem();
     await routeToExecutors({
       classifiedItems: [apiItem],
       repoPath: null,
       previewUrl: "https://preview.example.com",
-      groqApiKey: "sk-custom-key",
+      llm: mockLLM,
     });
 
     expect(mockExecuteApiItem).toHaveBeenCalledWith(
       apiItem,
-      expect.objectContaining({ groqApiKey: "sk-custom-key" }),
+      expect.objectContaining({ llm: mockLLM }),
     );
   });
 });
@@ -282,7 +287,7 @@ describe("routeToExecutors — retryItemIds", () => {
       classifiedItems: [shellItem, apiItem],
       repoPath: "/tmp/repo",
       previewUrl: "https://preview.example.com",
-      groqApiKey: API_KEY,
+      llm: mockLLM,
       retryItemIds: undefined,
     });
     expect(mockExecuteShellItem).toHaveBeenCalledOnce();
@@ -296,7 +301,7 @@ describe("routeToExecutors — retryItemIds", () => {
       classifiedItems: [shellItem, apiItem],
       repoPath: "/tmp/repo",
       previewUrl: "https://preview.example.com",
-      groqApiKey: API_KEY,
+      llm: mockLLM,
       retryItemIds: ["tp-0"],
     });
 
@@ -315,7 +320,7 @@ describe("routeToExecutors — retryItemIds", () => {
       classifiedItems: [shellItem, apiItem],
       repoPath: "/tmp/repo",
       previewUrl: "https://preview.example.com",
-      groqApiKey: API_KEY,
+      llm: mockLLM,
       retryItemIds: ["tp-1"],
     });
 
@@ -332,7 +337,7 @@ describe("routeToExecutors — retryItemIds", () => {
       classifiedItems: [shellItem],
       repoPath: "/tmp/repo",
       previewUrl: null,
-      groqApiKey: API_KEY,
+      llm: mockLLM,
       retryItemIds: [],
     });
     // empty retryItemIds means every item is NOT in the set, all get notRetried

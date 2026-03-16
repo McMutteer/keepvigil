@@ -501,4 +501,106 @@ shell:
     expect(config).toEqual({});
     expect(warnings.length).toBeGreaterThanOrEqual(3);
   });
+
+  // --- llm section ---
+
+  it("parses valid llm config", () => {
+    const yaml = `
+llm:
+  provider: groq
+  model: llama-3.3-70b-versatile
+  api_key: gsk_test123
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(warnings).toEqual([]);
+    expect(config.llm).toEqual({
+      provider: "groq",
+      model: "llama-3.3-70b-versatile",
+      apiKey: "gsk_test123",
+    });
+  });
+
+  it("parses openai provider", () => {
+    const yaml = `
+llm:
+  provider: openai
+  model: gpt-4o-mini
+  api_key: sk-test
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(warnings).toEqual([]);
+    expect(config.llm?.provider).toBe("openai");
+  });
+
+  it("parses ollama provider", () => {
+    const yaml = `
+llm:
+  provider: ollama
+  model: llama3
+  api_key: unused
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(warnings).toEqual([]);
+    expect(config.llm?.provider).toBe("ollama");
+  });
+
+  it("rejects invalid llm provider with warning", () => {
+    const yaml = `
+llm:
+  provider: anthropic
+  model: claude-3-haiku
+  api_key: sk-ant-test
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("llm.provider");
+    expect(config.llm?.provider).toBeUndefined();
+    // model and api_key should still be parsed
+    expect(config.llm?.model).toBe("claude-3-haiku");
+    expect(config.llm?.apiKey).toBe("sk-ant-test");
+  });
+
+  it("rejects empty llm model with warning", () => {
+    const yaml = `
+llm:
+  provider: groq
+  model: ""
+  api_key: gsk_test
+`;
+    const { warnings } = parseVigilConfig(yaml);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("llm.model");
+  });
+
+  it("rejects empty llm api_key with warning", () => {
+    const yaml = `
+llm:
+  provider: groq
+  model: test
+  api_key: ""
+`;
+    const { warnings } = parseVigilConfig(yaml);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("llm.api_key");
+  });
+
+  it("omits llm when no valid fields", () => {
+    const yaml = `
+llm:
+  provider: invalid
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(warnings).toHaveLength(1);
+    expect(config.llm).toBeUndefined();
+  });
+
+  it("parses partial llm config (only provider)", () => {
+    const yaml = `
+llm:
+  provider: groq
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(warnings).toEqual([]);
+    expect(config.llm).toEqual({ provider: "groq" });
+  });
 });
