@@ -69,7 +69,7 @@ Each section is a self-contained unit of work. When starting a section, create a
 
 ---
 
-### Section 2: BYOLLM Client ⬜
+### Section 2: BYOLLM Client ✅
 
 **Goal:** Replace the hardcoded Groq integration with a provider-agnostic LLM client that users can configure.
 
@@ -266,7 +266,7 @@ Deferred to post-MVP:
 | Section | Status | Branch | PR |
 |---------|--------|--------|----|
 | S1: Score Engine | ✅ Complete | `feat/v2-score-engine` | #29 merged |
-| S2: BYOLLM Client | ⬜ Not started | — | — |
+| S2: BYOLLM Client | ✅ Complete | `feat/v2-byollm-client` | #30 merged |
 | S3: Credential Scanner | ⬜ Not started | — | — |
 | S4: CI Bridge | ⬜ Not started | — | — |
 | S5: Coverage Mapper | ⬜ Not started | — | — |
