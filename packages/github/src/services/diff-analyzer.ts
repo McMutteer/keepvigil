@@ -149,7 +149,8 @@ export async function analyzeDiff(options: DiffAnalyzerOptions): Promise<Signal>
       timeoutMs: TIMEOUT_MS,
     });
   } catch (err) {
-    log.warn({ err }, "Diff analyzer LLM call failed");
+    const msg = err instanceof Error ? err.message : String(err);
+    log.warn({ error: msg.replace(/ghs_[A-Za-z0-9]+/g, "***") }, "Diff analyzer LLM call failed");
     return neutralSignal("LLM analysis unavailable");
   }
 
