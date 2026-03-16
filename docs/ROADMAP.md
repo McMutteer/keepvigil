@@ -50,11 +50,21 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesión de t
 
 ---
 
+## v2 — Confidence Score Pivot
+
+Vigil is pivoting from test plan executor to confidence score engine for AI-generated PRs. See `docs/master-plan-v2.md` for the full plan and `docs/vision-v2-confidence-score.md` for the vision.
+
+**10 sections** covering: Score Engine, BYOLLM Client, Credential Scanner, CI Bridge, Coverage Mapper, Diff Analyzer, Gap Analyzer, Executor Adapter, Pipeline v2, Free/Pro Gating.
+
+Track progress in `docs/master-plan-v2.md` → Status table.
+
+---
+
 ## Notas
 
 - P0/P1 todos resueltos (PRs #14, #15)
 - P3 CI pipeline + graceful degradation completos (PRs #20, #21)
 - P4 100% completo — todos los items resueltos
 - P2: config file (#22), config UX (#23), retry (#24), webhooks (#25) completos — queda Marketplace
-- Siguiente recomendado: GitHub App Marketplace listing o Integration tests E2E
+- v1 feature-complete — focus shifts to v2 confidence score
 - Cuando se complete un item, marcarlo aqui Y en el GitHub Issue correspondiente
