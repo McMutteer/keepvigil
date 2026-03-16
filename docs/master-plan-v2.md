@@ -121,7 +121,7 @@ Each section is a self-contained unit of work. When starting a section, create a
 
 ---
 
-### Section 5: Coverage Mapper ⬜
+### Section 5: Coverage Mapper ✅
 
 **Goal:** For each changed file, check if a corresponding test file exists in the repo.
 
@@ -269,7 +269,7 @@ Deferred to post-MVP:
 | S2: BYOLLM Client | ✅ Complete | `feat/v2-byollm-client` | #30 merged |
 | S3: Credential Scanner | ✅ Complete | `feat/v2-credential-scanner` | #31 merged |
 | S4: CI Bridge | ✅ Complete | `feat/v2-ci-bridge` | #32 merged |
-| S5: Coverage Mapper | ⬜ Not started | — | — |
+| S5: Coverage Mapper | ✅ Complete | `feat/v2-coverage-mapper` | #33 merged |
 | S6: Diff Analyzer | ⬜ Not started | — | — |
 | S7: Gap Analyzer | ⬜ Not started | — | — |
 | S8: Executor Adapter | ⬜ Not started | — | — |
