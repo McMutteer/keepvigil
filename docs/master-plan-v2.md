@@ -135,7 +135,7 @@ Each section is a self-contained unit of work. When starting a section, create a
 
 ---
 
-### Section 6: Diff Analyzer (LLM) ⬜
+### Section 6: Diff Analyzer (LLM) ✅
 
 **Goal:** LLM compares the actual code diff against the test plan claims. Are the promises real?
 
@@ -270,7 +270,7 @@ Deferred to post-MVP:
 | S3: Credential Scanner | ✅ Complete | `feat/v2-credential-scanner` | #31 merged |
 | S4: CI Bridge | ✅ Complete | `feat/v2-ci-bridge` | #32 merged |
 | S5: Coverage Mapper | ✅ Complete | `feat/v2-coverage-mapper` | #33 merged |
-| S6: Diff Analyzer | ⬜ Not started | — | — |
+| S6: Diff Analyzer | ✅ Complete | `feat/v2-diff-analyzer` | #35 merged |
 | S7: Gap Analyzer | ⬜ Not started | — | — |
 | S8: Executor Adapter | ✅ Complete | `feat/v2-executor-adapter` | #34 merged |
 | S9: Pipeline v2 | ⬜ Not started | — | — |
