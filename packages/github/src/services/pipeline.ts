@@ -14,6 +14,7 @@ import { detectPreviewUrl } from "./preview-url.js";
 import { routeToExecutors } from "./executor-router.js";
 import { fetchPRDiff, fetchRepoFileList } from "./diff-fetcher.js";
 import { collectCISignal } from "./ci-bridge.js";
+import { buildExecutorSignal } from "./executor-adapter.js";
 
 const log = createLogger("pipeline");
 
@@ -209,6 +210,11 @@ async function _runPipeline(
       signals.push(coverageSignal);
       log.info({ signalId: coverageSignal.id, score: coverageSignal.score, passed: coverageSignal.passed }, "Coverage mapper complete");
     }
+
+    // Stage 6.8: Executor Adapter (wraps v1 execution results as signal)
+    const executorSignal = buildExecutorSignal(classifiedItems, executionResults);
+    signals.push(executorSignal);
+    log.info({ signalId: executorSignal.id, score: executorSignal.score, passed: executorSignal.passed }, "Executor adapter complete");
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);
     const safeMsg = rawMsg.replace(/ghs_[A-Za-z0-9]+/g, "***");
