@@ -52,7 +52,7 @@ These decisions are made. Don't revisit during implementation.
 
 Each section is a self-contained unit of work. When starting a section, create a detailed implementation plan in `/plan` mode. **Do not plan Section N+1 until Section N is merged.**
 
-### Section 1: Score Engine + Signal Types ⬜
+### Section 1: Score Engine + Signal Types ✅
 
 **Goal:** Define the data model for signals and the pure function that combines them into a score.
 
@@ -265,7 +265,7 @@ Deferred to post-MVP:
 
 | Section | Status | Branch | PR |
 |---------|--------|--------|----|
-| S1: Score Engine | ⬜ Not started | — | — |
+| S1: Score Engine | ✅ Complete | `feat/v2-score-engine` | #29 merged |
 | S2: BYOLLM Client | ⬜ Not started | — | — |
 | S3: Credential Scanner | ⬜ Not started | — | — |
 | S4: CI Bridge | ⬜ Not started | — | — |
