@@ -87,7 +87,7 @@ Each section is a self-contained unit of work. When starting a section, create a
 
 ---
 
-### Section 3: Credential Scanner ⬜
+### Section 3: Credential Scanner ✅
 
 **Goal:** Scan PR diff for hardcoded secrets using regex patterns. Binary signal: clean or compromised.
 
@@ -267,7 +267,7 @@ Deferred to post-MVP:
 |---------|--------|--------|----|
 | S1: Score Engine | ✅ Complete | `feat/v2-score-engine` | #29 merged |
 | S2: BYOLLM Client | ✅ Complete | `feat/v2-byollm-client` | #30 merged |
-| S3: Credential Scanner | ⬜ Not started | — | — |
+| S3: Credential Scanner | ✅ Complete | `feat/v2-credential-scanner` | #31 merged |
 | S4: CI Bridge | ⬜ Not started | — | — |
 | S5: Coverage Mapper | ⬜ Not started | — | — |
 | S6: Diff Analyzer | ⬜ Not started | — | — |
