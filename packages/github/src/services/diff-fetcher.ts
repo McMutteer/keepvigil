@@ -47,7 +47,10 @@ export async function fetchPRDiff(options: FetchDiffOptions): Promise<string | n
 
     if (diff.length > MAX_DIFF_SIZE) {
       log.info({ owner, repo, pullNumber, size: diff.length, max: MAX_DIFF_SIZE }, "Diff truncated to max size");
-      return diff.slice(0, MAX_DIFF_SIZE);
+      // Truncate at last newline to avoid cutting mid-line (could split a secret pattern)
+      const truncated = diff.slice(0, MAX_DIFF_SIZE);
+      const lastNewline = truncated.lastIndexOf("\n");
+      return lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated;
     }
 
     return diff;

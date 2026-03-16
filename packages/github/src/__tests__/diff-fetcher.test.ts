@@ -40,12 +40,16 @@ describe("fetchPRDiff", () => {
     expect(result).toBeNull();
   });
 
-  it("truncates diff larger than 1MB", async () => {
-    const largeDiff = "x".repeat(1_048_576 + 1000);
+  it("truncates diff larger than 1MB at last newline boundary", async () => {
+    // Build a diff that exceeds max with newlines near the boundary
+    const line = "x".repeat(100) + "\n";
+    const lineCount = Math.ceil(1_048_576 / line.length) + 10;
+    const largeDiff = line.repeat(lineCount);
     const octokit = makeOctokit(largeDiff);
     const result = await fetchPRDiff({ octokit, owner: "org", repo: "repo", pullNumber: 1 });
     expect(result).not.toBeNull();
-    expect(result!.length).toBe(1_048_576);
+    expect(result!.length).toBeLessThanOrEqual(1_048_576);
+    expect(result!.endsWith("\n")).toBe(false); // lastIndexOf strips trailing newline
   });
 
   it("returns full diff when exactly at max size", async () => {
