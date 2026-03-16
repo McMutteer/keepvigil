@@ -104,7 +104,7 @@ Each section is a self-contained unit of work. When starting a section, create a
 
 ---
 
-### Section 4: CI Bridge ⬜
+### Section 4: CI Bridge ✅
 
 **Goal:** Read GitHub Actions check run results and map them to test plan items.
 
@@ -268,7 +268,7 @@ Deferred to post-MVP:
 | S1: Score Engine | ✅ Complete | `feat/v2-score-engine` | #29 merged |
 | S2: BYOLLM Client | ✅ Complete | `feat/v2-byollm-client` | #30 merged |
 | S3: Credential Scanner | ✅ Complete | `feat/v2-credential-scanner` | #31 merged |
-| S4: CI Bridge | ⬜ Not started | — | — |
+| S4: CI Bridge | ✅ Complete | `feat/v2-ci-bridge` | #32 merged |
 | S5: Coverage Mapper | ⬜ Not started | — | — |
 | S6: Diff Analyzer | ⬜ Not started | — | — |
 | S7: Gap Analyzer | ⬜ Not started | — | — |
