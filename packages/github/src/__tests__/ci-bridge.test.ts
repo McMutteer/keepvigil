@@ -29,11 +29,12 @@ function makeCheckRun(name: string, conclusion: string | null = "success", statu
 
 function makeOctokit(checkRuns: ReturnType<typeof makeCheckRun>[], shouldThrow = false) {
   return {
+    paginate: shouldThrow
+      ? vi.fn().mockRejectedValue(new Error("API error"))
+      : vi.fn().mockResolvedValue(checkRuns),
     rest: {
       checks: {
-        listForRef: shouldThrow
-          ? vi.fn().mockRejectedValue(new Error("API error"))
-          : vi.fn().mockResolvedValue({ data: { check_runs: checkRuns } }),
+        listForRef: vi.fn(),
       },
     },
   } as unknown as Parameters<typeof collectCISignal>[0]["octokit"];

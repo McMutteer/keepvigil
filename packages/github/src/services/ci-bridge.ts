@@ -155,14 +155,14 @@ export async function collectCISignal(options: CIBridgeOptions): Promise<Signal>
   // Fetch check runs for the head SHA
   let checkRuns: CheckRun[];
   try {
-    const { data } = await octokit.rest.checks.listForRef({
+    const allRuns = await octokit.paginate(octokit.rest.checks.listForRef, {
       owner,
       repo,
       ref: headSha,
       per_page: 100,
     });
     // Filter out Vigil's own check run
-    checkRuns = data.check_runs
+    checkRuns = allRuns
       .filter((r) => !r.name.includes("Vigil"))
       .map((r) => ({
         name: r.name,
