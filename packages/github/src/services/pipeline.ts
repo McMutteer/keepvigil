@@ -6,12 +6,13 @@
 
 import { randomUUID } from "node:crypto";
 import type { Probot, ProbotOctokit } from "probot";
-import type { ClassifiedItem, ExecutionResult, LLMClient, ParsedTestPlan, VerifyTestPlanJob, VigilConfig } from "@vigil/core";
-import { parseTestPlan, classifyItems, createLLMClient, createLogger, runWithCorrelationId } from "@vigil/core";
+import type { ClassifiedItem, ExecutionResult, LLMClient, ParsedTestPlan, Signal, VerifyTestPlanJob, VigilConfig } from "@vigil/core";
+import { parseTestPlan, classifyItems, createLLMClient, scanCredentials, createLogger, runWithCorrelationId } from "@vigil/core";
 import { reportResults } from "./reporter.js";
 import { cloneRepo, cleanupRepo } from "./repo-clone.js";
 import { detectPreviewUrl } from "./preview-url.js";
 import { routeToExecutors } from "./executor-router.js";
+import { fetchPRDiff } from "./diff-fetcher.js";
 
 const log = createLogger("pipeline");
 
@@ -159,6 +160,7 @@ async function _runPipeline(
   let classifiedItems: ClassifiedItem[] = [];
   let executionResults: ExecutionResult[] = [];
   let pipelineError: string | null = null;
+  const signals: Signal[] = [];
 
   try {
     // Stage 2: Parse
@@ -171,6 +173,9 @@ async function _runPipeline(
     // Create LLM client after parse — avoids failures on empty/no-op pipelines
     const llm = createPipelineLLM(vigiConfig, groqApiKey);
 
+    // Stage 2.5: Fetch PR diff (used by credential scanner + future signals)
+    const diff = await fetchPRDiff({ octokit, owner, repo, pullNumber });
+
     // Stage 3: Classify
     classifiedItems = await stageClassify(plan, llm);
 
@@ -182,6 +187,13 @@ async function _runPipeline(
 
     // Stage 6: Execute
     executionResults = await stageExecute(classifiedItems, repoPath, previewUrl, llm, vigiConfig, retryItemIds);
+
+    // Stage 6.5: Credential scan (runs on diff, independent of executors)
+    if (diff) {
+      const credSignal = scanCredentials(diff);
+      signals.push(credSignal);
+      log.info({ signalId: credSignal.id, score: credSignal.score, passed: credSignal.passed, findings: credSignal.details.length }, "Credential scan complete");
+    }
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);
     const safeMsg = rawMsg.replace(/ghs_[A-Za-z0-9]+/g, "***");
