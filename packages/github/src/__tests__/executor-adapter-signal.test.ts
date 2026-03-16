@@ -70,13 +70,12 @@ describe("buildExecutorSignal", () => {
   });
 
   it("LOW item failed → passed true (non-blocking)", () => {
-    const items = [makeClassified("tp-0", "Some check", "LOW", "none")];
+    const items = [makeClassified("tp-0", "Some check", "LOW", "shell")];
     const results = [makeResult("tp-0", false)];
 
-    // LOW + none executor → skipped (executorType: "none")
     const signal = buildExecutorSignal(items, results);
-    expect(signal.passed).toBe(true);
-    expect(signal.score).toBe(100); // Skipped → not counted
+    expect(signal.passed).toBe(true); // LOW is non-blocking
+    expect(signal.score).toBe(0); // Still affects score
   });
 
   it("skipped items excluded from score", () => {
