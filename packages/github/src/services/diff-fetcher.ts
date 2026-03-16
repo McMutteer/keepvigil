@@ -84,6 +84,10 @@ export async function fetchRepoFileList(options: FetchRepoFilesOptions): Promise
       recursive: "true",
     });
 
+    if (data.truncated) {
+      log.warn({ owner, repo, headSha }, "Git tree truncated — coverage mapper may miss test files in large repos");
+    }
+
     return data.tree
       .filter((entry) => entry.type === "blob" && entry.path)
       .map((entry) => entry.path!);
