@@ -48,25 +48,25 @@ describe("analyzeGaps", () => {
       expect(signal.details[0].status).toBe("pass");
     });
 
-    it("1 critical gap → score 75, passed false", async () => {
+    it("1 critical gap → score 85, passed false", async () => {
       const llm = makeLLM(JSON.stringify({
         gaps: [{ file: "src/auth.ts", area: "JWT validation", severity: "critical", suggestion: "Add token test" }],
-      }));
-      const signal = await analyzeGaps({ diff: SAMPLE_DIFF, classifiedItems: items, llm });
-      expect(signal.score).toBe(75);
-      expect(signal.passed).toBe(false);
-    });
-
-    it("1 high gap → score 85, passed false", async () => {
-      const llm = makeLLM(JSON.stringify({
-        gaps: [{ file: "src/db.ts", area: "data mutation", severity: "high", suggestion: "Test insert" }],
       }));
       const signal = await analyzeGaps({ diff: SAMPLE_DIFF, classifiedItems: items, llm });
       expect(signal.score).toBe(85);
       expect(signal.passed).toBe(false);
     });
 
-    it("2 medium + 1 low gaps → score 88, passed true", async () => {
+    it("1 high gap → score 90, passed false", async () => {
+      const llm = makeLLM(JSON.stringify({
+        gaps: [{ file: "src/db.ts", area: "data mutation", severity: "high", suggestion: "Test insert" }],
+      }));
+      const signal = await analyzeGaps({ diff: SAMPLE_DIFF, classifiedItems: items, llm });
+      expect(signal.score).toBe(90);
+      expect(signal.passed).toBe(false);
+    });
+
+    it("2 medium + 1 low gaps → score 93, passed true", async () => {
       const llm = makeLLM(JSON.stringify({
         gaps: [
           { file: "src/ui.ts", area: "button style", severity: "medium", suggestion: "" },
@@ -75,12 +75,12 @@ describe("analyzeGaps", () => {
         ],
       }));
       const signal = await analyzeGaps({ diff: SAMPLE_DIFF, classifiedItems: items, llm });
-      // 100 - (5+5+2) = 88
-      expect(signal.score).toBe(88);
+      // 100 - (3+3+1) = 93
+      expect(signal.score).toBe(93);
       expect(signal.passed).toBe(true);
     });
 
-    it("mixed: 1 critical + 1 medium + 1 low → score 68, passed false", async () => {
+    it("mixed: 1 critical + 1 medium + 1 low → score 81, passed false", async () => {
       const llm = makeLLM(JSON.stringify({
         gaps: [
           { file: "src/auth.ts", area: "auth", severity: "critical", suggestion: "" },
@@ -89,19 +89,19 @@ describe("analyzeGaps", () => {
         ],
       }));
       const signal = await analyzeGaps({ diff: SAMPLE_DIFF, classifiedItems: items, llm });
-      // 100 - (25+5+2) = 68
-      expect(signal.score).toBe(68);
+      // 100 - (15+3+1) = 81
+      expect(signal.score).toBe(81);
       expect(signal.passed).toBe(false);
     });
 
-    it("many gaps floor score at 0", async () => {
+    it("many gaps reduce score significantly", async () => {
       const gaps = Array.from({ length: 5 }, (_, i) => ({
         file: `src/file${i}.ts`, area: "critical area", severity: "critical", suggestion: "",
       }));
       const llm = makeLLM(JSON.stringify({ gaps }));
       const signal = await analyzeGaps({ diff: SAMPLE_DIFF, classifiedItems: items, llm });
-      // 100 - (25*5) = -25 → floored to 0
-      expect(signal.score).toBe(0);
+      // 100 - (15*5) = 25
+      expect(signal.score).toBe(25);
       expect(signal.passed).toBe(false);
     });
   });

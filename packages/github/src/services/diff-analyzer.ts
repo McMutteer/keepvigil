@@ -29,10 +29,14 @@ export interface DiffAnalyzerOptions {
 const SYSTEM_PROMPT = `You are a code review assistant. Given a PR diff and a test plan, assess how well the test plan covers the actual code changes.
 
 For each test plan item, determine:
-- "covered": true if this item corresponds to an actual change in the diff
+- "covered": true if this item corresponds to an actual change in the diff. Be GENEROUS — if the item is reasonably related to the changes, mark it as covered.
 - "reasoning": brief explanation (1 sentence)
 
-Also identify significant changes in the diff NOT covered by any test plan item. Only list meaningful changes — ignore formatting, imports, or trivial modifications.
+Also identify SIGNIFICANT uncovered changes — only changes that could introduce bugs or security issues if not tested. Be conservative:
+- Do NOT flag new files without tests (that's normal for new features)
+- Do NOT flag config changes, imports, type definitions, or formatting
+- Do NOT flag changes that are adequately covered by related test plan items
+- Only flag changes where missing test coverage could lead to production issues
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
@@ -210,11 +214,12 @@ export async function analyzeDiff(options: DiffAnalyzerOptions): Promise<Signal>
     });
   }
 
-  // Score: coverage ratio minus penalty for uncovered changes
+  // Score: coverage ratio minus capped penalty for uncovered changes
   const coveredRatio = totalItems > 0 ? coveredCount / totalItems : 1;
-  const penalty = response.uncoveredChanges.length * 10;
+  const rawPenalty = response.uncoveredChanges.length * 5;
+  const penalty = Math.min(rawPenalty, 30); // Cap penalty at 30 — uncovered changes inform, don't destroy
   const score = Math.max(0, Math.round(coveredRatio * 100 - penalty));
-  const passed = coveredRatio >= 0.7 && response.uncoveredChanges.length <= 2;
+  const passed = coveredRatio >= 0.5 && response.uncoveredChanges.length <= 5;
 
   return createSignal({
     id: "diff-analyzer",

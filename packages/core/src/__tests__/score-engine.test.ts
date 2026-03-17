@@ -80,6 +80,17 @@ describe("computeScore", () => {
       expect(result.recommendation).toBe("review");
     });
 
+    it("does not cap when only LLM signals fail (LLM failures are speculative)", () => {
+      const signals = [
+        makeSignal({ id: "ci-bridge", score: 100 }),
+        makeSignal({ id: "diff-analyzer", score: 30, passed: false, requiresLLM: true }),
+        makeSignal({ id: "gap-analyzer", score: 40, passed: false, requiresLLM: true }),
+      ];
+      const result = computeScore(signals);
+      // LLM failures don't trigger the cap — score is the weighted average
+      expect(result.score).toBeGreaterThan(FAILURE_CAP);
+    });
+
     it("does not cap when all signals pass", () => {
       const signals = [
         makeSignal({ id: "ci-bridge", score: 90 }),

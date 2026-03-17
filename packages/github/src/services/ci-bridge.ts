@@ -185,9 +185,9 @@ export async function collectCISignal(options: CIBridgeOptions): Promise<Signal>
     return createSignal({
       id: "ci-bridge",
       name: "CI Bridge",
-      score: 50,
+      score: 100,
       passed: true,
-      details: [{ label: "No CI", status: "warn", message: "No GitHub Actions check runs found for this PR" }],
+      details: [{ label: "No CI", status: "skip", message: "No GitHub Actions configured — not penalized" }],
     });
   }
 
@@ -220,12 +220,12 @@ export async function collectCISignal(options: CIBridgeOptions): Promise<Signal>
     });
   }
 
-  // Score calculation
+  // Score calculation — no matches = not penalized (CI might not cover test plan items)
   if (matchedCount === 0) {
     return createSignal({
       id: "ci-bridge",
       name: "CI Bridge",
-      score: 50,
+      score: 100,
       passed: true,
       details,
     });

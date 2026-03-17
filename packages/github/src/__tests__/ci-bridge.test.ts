@@ -171,23 +171,23 @@ describe("collectCISignal", () => {
   });
 
   describe("edge cases", () => {
-    it("no check runs found → score 50, passed true (neutral)", async () => {
+    it("no check runs found → score 100, passed true (neutral)", async () => {
       const items = [makeItem("Build", ["npm run build"])];
       const octokit = makeOctokit([]);
 
       const signal = await collectCISignal({ ...BASE_OPTIONS, octokit, classifiedItems: items });
-      expect(signal.score).toBe(50);
+      expect(signal.score).toBe(100);
       expect(signal.passed).toBe(true);
       expect(signal.details[0].message).toContain("No GitHub Actions");
     });
 
-    it("no items match any check run → score 50 (neutral)", async () => {
+    it("no items match any check run → score 100 (neutral)", async () => {
       const items = [makeItem("Visual check", [], "ui-flow")];
       const checkRuns = [makeCheckRun("build")];
       const octokit = makeOctokit(checkRuns);
 
       const signal = await collectCISignal({ ...BASE_OPTIONS, octokit, classifiedItems: items });
-      expect(signal.score).toBe(50);
+      expect(signal.score).toBe(100);
       expect(signal.passed).toBe(true);
     });
 
@@ -198,7 +198,7 @@ describe("collectCISignal", () => {
 
       const signal = await collectCISignal({ ...BASE_OPTIONS, octokit, classifiedItems: items });
       // Vigil's own check run should be filtered out → no CI check runs remain
-      expect(signal.score).toBe(50);
+      expect(signal.score).toBe(100);
       expect(signal.details[0].message).toContain("No GitHub Actions");
     });
 

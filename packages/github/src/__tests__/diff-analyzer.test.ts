@@ -68,12 +68,12 @@ describe("analyzeDiff", () => {
       });
 
       const signal = await analyzeDiff({ diff: SAMPLE_DIFF, classifiedItems: items, llm: makeLLM(llmResponse) });
-      // 50% covered (1/2) = 50, minus 10 penalty = 40
-      expect(signal.score).toBe(40);
-      expect(signal.passed).toBe(false); // <70% covered
+      // 50% covered (1/2) = 50, minus 5 penalty = 45
+      expect(signal.score).toBe(45);
+      expect(signal.passed).toBe(true); // ≥50% AND ≤5 uncovered
     });
 
-    it("80% covered, 1 uncovered change → score 70, passed true", async () => {
+    it("80% covered, 1 uncovered change → score 75, passed true", async () => {
       const items = Array.from({ length: 5 }, (_, i) => makeItem(`tp-${i}`, `item ${i}`));
       const llmResponse = JSON.stringify({
         items: [
@@ -87,12 +87,12 @@ describe("analyzeDiff", () => {
       });
 
       const signal = await analyzeDiff({ diff: SAMPLE_DIFF, classifiedItems: items, llm: makeLLM(llmResponse) });
-      // 80% = 80, minus 10 = 70
-      expect(signal.score).toBe(70);
-      expect(signal.passed).toBe(true); // ≥70% AND ≤2 uncovered
+      // 80% = 80, minus 5 = 75
+      expect(signal.score).toBe(75);
+      expect(signal.passed).toBe(true); // ≥50% AND ≤5 uncovered
     });
 
-    it("50% covered, 3 uncovered changes → score 20", async () => {
+    it("50% covered, 3 uncovered changes → score 35", async () => {
       const items = [makeItem("tp-0", "build"), makeItem("tp-1", "test")];
       const llmResponse = JSON.stringify({
         items: [
@@ -103,9 +103,9 @@ describe("analyzeDiff", () => {
       });
 
       const signal = await analyzeDiff({ diff: SAMPLE_DIFF, classifiedItems: items, llm: makeLLM(llmResponse) });
-      // 50% = 50, minus 30 = 20
-      expect(signal.score).toBe(20);
-      expect(signal.passed).toBe(false);
+      // 50% = 50, minus 15 = 35
+      expect(signal.score).toBe(35);
+      expect(signal.passed).toBe(true); // ≥50% AND ≤5 uncovered
     });
 
     it("handles fenced JSON code blocks in response", async () => {
