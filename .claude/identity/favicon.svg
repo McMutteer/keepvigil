@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Vigil">
+  <title>Vigil</title>
+  <g id="icon" fill="none" stroke="#0f1729" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 6 8 L 16 26 L 26 8" stroke-width="3"/>
+  </g>
+  <circle cx="16" cy="26" r="2.5" fill="#e8a820"/>
+</svg>

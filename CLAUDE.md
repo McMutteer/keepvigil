@@ -19,6 +19,16 @@ Silent. Reliable. Nocturnal. Precise. Trustworthy.
 ### What We Are Not
 We are not "Playwright with a wrapper." We are not another CI check that nobody reads. We are not a QA platform that requires onboarding, training, or test authoring. We require zero workflow change — the test plan already exists. We just make it real.
 
+## Visual Identity
+
+Sigil complete. Brand guide: `.claude/identity/brand.md`
+
+**Primary:** #0f1729 (Midnight Navy) | **Accent:** #e8a820 (Vigil Amber) | **Light:** #e2e8f0
+
+Logo files: `.claude/identity/` (source of truth)
+
+Design principles: geometric, stroke-based, active negative space, single warm accent
+
 ## Development Workflow
 
 **MANDATORY: Use `/protocol` before starting ANY implementation work.**
