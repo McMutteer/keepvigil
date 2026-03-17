@@ -35,7 +35,7 @@ const PLANS = [
       "Priority support",
     ],
     cta: "Start Pro Trial",
-    ctaHref: "https://github.com/apps/keepvigil",
+    ctaHref: "https://keepvigil.dev/api/checkout?plan=pro",
     highlighted: true,
   },
   {
@@ -51,8 +51,8 @@ const PLANS = [
       "Org-wide configuration",
       "Dedicated support",
     ],
-    cta: "Contact Us",
-    ctaHref: "mailto:hello@keepvigil.dev",
+    cta: "Start Team Trial",
+    ctaHref: "https://keepvigil.dev/api/checkout?plan=team",
     highlighted: false,
   },
 ];
