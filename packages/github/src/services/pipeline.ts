@@ -174,13 +174,21 @@ async function _runPipeline(
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
   // Stage 0: Check subscription plan + rate limit
-  const plan = pipelineDb ? await checkPlan(pipelineDb, Number(installationId)) : "free";
-  const proEnabled = isPro(plan);
-  log.info({ installationId, plan, proEnabled }, "Subscription plan resolved");
+  const tier = pipelineDb ? await checkPlan(pipelineDb, Number(installationId)) : "free" as const;
+  const proEnabled = isPro(tier);
+  log.info({ installationId, tier, proEnabled }, "Subscription plan resolved");
 
-  const rateCheck = checkRateLimit(Number(installationId), plan);
+  const rateCheck = checkRateLimit(Number(installationId), tier);
   if (!rateCheck.allowed) {
-    log.warn({ installationId, message: rateCheck.message }, "Rate limited — skipping pipeline");
+    log.warn({ installationId, message: rateCheck.message }, "Rate limited");
+    // Still report so the user sees a check run (not just silence)
+    const octokit = await probot.auth(Number(installationId));
+    await reportResults({
+      octokit, owner, repo, pullNumber, checkRunId,
+      classifiedItems: [], executionResults: [], signals: [],
+      pipelineError: rateCheck.message ?? "Rate limit exceeded",
+      vigiConfig, configWarnings,
+    });
     return;
   }
 
@@ -239,12 +247,14 @@ async function _runPipeline(
       signals.push(coverageSignal);
       log.info({ signalId: coverageSignal.id, score: coverageSignal.score, passed: coverageSignal.passed }, "Coverage mapper complete");
 
-      // Stage 6.7.5: Contract Checker — cross-file API/frontend shape verification
+      // Stage 6.7.5: Contract Checker — cross-file API/frontend shape verification (Pro only)
       // Runs BEFORE executor adapter so verified files can override assertion failures
-      const { signal: contractSignal, verifiedFiles } = await checkContracts({ diff, llm });
-      signals.push(contractSignal);
-      contractVerifiedFiles = verifiedFiles;
-      log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed, verifiedFiles: verifiedFiles.size }, "Contract checker complete");
+      if (proEnabled) {
+        const { signal: contractSignal, verifiedFiles } = await checkContracts({ diff, llm });
+        signals.push(contractSignal);
+        contractVerifiedFiles = verifiedFiles;
+        log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed, verifiedFiles: verifiedFiles.size }, "Contract checker complete");
+      }
     }
 
     // Stage 6.8: Executor Adapter (wraps v1 execution results as signal)

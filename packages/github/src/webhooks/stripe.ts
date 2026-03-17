@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Database } from "@vigil/core/db";
 import { createLogger } from "@vigil/core";
 import { upsertSubscription } from "../services/subscription.js";
@@ -18,7 +18,8 @@ export function setStripeWebhookDeps(database: Database, secret: string): void {
 function verifySignature(payload: string, signature: string): boolean {
   if (!forwardingSecret) return false;
   const expected = createHmac("sha256", forwardingSecret).update(payload).digest("hex");
-  return signature === expected;
+  if (signature.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 
 export async function handleStripeWebhook(req: IncomingMessage, res: ServerResponse): Promise<void> {

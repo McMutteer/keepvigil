@@ -7,16 +7,20 @@ const log = createLogger("subscription");
 
 export type Plan = "free" | "pro" | "team";
 
+const VALID_PLANS = new Set<string>(["free", "pro", "team"]);
+
+function toPlan(value: string | null | undefined): Plan {
+  if (value && VALID_PLANS.has(value)) return value as Plan;
+  return "free";
+}
+
 export async function checkPlan(db: Database, installationId: number): Promise<Plan> {
   const sub = await db.select().from(schema.subscriptions)
     .where(eq(schema.subscriptions.installationId, installationId))
     .limit(1);
 
-  const plan: Plan = (sub.length > 0 && sub[0].status === "active")
-    ? (sub[0].plan as Plan)
-    : "free";
-
-  return plan;
+  if (sub.length === 0 || sub[0].status !== "active") return "free";
+  return toPlan(sub[0].plan);
 }
 
 export function isPro(plan: Plan): boolean {

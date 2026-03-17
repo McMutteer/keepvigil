@@ -9,18 +9,28 @@ const LIMITS: Record<Plan, { perHour: number; perDay: number }> = {
   team: { perHour: 200, perDay: 2000 },
 };
 
-// In-memory counters (reset on restart — acceptable for v1)
+// In-memory fixed-window counters (reset on restart — acceptable for v1)
+// Expired entries are evicted on access — no unbounded growth
 const counters = new Map<string, { count: number; resetAt: number }>();
 
 function getCounter(key: string, windowMs: number): number {
   const entry = counters.get(key);
   const now = Date.now();
   if (!entry || now >= entry.resetAt) {
+    // Evict expired entry and start fresh window
     counters.set(key, { count: 0, resetAt: now + windowMs });
     return 0;
   }
   return entry.count;
 }
+
+// Periodic cleanup of expired entries (every 10 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of counters) {
+    if (now >= entry.resetAt) counters.delete(key);
+  }
+}, 600_000).unref();
 
 function incrementCounter(key: string, windowMs: number): void {
   const entry = counters.get(key);
