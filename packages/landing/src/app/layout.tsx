@@ -69,14 +69,14 @@ export default function RootLayout({
                   price: "0",
                   priceCurrency: "USD",
                   name: "Free",
-                  description: "5 signals, unlimited PRs, unlimited repos",
+                  description: "6 signals, unlimited PRs, unlimited repos",
                 },
                 {
                   "@type": "Offer",
                   price: "19",
                   priceCurrency: "USD",
                   name: "Pro",
-                  description: "All 7 signals with BYOLLM",
+                  description: "All 8 signals with BYOLLM",
                 },
               ],
               author: {

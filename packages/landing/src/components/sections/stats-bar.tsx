@@ -1,7 +1,7 @@
 import { ScrollReveal } from "../scroll-reveal";
 
 const STATS = [
-  { value: "7", label: "Independent Signals" },
+  { value: "8", label: "Independent Signals" },
   { value: "72%", label: "Of AI test items are assertions — only Vigil verifies them" },
   { value: "30s", label: "Setup Time" },
   { value: "0", label: "Config Required" },
