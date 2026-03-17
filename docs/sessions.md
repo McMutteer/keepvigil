@@ -120,3 +120,24 @@ related: []
 **Resultado:** PR #11 (Groq migration) abierto, 349/349 tests. Infisical `vigil` completo — 6/6 secrets (DATABASE_URL, POSTGRES_PASSWORD, GROQ_API_KEY, GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET). GitHub App ID 3004145, webhook secret generado, private key guardada.
 
 **Aprendido:** `infisical projects` no existe — para crear o listar proyectos usar REST API directamente. `POST /api/v2/workspace` con `{"projectName": "vigil"}` funciona; incluir `organizationId` rompe el endpoint con 403. Para guardar una RSA private key como env var de una sola línea: `awk 'NF {printf "%s\\n", $0}'` produce `-----BEGIN RSA PRIVATE KEY-----\nMII...` que Probot acepta sin problema.
+
+---
+id: 2026-03-16-v2-confidence-score-complete
+type: feat
+scope: v2 pivot
+duration: ~8 hours
+prs: "#29-#38 (10 PRs)"
+tests: "740 (was 544)"
+---
+
+**Hilo:** Implementación completa del pivot Vigil v2 — de "test plan executor" a "confidence score for AI-generated PRs". 10 secciones del master plan, 10 PRs, todo mergeado a main en una sola sesión maratónica.
+
+**Lo que pasó:** Arrancamos con el master plan (`docs/master-plan-v2.md`) como plan-de-planes — cada sección se planificó individualmente en `/plan` mode antes de ejecutar. La secuencia fue: S1 Score Engine (tipos + `computeScore()` pure function) → S2 BYOLLM Client (refactor de `groqApiKey: string` a `LLMClient` interface en 22 archivos) → S3 Credential Scanner (10 regex patterns, solo added lines) → S4 CI Bridge (fuzzy matching de check runs con stemming) → S5 Coverage Mapper (resolución multi-lenguaje de test files) → S8 Executor Adapter (wrapper de v1 results) → S6 Diff Analyzer (primer signal LLM, prompt engineering) → S7 Gap Analyzer (segundo LLM signal, severity-based scoring) → S9 Pipeline v2 (wiring de signals al reporter, nuevo formato de comentario con score) → S10 Free/Pro gating (weight 0 para signals Pro sin LLM config).
+
+**Decisiones clave:** (1) Signal types en `packages/core` (pure functions), signal collectors en `packages/github` (I/O). (2) `createSignal()` factory con weight defaults del `SIGNAL_WEIGHTS` map. (3) Failure cap: cualquier signal con `passed: false` caps el score a 70. (4) BYOLLM: OpenAI SDK con diferentes baseURLs para Groq/OpenAI/Ollama — un solo code path. (5) Pro gating via `weight: 0` — el score engine ya excluye weight 0, así que los placeholders Pro no afectan el cálculo. (6) Pipeline error → skip score (usar v1 conclusion para safety).
+
+**Obstáculos:** (1) CI Bridge fuzzy matching: `npm run build` no matcheaba contra check run `build` porque el substring match era unidireccional — fix: bidireccional + token overlap con threshold 1 para code blocks vs 2 para text. (2) Stemming naive: `"linting".replace(/ting$/)` producía "lin" en vez de "lint" — el suffix `ting` matcheaba antes que `ing`. (3) El agente de S9 creó la rama con nombre diferente (`feat/section-9-score-reporter` vs `feat/v2-pipeline-integration`). (4) CodeRabbit consistentemente marcaba "signals collected but not consumed" como Major en cada PR — respondimos que era intencional (phased rollout, S9 wirea).
+
+**Resultado:** v2 MVP completo. 6 signals, score 0-100, Free/Pro tiers, BYOLLM, nuevo formato de PR comment con score header + signal table + v1 results colapsables. 740 tests (196 nuevos), 26 test files, todo en main.
+
+**Aprendido:** (1) Plan-de-planes funciona — cada sección tenía scope claro y dependencies explícitas. (2) Los signals puros (no-LLM) se implementan muy rápido (~15 min cada uno). (3) CodeRabbit es muy consistente en sus patterns — prompt injection y "unused signals" aparecieron en cada PR con LLM signals. (4) El patrón `createSignal()` + `weight: 0` para gating es elegante — reutiliza infraestructura existente sin code paths especiales.
