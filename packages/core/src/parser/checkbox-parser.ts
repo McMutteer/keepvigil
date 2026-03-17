@@ -14,6 +14,27 @@ const CHECKBOX_PATTERN = /^(\s*)([-*])\s*\[([ xX])\]\s+(.*)$/;
 const SPACES_PER_INDENT = 2;
 
 /**
+ * Lines that should NOT be treated as multi-line continuations.
+ * These are boilerplate footers commonly appended after the last checkbox.
+ */
+const BOILERPLATE_PATTERNS = [
+  /generated with \[?claude/i,
+  /generated with \[?cursor/i,
+  /generated with \[?copilot/i,
+  /generated with \[?coderabbit/i,
+  /^🤖\s/,
+  /^<sub>/i,
+  /^<!--/,
+  /^---\s*$/,
+];
+
+/** Check if a line is PR boilerplate that should not be appended to the last item */
+function isBoilerplate(line: string): boolean {
+  const trimmed = line.trim();
+  return BOILERPLATE_PATTERNS.some((p) => p.test(trimmed));
+}
+
+/**
  * Parse checkbox items from the body of a test plan section.
  *
  * Handles:
@@ -42,7 +63,7 @@ export function parseCheckboxItems(sectionBody: string): TestPlanItem[] {
         indent,
         hints,
       });
-    } else if (items.length > 0 && line.trim() !== "" && !line.match(/^#{1,6}\s+/)) {
+    } else if (items.length > 0 && line.trim() !== "" && !line.match(/^#{1,6}\s+/) && !isBoilerplate(line)) {
       // Multi-line continuation: append to previous item
       const prev = items[items.length - 1];
       prev.raw += `\n${line}`;
