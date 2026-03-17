@@ -218,6 +218,10 @@ export async function reportResults(context: ReportContext): Promise<void> {
 
   // Secondary — catch errors so a comment failure doesn't re-trigger the whole job
   try {
+    // Detect first-run: no existing Vigil comment means this is the first time for this repo/PR
+    const existingCommentId = await findExistingComment(context.octokit, context.owner, context.repo, context.pullNumber);
+    const isFirstRun = !existingCommentId;
+
     const commentBody = buildCommentBody(
       items,
       summary,
@@ -227,14 +231,24 @@ export async function reportResults(context: ReportContext): Promise<void> {
       context.configWarnings,
       context.retryItemIds,
       confidenceScore,
+      isFirstRun,
     );
-    await postOrUpdateComment(
-      context.octokit,
-      context.owner,
-      context.repo,
-      context.pullNumber,
-      commentBody,
-    );
+
+    if (existingCommentId) {
+      await context.octokit.rest.issues.updateComment({
+        owner: context.owner,
+        repo: context.repo,
+        comment_id: existingCommentId,
+        body: commentBody,
+      });
+    } else {
+      await context.octokit.rest.issues.createComment({
+        owner: context.owner,
+        repo: context.repo,
+        issue_number: context.pullNumber,
+        body: commentBody,
+      });
+    }
   } catch (err) {
     log.error({ err }, "Failed to post/update PR comment");
   }
