@@ -101,7 +101,10 @@ export async function executeAssertionItem(
 
   // Truncate large files
   if (Buffer.byteLength(content, "utf-8") > MAX_FILE_BYTES) {
-    content = content.slice(0, MAX_FILE_BYTES) + "\n\n...(truncated)";
+    // Byte-safe truncation: encode, slice bytes, decode back
+    const truncated = Buffer.from(content, "utf-8").subarray(0, MAX_FILE_BYTES).toString("utf-8");
+    // Remove potential partial multi-byte char at the end
+    content = truncated.replace(/[\uFFFD]$/, "") + "\n\n...(truncated)";
   }
 
   // Ask LLM to verify the assertion

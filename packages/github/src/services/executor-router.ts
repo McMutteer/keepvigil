@@ -117,10 +117,13 @@ const EXECUTOR_REGISTRY = new Map<ExecutorType, ExecutorFn>([
     "assertion",
     (item, ctx) => {
       if (!ctx.repoPath) return Promise.resolve(noRepoResult(item.item.id));
+      const timeoutMs = ctx.vigiConfig?.timeouts?.assertion
+        ? ctx.vigiConfig.timeouts.assertion * 1000
+        : 30_000;
       return executeAssertionItem(item, {
         repoPath: ctx.repoPath,
         llm: ctx.llm,
-        timeoutMs: 30_000,
+        timeoutMs,
       });
     },
   ],

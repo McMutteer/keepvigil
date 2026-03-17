@@ -308,6 +308,8 @@ export interface VigilConfig {
     api?: number;
     /** Browser executor timeout in seconds (default: 60) */
     browser?: number;
+    /** Assertion executor timeout in seconds (default: 30) */
+    assertion?: number;
   };
   /** Categories to skip entirely — items are returned as skipped, not executed */
   skip?: {
