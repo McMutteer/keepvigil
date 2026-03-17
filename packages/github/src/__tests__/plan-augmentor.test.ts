@@ -183,5 +183,15 @@ describe("augmentPlan", () => {
       expect(signal.name).toBe("Plan Augmentation");
       expect(signal.requiresLLM).toBe(true);
     });
+
+    it("has weight 15", async () => {
+      const signal = await augmentPlan({
+        diff: "",
+        classifiedItems: [makeItem("tp-0", "test")],
+        llm: makeLLM(["unused"]),
+        repoPath: "/tmp/repo",
+      });
+      expect(signal.weight).toBe(15);
+    });
   });
 });

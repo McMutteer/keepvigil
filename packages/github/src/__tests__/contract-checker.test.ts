@@ -147,5 +147,10 @@ describe("checkContracts", () => {
       expect(signal.name).toBe("Contract Check");
       expect(signal.requiresLLM).toBe(true);
     });
+
+    it("has weight 10", async () => {
+      const signal = await checkContracts({ diff: "", llm: makeLLM("unused") });
+      expect(signal.weight).toBe(10);
+    });
   });
 });
