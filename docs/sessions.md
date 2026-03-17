@@ -265,3 +265,27 @@ related: [2026-03-17-landing-to-portal]
 **Resultado:** S1-S6 del GTM master plan completos. Stripe registrado, productos creados, billing infrastructure mergeada (PRs #50, #51). 836 tests passing. Falta: LICENSE, repo público, Marketplace.
 
 **Aprendido:** (1) Siempre full paths en test plans — Vigil nos lo confirmó en carne propia. (2) El Stripe Gateway está en miia-03, no en el server de Vigil — la admin key se saca del container directamente. (3) `timingSafeEqual` obligatorio para HMAC verification — CodeRabbit tiene razón. (4) Variable shadowing es invisible hasta que alguien lo reporta — `plan` (subscription tier) vs `plan` (parsed test plan) causó confusión silenciosa. (5) El go-to-market doc + master plan son los artefactos más valiosos para handoff entre agentes.
+
+---
+
+---
+id: 2026-03-17-legal-research-and-plan
+type: research
+project: vigil
+branch: main
+pr: null
+date: 2026-03-17
+tags: [legal, terms, privacy, i18n, nqual5, miia-reference, gdpr, arco]
+summary: "Investigated MIIA legal docs as template for Vigil, mapped 20 sections terms + 16 sections privacy, created adaptation plan with i18n companion."
+related: [2026-03-17-siegekit-analysis-to-v3-signals]
+---
+
+### La Armadura Legal
+
+**Hilo:** Vigil tiene terms y privacy placeholder de 6 secciones. MIIA tiene documentos de produccion con 20+16 secciones (GDPR, ARCO, arbitraje, indemnizacion). Misma empresa (Nqual5), diferente producto — la base legal se reutiliza.
+
+**Lo que paso:** Descargamos los terms de mi-ia.ai extrayendo el markdown del JS chunk de Next.js (fetch /terms-and-conditions.md). El privacy daba 404 pero el usuario tenia copias locales de ambos. Mapeamos seccion por seccion: ~60% se reutiliza directo (empresa, jurisdiccion, terminacion, garantias, indemnizacion, arbitraje), ~40% necesita reescritura (descripcion de servicio, datos que accede, propiedad intelectual dual MIT+hosted, pagos por suscripcion). Decision clave: espanol como version vinculante, ingles cuando se implemente i18n para toda la landing.
+
+**Resultado:** Plan completo en `docs/plans/legal-and-i18n.md` con mapping de secciones, decisiones tomadas, y orden de implementacion. No se toco codigo — todo investigacion y planeacion.
+
+**Aprendido:** Para adaptar legales entre productos de la misma empresa, la estructura legal (jurisdiccion, arbitraje, indemnizacion, ARCO) es portable al 100%. Lo que cambia es la descripcion del servicio, los datos que se procesan, y el modelo de cobro. No reinventar — adaptar.
