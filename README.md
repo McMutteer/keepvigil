@@ -74,7 +74,7 @@ Vigil evaluates every PR across 9 signals. Each contributes to a weighted score.
 | 50–79 | Review needed | Neutral |
 | 0–49 | Caution | Failure |
 
-Any deterministic signal failure (CI, credentials, execution) caps the score at 70 — one hard failure means it's never "safe to merge."
+Any deterministic signal failure (CI, credentials, execution, coverage) caps the score at 70 — one hard failure means it's never "safe to merge."
 
 ---
 
