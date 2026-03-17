@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ScrollReveal } from "../scroll-reveal";
+import { EmailCapture } from "../email-capture";
 
 export function CtaFooter() {
   return (
@@ -20,6 +21,9 @@ export function CtaFooter() {
             >
               Install on GitHub
             </a>
+
+            {/* Email capture */}
+            <EmailCapture />
           </div>
         </ScrollReveal>
       </section>
