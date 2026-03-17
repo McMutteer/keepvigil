@@ -25,49 +25,111 @@ export function CtaFooter() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-6">
-        <div className="mx-auto max-w-[1200px] px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <a href="#" className="flex items-center gap-2">
-            <Image
-              src="/brand/icon.svg"
-              alt=""
-              width={20}
-              height={20}
-              className="w-5 h-5 opacity-60"
-            />
-            <span className="text-sm text-text-muted">vigil</span>
-          </a>
+      <footer className="border-t border-white/[0.06] py-12 sm:py-16">
+        <div className="mx-auto max-w-[1200px] px-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12">
+            {/* Logo column */}
+            <div className="col-span-2 sm:col-span-1">
+              <a href="#" className="flex items-center gap-2 mb-4">
+                <Image
+                  src="/brand/icon.svg"
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="w-5 h-5 opacity-60"
+                />
+                <span className="text-sm text-text-muted">vigil</span>
+              </a>
+            </div>
 
-          <div className="flex items-center gap-6 text-sm text-text-muted">
-            <a
-              href="https://github.com/McMutteer/keepvigil"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-text-secondary transition-colors"
-            >
-              GitHub
-            </a>
-            <a
-              href="https://github.com/McMutteer/keepvigil#readme"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-text-secondary transition-colors"
-            >
-              Documentation
-            </a>
-            <a
-              href="https://github.com/McMutteer/keepvigil/blob/main/LICENSE"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-text-secondary transition-colors"
-            >
-              MIT License
-            </a>
+            {/* Product */}
+            <div>
+              <h3 className="text-xs font-medium uppercase tracking-wider text-text-primary mb-4">
+                Product
+              </h3>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <a href="/#signals" className="text-text-muted hover:text-text-secondary transition-colors">
+                    Signals
+                  </a>
+                </li>
+                <li>
+                  <a href="/#pricing" className="text-text-muted hover:text-text-secondary transition-colors">
+                    Pricing
+                  </a>
+                </li>
+                <li>
+                  <a href="/docs/byollm" className="text-text-muted hover:text-text-secondary transition-colors">
+                    BYOLLM
+                  </a>
+                </li>
+                <li>
+                  <a href="/docs/security" className="text-text-muted hover:text-text-secondary transition-colors">
+                    Security
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h3 className="text-xs font-medium uppercase tracking-wider text-text-primary mb-4">
+                Resources
+              </h3>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <a href="/docs/getting-started" className="text-text-muted hover:text-text-secondary transition-colors">
+                    Documentation
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/McMutteer/keepvigil"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-text-muted hover:text-text-secondary transition-colors"
+                  >
+                    GitHub
+                  </a>
+                </li>
+                <li>
+                  <a href="/docs/writing-test-plans" className="text-text-muted hover:text-text-secondary transition-colors">
+                    Writing Test Plans
+                  </a>
+                </li>
+                <li>
+                  <a href="/about" className="text-text-muted hover:text-text-secondary transition-colors">
+                    About
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h3 className="text-xs font-medium uppercase tracking-wider text-text-primary mb-4">
+                Legal
+              </h3>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <a href="/privacy" className="text-text-muted hover:text-text-secondary transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="/terms" className="text-text-muted hover:text-text-secondary transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <p className="text-xs text-text-muted">
-            © 2026 Vigil. Open source under MIT.
-          </p>
+          <div className="mt-12 pt-6 border-t border-white/[0.06]">
+            <p className="text-xs text-text-muted">
+              &copy; 2026 Vigil. Open source under MIT.
+            </p>
+          </div>
         </div>
       </footer>
     </>

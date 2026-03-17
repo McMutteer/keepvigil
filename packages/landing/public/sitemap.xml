@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://keepvigil.dev</loc><lastmod>2026-03-17</lastmod><priority>1.0</priority></url>
+  <url><loc>https://keepvigil.dev/about</loc><lastmod>2026-03-17</lastmod><priority>0.7</priority></url>
+  <url><loc>https://keepvigil.dev/privacy</loc><lastmod>2026-03-17</lastmod><priority>0.3</priority></url>
+  <url><loc>https://keepvigil.dev/terms</loc><lastmod>2026-03-17</lastmod><priority>0.3</priority></url>
+  <url><loc>https://keepvigil.dev/docs/getting-started</loc><lastmod>2026-03-17</lastmod><priority>0.9</priority></url>
+  <url><loc>https://keepvigil.dev/docs/writing-test-plans</loc><lastmod>2026-03-17</lastmod><priority>0.8</priority></url>
+  <url><loc>https://keepvigil.dev/docs/how-it-works</loc><lastmod>2026-03-17</lastmod><priority>0.8</priority></url>
+  <url><loc>https://keepvigil.dev/docs/configuration</loc><lastmod>2026-03-17</lastmod><priority>0.8</priority></url>
+  <url><loc>https://keepvigil.dev/docs/signals</loc><lastmod>2026-03-17</lastmod><priority>0.8</priority></url>
+  <url><loc>https://keepvigil.dev/docs/signals/ci-bridge</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/signals/credential-scan</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/signals/test-execution</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/signals/coverage-mapper</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/signals/assertion-verifier</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/signals/diff-analysis</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/signals/gap-analysis</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/scoring</loc><lastmod>2026-03-17</lastmod><priority>0.7</priority></url>
+  <url><loc>https://keepvigil.dev/docs/commands</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/byollm</loc><lastmod>2026-03-17</lastmod><priority>0.7</priority></url>
+  <url><loc>https://keepvigil.dev/docs/notifications</loc><lastmod>2026-03-17</lastmod><priority>0.5</priority></url>
+  <url><loc>https://keepvigil.dev/docs/shell-allowlist</loc><lastmod>2026-03-17</lastmod><priority>0.5</priority></url>
+  <url><loc>https://keepvigil.dev/docs/security</loc><lastmod>2026-03-17</lastmod><priority>0.7</priority></url>
+</urlset>

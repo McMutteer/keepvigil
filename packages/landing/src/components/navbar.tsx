@@ -43,6 +43,12 @@ export function Navbar() {
             Docs
           </a>
           <a
+            href="/about"
+            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-[6px] text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
+          >
+            About
+          </a>
+          <a
             href="https://github.com/McMutteer/keepvigil"
             target="_blank"
             rel="noopener noreferrer"
