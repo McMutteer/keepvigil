@@ -197,7 +197,7 @@ export function buildResultsTable(items: ReportItem[]): string {
 
 /** Build a single item's evidence section as a <details> block. */
 export function buildEvidenceBlock(item: ReportItem): string {
-  if (item.verdict === "passed" || item.verdict === "skipped") return "";
+  if (item.verdict === "passed" || item.verdict === "skipped" || item.verdict === "infra-skipped") return "";
 
   const icon = item.verdict === "failed" || item.verdict === "error" ? "x" : "warning";
   const label = `${item.classified.item.id}: ${truncate(escapeHtml(item.classified.item.text), 60)}`;
@@ -352,6 +352,10 @@ function isNeedsReview(item: ReportItem): boolean {
 function verdictToStatus(item: ReportItem): string {
   if (item.verdict === "skipped" && item.result?.evidence?.notRetried) return ":next_track_button: Not retried";
   if (item.verdict === "skipped") return ":construction: Human";
+  if (item.verdict === "infra-skipped") {
+    const reason = typeof item.result?.evidence?.reason === "string" ? item.result.evidence.reason : "Infrastructure limitation";
+    return `:next_track_button: Skipped — ${reason}`;
+  }
   if (item.verdict === "passed") return ":white_check_mark: Passed";
   if (isNeedsReview(item)) return ":warning: Needs Review";
   if (item.verdict === "error") return ":x: Error";

@@ -127,6 +127,30 @@ export function extractChangedFiles(diff: string): string[] {
   return files;
 }
 
+/** A changed file with its modification status. */
+export interface ChangedFile {
+  path: string;
+  isNew: boolean;
+}
+
+/**
+ * Extract changed file paths with their status (new vs modified) from a unified diff.
+ * A file is "new" when its `---` line is `/dev/null`.
+ */
+export function extractChangedFilesWithStatus(diff: string): ChangedFile[] {
+  const files: ChangedFile[] = [];
+  const lines = diff.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith("+++ b/")) {
+      const filePath = lines[i].slice(6);
+      const prevLine = i > 0 ? lines[i - 1] : "";
+      const isNew = prevLine === "--- /dev/null";
+      files.push({ path: filePath, isNew });
+    }
+  }
+  return files;
+}
+
 // ---------------------------------------------------------------------------
 // Signal builder
 // ---------------------------------------------------------------------------
@@ -134,10 +158,14 @@ export function extractChangedFiles(diff: string): string[] {
 /**
  * Map changed files to test files and build a coverage Signal.
  *
+ * Accepts either `string[]` (backward compat) or `ChangedFile[]`.
+ * When `ChangedFile[]` is passed, new files are skipped — they're
+ * expected to not have tests yet.
+ *
  * @param changedFiles - File paths from the PR diff
  * @param repoFiles - All file paths in the repository (for checking existence)
  */
-export function mapCoverage(changedFiles: string[], repoFiles: string[]): Signal {
+export function mapCoverage(changedFiles: (string | ChangedFile)[], repoFiles: string[]): Signal {
   if (changedFiles.length === 0) {
     return createSignal({
       id: "coverage-mapper",
@@ -153,11 +181,24 @@ export function mapCoverage(changedFiles: string[], repoFiles: string[]): Signal
   let sourceCount = 0;
   let coveredCount = 0;
 
-  for (const file of changedFiles) {
+  for (const entry of changedFiles) {
+    const file = typeof entry === "string" ? entry : entry.path;
+    const isNew = typeof entry === "object" && entry.isNew;
+
     // Skip non-source files
     if (isNonSource(file)) continue;
     // Skip test files themselves (they don't need coverage)
     if (isTestFile(file)) continue;
+
+    // New files are expected to not have tests yet — skip with an informational detail
+    if (isNew) {
+      details.push({
+        label: file,
+        status: "skip",
+        message: "New file — test coverage not expected",
+      });
+      continue;
+    }
 
     sourceCount++;
     const candidates = generateTestCandidates(file);

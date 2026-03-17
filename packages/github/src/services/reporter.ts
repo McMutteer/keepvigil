@@ -12,7 +12,7 @@ const log = createLogger("reporter");
 // ---------------------------------------------------------------------------
 
 /** Status of a single item after matching classification with execution. */
-export type ItemVerdict = "passed" | "failed" | "skipped" | "error";
+export type ItemVerdict = "passed" | "failed" | "skipped" | "error" | "infra-skipped";
 
 /** Check Run conclusion. */
 export type CheckConclusion = "success" | "failure" | "neutral";
@@ -79,6 +79,12 @@ export function buildReportItems(
       return { classified, result: null, verdict: "error" as const };
     }
 
+    // Infrastructure skip: infra limitation prevented execution (no repo, no preview, allowlist rejection)
+    const evidence = result.evidence as Record<string, unknown>;
+    if (evidence.infrastructureSkip) {
+      return { classified, result, verdict: "infra-skipped" as const };
+    }
+
     return {
       classified,
       result,
@@ -98,9 +104,13 @@ export function computeSummary(items: ReportItem[]): ReportSummary {
   let skipped = 0;
   let needsReview = 0;
 
+  let infraSkipped = 0;
+
   for (const item of items) {
     if (item.verdict === "skipped") {
       skipped++;
+    } else if (item.verdict === "infra-skipped") {
+      infraSkipped++;
     } else if (item.verdict === "passed") {
       passed++;
     } else {
@@ -112,6 +122,9 @@ export function computeSummary(items: ReportItem[]): ReportSummary {
       }
     }
   }
+
+  // Include infra-skipped in the skipped bucket for summary totals
+  skipped += infraSkipped;
 
   return { total: items.length, passed, failed, skipped, needsReview };
 }

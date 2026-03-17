@@ -123,6 +123,14 @@ describe("buildReportItems", () => {
     expect(items[1].verdict).toBe("failed");
     expect(items[2].verdict).toBe("skipped");
   });
+
+  it("maps infrastructure skip results to verdict infra-skipped", () => {
+    const classified = [makeClassified("shell test", { id: "tp-0" })];
+    const results = [makeResult("tp-0", true, { skipped: true, infrastructureSkip: true, reason: "No repo" })];
+    const items = buildReportItems(classified, results);
+
+    expect(items[0].verdict).toBe("infra-skipped");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -152,6 +160,15 @@ describe("computeSummary", () => {
 
   it("returns all zeros for empty items", () => {
     expect(computeSummary([])).toEqual({ total: 0, passed: 0, failed: 0, skipped: 0, needsReview: 0 });
+  });
+
+  it("counts infra-skipped items in the skipped bucket", () => {
+    const items: ReportItem[] = [
+      { classified: makeClassified("a", { id: "tp-0" }), result: makeResult("tp-0", true), verdict: "passed" },
+      { classified: makeClassified("b", { id: "tp-1" }), result: makeResult("tp-1", true, { skipped: true, infrastructureSkip: true }), verdict: "infra-skipped" },
+    ];
+    const summary = computeSummary(items);
+    expect(summary).toEqual({ total: 2, passed: 1, failed: 0, skipped: 1, needsReview: 0 });
   });
 });
 
@@ -228,6 +245,22 @@ describe("determineConclusion", () => {
       { classified: makeClassified("a", { confidence: "DETERMINISTIC" }), result: null, verdict: "error" },
     ];
     expect(determineConclusion(items)).toBe("failure");
+  });
+
+  it("excludes infra-skipped items from conclusion — treats them like skipped", () => {
+    const items: ReportItem[] = [
+      { classified: makeClassified("a", { confidence: "DETERMINISTIC" }), result: makeResult("tp-0", true, { skipped: true, infrastructureSkip: true }), verdict: "infra-skipped" },
+    ];
+    // Only infra-skipped items → all filtered out → neutral
+    expect(determineConclusion(items)).toBe("neutral");
+  });
+
+  it("does not count infra-skipped as failure even with DETERMINISTIC confidence", () => {
+    const items: ReportItem[] = [
+      { classified: makeClassified("a", { id: "tp-0", confidence: "DETERMINISTIC" }), result: makeResult("tp-0", true), verdict: "passed" },
+      { classified: makeClassified("b", { id: "tp-1", confidence: "DETERMINISTIC" }), result: makeResult("tp-1", true, { skipped: true, infrastructureSkip: true }), verdict: "infra-skipped" },
+    ];
+    expect(determineConclusion(items)).toBe("success");
   });
 });
 
@@ -387,6 +420,19 @@ describe("buildResultsTable", () => {
     expect(table).toContain(":warning: Needs Review");
     expect(table).toContain(":construction: Human");
   });
+
+  it("shows infra-skipped status with reason", () => {
+    const items: ReportItem[] = [
+      {
+        classified: makeClassified("e", { id: "tp-4" }),
+        result: makeResult("tp-4", true, { skipped: true, infrastructureSkip: true, reason: "No repo cloned" }),
+        verdict: "infra-skipped",
+      },
+    ];
+    const table = buildResultsTable(items);
+    expect(table).toContain(":next_track_button: Skipped");
+    expect(table).toContain("No repo cloned");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -399,6 +445,15 @@ describe("buildEvidenceBlock", () => {
       classified: makeClassified("test"),
       result: makeResult("tp-0", true),
       verdict: "passed",
+    };
+    expect(buildEvidenceBlock(item)).toBe("");
+  });
+
+  it("returns empty string for infra-skipped items", () => {
+    const item: ReportItem = {
+      classified: makeClassified("test"),
+      result: makeResult("tp-0", true, { skipped: true, infrastructureSkip: true }),
+      verdict: "infra-skipped",
     };
     expect(buildEvidenceBlock(item)).toBe("");
   });
