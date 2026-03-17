@@ -17,7 +17,7 @@ const STEPS = [
     number: 3,
     title: "Get your score",
     description:
-      "Vigil runs 8 signals, calculates a confidence score, and posts results directly on the PR.",
+      "Vigil runs 9 signals, calculates a confidence score, and posts results directly on the PR.",
   },
 ];
 

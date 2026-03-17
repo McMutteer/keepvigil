@@ -17,7 +17,7 @@ export default function CiBridgePage() {
         CI Bridge
       </h1>
       <p className="text-text-secondary mb-8">
-        Weight: 30 &middot; Free tier
+        Weight: 25 &middot; Free tier
       </p>
 
       <p className="text-text-secondary leading-relaxed mb-4">

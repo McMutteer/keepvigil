@@ -45,7 +45,7 @@ Parse test plan (extract checkboxes from PR body)
 Classify items (rule-based → LLM fallback)
     │
     ▼
-Collect signals (8 independent checks)
+Collect signals (9 independent checks)
     │
     ▼
 Calculate confidence score (0-100 weighted average)
@@ -163,7 +163,7 @@ Post results (PR comment + GitHub Check Run)`}
         Step 3: Collect Signals
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Eight independent signals run in parallel. Each signal examines a
+        Nine independent signals run in parallel. Each signal examines a
         different aspect of the PR and produces a score from 0 to 100, a
         pass/fail status, and detailed evidence explaining its findings.
       </p>
@@ -185,32 +185,42 @@ Post results (PR comment + GitHub Check Run)`}
           <tbody>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">CI Bridge</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">30%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">25%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">CI pipeline status (GitHub Actions, etc.)</td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Credential Scan</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">25%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">20%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Leaked secrets, API keys, tokens in the diff</td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Test Execution</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">20%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Shell commands, API calls, browser tests</td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Coverage Mapper</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10%</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Changed files covered by test plan items</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Plan Augmentor</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM generates and verifies items the test plan missed</td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Assertion Verifier</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">20%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15%*</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">File contents match claimed behavior</td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Diff vs Claims</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Contract Checker</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM compares API response shapes vs frontend interfaces</td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Coverage Mapper</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Changed files covered by test plan items</td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Diff vs Claims</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM compares diff against test plan claims</td>
             </tr>
             <tr>
@@ -221,6 +231,11 @@ Post results (PR comment + GitHub Check Run)`}
           </tbody>
         </table>
       </div>
+      <p className="text-xs text-text-muted mb-4">
+        * Assertion Verifier and Test Execution share the executor weight — the
+        combined 15% is distributed based on which items are present in the test
+        plan.
+      </p>
       <p className="text-text-secondary leading-relaxed mb-4">
         See the{" "}
         <Link href="/docs/signals" className="text-accent hover:underline">
@@ -254,8 +269,8 @@ Post results (PR comment + GitHub Check Run)`}
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
         A failure cap applies: if any deterministic signal (CI Bridge,
-        Credential Scan, Test Execution) fails critically, the score is capped
-        at 70 regardless of other results. See{" "}
+        Credential Scan, Test Execution, Coverage Mapper) fails critically, the
+        score is capped at 70 regardless of other results. See{" "}
         <Link href="/docs/scoring" className="text-accent hover:underline">
           Confidence Score
         </Link>{" "}

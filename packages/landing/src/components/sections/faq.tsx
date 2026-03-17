@@ -7,7 +7,7 @@ const FAQ_ITEMS = [
   {
     question: "Is Vigil free for open source?",
     answer:
-      "Yes. The Free tier includes 5 signals, unlimited PRs, and unlimited public repos. No credit card required.",
+      "Yes. The Free tier includes 6 signals, unlimited PRs, and unlimited public repos. No credit card required.",
   },
   {
     question: "Does Vigil work with private repos?",

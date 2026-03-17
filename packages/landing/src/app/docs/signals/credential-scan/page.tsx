@@ -18,7 +18,7 @@ export default function CredentialScanPage() {
         Credential Scan
       </h1>
       <p className="text-text-secondary mb-8">
-        Weight: 25 &middot; Free tier
+        Weight: 20 &middot; Free tier
       </p>
 
       <p className="text-text-secondary leading-relaxed mb-4">

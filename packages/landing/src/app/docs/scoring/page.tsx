@@ -44,23 +44,25 @@ export default function ScoringPage() {
         Worked Example
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Consider a PR where all eight signals are active. Here is how the final
+        Consider a PR where all nine signals are active. Here is how the final
         score is calculated:
       </p>
       <CodeBlock
         filename="example calculation"
         code={`Signal              Score   Weight   Contribution
 ─────────────────   ─────   ──────   ────────────
-CI Bridge             100   x  30   =       3000
-Credential Scan       100   x  25   =       2500
-Test Execution         67   x  20   =       1340
-Coverage Mapper        75   x  10   =        750
-Diff vs Claims         85   x  10   =        850
+CI Bridge             100   x  25   =       2500
+Credential Scan       100   x  20   =       2000
+Test Execution         67   x  15   =       1005
+Plan Augmentor         80   x  15   =       1200
+Contract Checker       90   x  10   =        900
+Coverage Mapper        75   x   5   =        375
+Diff vs Claims         85   x   5   =        425
 Gap Analysis           90   x   5   =        450
                                     ────────────
-Total                          100         8890
+Total                          100         8855
 
-Score = 8890 / 100 = 88.9 → 89`}
+Score = 8855 / 100 = 88.6 → 89`}
       />
       <p className="text-text-secondary leading-relaxed mb-4">
         The Assertion Verifier shares weight with Test Execution. When both

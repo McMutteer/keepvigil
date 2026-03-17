@@ -23,8 +23,8 @@ export default function ByollmPage() {
       </p>
 
       <Callout variant="pro" title="Pro Tier Signals">
-        BYOLLM unlocks Diff vs Claims and Gap Analysis signals. Without it,
-        Vigil runs Free tier signals only.
+        BYOLLM unlocks Diff vs Claims, Gap Analysis, and Contract Checker
+        signals. Without it, Vigil runs Free tier signals only.
       </Callout>
 
       {/* Supported Providers */}
@@ -144,12 +144,14 @@ export default function ByollmPage() {
         Cost Estimate
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Pro-tier signals make 2-4 LLM calls per Vigil run:
+        Pro-tier signals make 3-6 LLM calls per Vigil run:
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>Item classification (fallback for ambiguous items)</li>
         <li>Diff vs Claims analysis</li>
         <li>Gap analysis</li>
+        <li>Plan Augmentor (generates and verifies missing test items)</li>
+        <li>Contract Checker (validates API/frontend contract compatibility)</li>
         <li>Assertion verification (for file-based checks)</li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
@@ -195,6 +197,14 @@ export default function ByollmPage() {
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">For file verification — reads source files and validates claims</td>
             </tr>
             <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Plan Augmentor</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Always — generates missing test items and verifies them (Free tier uses platform key, Pro uses BYOLLM)</td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Contract Checker</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Pro only — detects API/frontend contract mismatches</td>
+            </tr>
+            <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Classifier</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Fallback only — used when rule-based matching is ambiguous</td>
             </tr>
@@ -221,6 +231,9 @@ export default function ByollmPage() {
         </li>
         <li>
           <strong className="text-text-primary">Coverage Mapper</strong> — checks if changed files are covered by the test plan
+        </li>
+        <li>
+          <strong className="text-text-primary">Plan Augmentor</strong> — generates and verifies missing test items using the platform key
         </li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
