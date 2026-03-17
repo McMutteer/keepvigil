@@ -28,13 +28,15 @@ export interface PlanAugmentorOptions {
   classifiedItems: ClassifiedItem[];
   llm: LLMClient;
   repoPath: string | null;
+  /** When true, skip cross-file contract items (Contract Checker handles those better) */
+  contractCheckerActive?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Prompts
 // ---------------------------------------------------------------------------
 
-const GENERATE_PROMPT = `You are a senior code reviewer. Given a PR diff and its existing test plan, generate 3-5 ADDITIONAL verification items that the test plan MISSED.
+const GENERATE_PROMPT_BASE = `You are a senior code reviewer. Given a PR diff and its existing test plan, generate 3-5 ADDITIONAL verification items that the test plan MISSED.
 
 Focus on these categories (in priority order):
 
@@ -44,7 +46,21 @@ Focus on these categories (in priority order):
 
 3. **Edge cases**: Double submission guards, cleanup on unmount, error responses, empty state handling.
 
-4. **Security**: Input validation, authorization checks scoped to correct user/tenant.
+4. **Security**: Input validation, authorization checks scoped to correct user/tenant.`;
+
+const GENERATE_PROMPT_NO_CONTRACTS = `You are a senior code reviewer. Given a PR diff and its existing test plan, generate 3-5 ADDITIONAL verification items that the test plan MISSED.
+
+Focus on these categories (in priority order):
+
+1. **Logic correctness**: Look for default values, fallback behavior, conditional branches. If code does \`x || "DEFAULT"\`, ask whether DEFAULT is appropriate for all cases.
+
+2. **Edge cases**: Double submission guards, cleanup on unmount, error responses, empty state handling.
+
+3. **Security**: Input validation, authorization checks scoped to correct user/tenant.
+
+Do NOT generate cross-file contract items (e.g., "interface in file A matches response in file B"). These are already verified by a dedicated Contract Checker signal.`;
+
+const GENERATE_PROMPT_SUFFIX = `
 
 Rules:
 - Each item MUST reference a specific file path from the diff
@@ -241,17 +257,21 @@ function neutralSignal(message: string): Signal {
  * 2. Each item is verified against the actual codebase via assertion executor pattern
  */
 export async function augmentPlan(options: PlanAugmentorOptions): Promise<Signal> {
-  const { diff, classifiedItems, llm, repoPath } = options;
+  const { diff, classifiedItems, llm, repoPath, contractCheckerActive } = options;
 
   if (!diff.trim()) return neutralSignal("Empty diff — nothing to augment");
   if (classifiedItems.length === 0) return neutralSignal("No test plan to augment");
   if (!repoPath) return neutralSignal("No repo available for verification");
 
+  // Select prompt variant: skip contracts when Contract Checker handles them
+  const promptBase = contractCheckerActive ? GENERATE_PROMPT_NO_CONTRACTS : GENERATE_PROMPT_BASE;
+  const systemPrompt = promptBase + GENERATE_PROMPT_SUFFIX;
+
   // Phase 1: Generate augmented items
   let generateResponse: string;
   try {
     generateResponse = await llm.chat({
-      system: GENERATE_PROMPT,
+      system: systemPrompt,
       user: buildGeneratePrompt(diff, classifiedItems),
       timeoutMs: TIMEOUT_MS,
     });
@@ -261,10 +281,23 @@ export async function augmentPlan(options: PlanAugmentorOptions): Promise<Signal
     return neutralSignal("LLM generation unavailable");
   }
 
-  const augmentedItems = parseGenerateResponse(generateResponse);
+  let augmentedItems = parseGenerateResponse(generateResponse);
   if (!augmentedItems || augmentedItems.length === 0) {
     log.warn("Plan augmentor received invalid or empty response from LLM");
     return neutralSignal("LLM returned no augmented items");
+  }
+
+  // Safety net: filter out contract items when Contract Checker is active
+  // (even if LLM ignores the prompt instruction)
+  if (contractCheckerActive) {
+    const before = augmentedItems.length;
+    augmentedItems = augmentedItems.filter((i) => i.category !== "contract");
+    if (before !== augmentedItems.length) {
+      log.info({ filtered: before - augmentedItems.length }, "Filtered contract items — Contract Checker handles those");
+    }
+    if (augmentedItems.length === 0) {
+      return neutralSignal("All generated items were contracts (handled by Contract Checker)");
+    }
   }
 
   log.info({ count: augmentedItems.length }, "Generated augmented items");
