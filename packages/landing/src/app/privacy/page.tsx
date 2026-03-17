@@ -50,8 +50,8 @@ export default function PrivacyPage() {
         Última actualización: 17 de marzo de 2026
       </p>
       <p className="text-xs text-text-muted mb-12 italic">
-        La versión en español es la versión oficial y vinculante. An English
-        translation will be available soon.
+        La versión en español es la versión oficial y vinculante. Pronto estará
+        disponible una traducción al inglés.
       </p>
 
       {/* --- S1: Introducción --- */}
@@ -150,9 +150,12 @@ export default function PrivacyPage() {
           Estos datos son procesados exclusivamente en memoria y NO son
           almacenados.
         </strong>{" "}
-        Se descartan tras completar el análisis del PR. Ni Vigil ni sus
-        proveedores de LLM utilizan el código del Usuario para entrenar, refinar
-        o influenciar modelos de inteligencia artificial.
+        Se descartan tras completar el análisis del PR. Ni Vigil ni su
+        proveedor de LLM por defecto (Groq) utilizan el código del Usuario para
+        entrenar, refinar o influenciar modelos de inteligencia artificial.
+        Cuando el Usuario configura BYOLLM, el tratamiento de los datos por
+        parte del proveedor elegido se rige por los términos y políticas de
+        dicho proveedor.
       </P>
 
       <Sub>3.3 Metadata almacenada</Sub>
@@ -436,8 +439,14 @@ export default function PrivacyPage() {
         </Li>
       </UL>
       <P>
-        Este Aviso se rige por las leyes de México. Cualquier controversia se
-        someterá a la jurisdicción de los tribunales de Aguascalientes, México.
+        Este Aviso se rige por las leyes de los Estados Unidos Mexicanos.
+        Cualquier controversia relacionada con el tratamiento de datos
+        personales se resolverá conforme al mecanismo de arbitraje establecido
+        en la Sección 15 de los{" "}
+        <a href="/terms" className="text-accent hover:underline">
+          Términos y Condiciones
+        </a>
+        .
       </P>
       <P>
         El Aviso de Privacidad está disponible en español (versión vinculante).

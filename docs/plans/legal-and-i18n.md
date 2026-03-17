@@ -140,7 +140,7 @@ When implementing i18n for the full landing:
 1. ~~Write terms in Spanish (adapt MIIA → Vigil)~~ ✅ Done (PR pending)
 2. ~~Write privacy in Spanish (adapt MIIA → Vigil)~~ ✅ Done (PR pending)
 3. ~~Create page components~~ ✅ Done — TSX with shared helper components
-4. ~~Deploy Spanish versions replacing current basic pages~~ ✅ Merged with PR
+4. ~~Deploy Spanish versions replacing current basic pages~~ ✅ Done (PR #52 pending merge)
 5. (Later, with i18n) Add English translations
 6. (Later, with i18n) Add language detection + toggle
 

@@ -42,8 +42,8 @@ export default function TermsPage() {
         Última actualización: 17 de marzo de 2026
       </p>
       <p className="text-xs text-text-muted mb-12 italic">
-        La versión en español es la versión oficial y vinculante. An English
-        translation will be available soon.
+        La versión en español es la versión oficial y vinculante. Pronto estará
+        disponible una traducción al inglés.
       </p>
 
       {/* --- Generalidades --- */}
@@ -183,7 +183,7 @@ export default function TermsPage() {
           </a>
         </Li>
         <Li>
-          <strong className="text-text-primary">Responsable de privacidad (DPO):</strong>{" "}
+          <strong className="text-text-primary">Responsable de privacidad:</strong>{" "}
           Departamento Legal de Nqual5 S. de R.L., encargado de atender
           solicitudes relacionadas con la protección de datos personales.
         </Li>
