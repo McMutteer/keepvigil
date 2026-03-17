@@ -178,8 +178,8 @@ describe("buildExecutorSignal", () => {
       expect(buildExecutorSignal([], []).requiresLLM).toBe(false);
     });
 
-    it("has weight 20", () => {
-      expect(buildExecutorSignal([], []).weight).toBe(20);
+    it("has weight 15", () => {
+      expect(buildExecutorSignal([], []).weight).toBe(15);
     });
   });
 });

@@ -170,7 +170,6 @@ function parseVerificationResponse(raw: string): VerificationResult | null {
   }
 
   // Text fallback
-  const lower = raw.toLowerCase();
   if (/\bverified["']?\s*:\s*true\b/i.test(raw) || /\bassertion is (?:true|correct|verified)\b/i.test(raw)) {
     return { verified: true, reasoning: raw.split(/[.\n]/)[0]?.trim().slice(0, 200) || "" };
   }
