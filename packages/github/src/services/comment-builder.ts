@@ -9,9 +9,9 @@ const MAX_EVIDENCE_BLOCK_BYTES = 2000;
 const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
-export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], confidenceScore?: ConfidenceScore): string {
+export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], confidenceScore?: ConfidenceScore, isFirstRun?: boolean): string {
   if (confidenceScore) {
-    return buildScoreCommentBody(items, summary, confidenceScore, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds);
+    return buildScoreCommentBody(items, summary, confidenceScore, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds, isFirstRun);
   }
   return buildV1CommentBody(items, summary, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds);
 }
@@ -87,7 +87,7 @@ function buildContextualRecommendation(score: ConfidenceScore, summary: ReportSu
 }
 
 /** Score-based comment format — shows confidence score, signal table, and test plan results in a details block. */
-function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[]): string {
+function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], isFirstRun?: boolean): string {
   const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
   const recommendationEmoji: Record<string, string> = { safe: "\u2705", review: "\u26A0\uFE0F", caution: "\uD83D\uDD34" };
   const emoji = recommendationEmoji[confidenceScore.recommendation] ?? "";
@@ -171,6 +171,10 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   const configBlock = buildConfigBlock(vigiConfig, configWarnings);
   if (configBlock) {
     parts.push("", configBlock);
+  }
+
+  if (isFirstRun) {
+    parts.push("", buildOnboardingTips());
   }
 
   const footer = correlationId
@@ -582,6 +586,32 @@ export function buildConfigBlock(vigiConfig?: VigilConfig, configWarnings?: stri
     : "⚙️ <code>.vigil.yml</code> found — no valid settings applied";
 
   return `<details>\n<summary>${title}</summary>\n\n${parts.join("\n\n")}\n\n</details>`;
+}
+
+/**
+ * Build a collapsible onboarding tips block for first-time repos.
+ * Shows tips for writing better test plans to get more out of Vigil.
+ */
+export function buildOnboardingTips(): string {
+  return `<details>
+<summary>💡 Tips for better Vigil scores (first run detected)</summary>
+
+Vigil works best when your test plan includes **logic and contract checks**, not just existence checks.
+
+**Structure your test plan:**
+- **Existence (≤30%):** \`file.ts\` has function X
+- **Logic (30-40%):** \`file.ts\` function X uses pattern A instead of B
+- **Contracts (20-30%):** \`api.ts\` response keys match \`page.tsx\` interface fields
+- **Edge cases (10-20%):** \`file.tsx\` handler has loading guard to prevent double submit
+
+**Quick wins:**
+- Use full file paths (\`packages/api/src/routes/targets.ts\` not \`targets.ts\`)
+- Be specific: "fetches existing type before normalizing" not "handles normalization"
+- Add a blank line before the "Generated with" footer
+
+[Full guide →](https://keepvigil.dev/docs/test-plans)
+
+</details>`;
 }
 
 export { COMMENT_MARKER };
