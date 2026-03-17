@@ -165,21 +165,29 @@ describe("executeAssertionItem", () => {
     });
   });
 
-  it("fails when LLM returns invalid JSON", async () => {
+  it("extracts verification from natural language when JSON fails", async () => {
     mockReadFile.mockResolvedValue("const x = 1;");
-    vi.mocked(mockLLM.chat).mockResolvedValue("I think the assertion is true but here is no JSON");
+    vi.mocked(mockLLM.chat).mockResolvedValue("I think the assertion is true based on the file content");
 
-    const item = makeClassified(
-      "`src/index.ts` exports default",
-      ["src/index.ts"],
-    );
+    const item = makeClassified("`src/index.ts` exports default", ["src/index.ts"]);
+    const result = await executeAssertionItem(item, baseContext);
+
+    expect(result.passed).toBe(true);
+    expect((result.evidence as Record<string, unknown>).verified).toBe(true);
+  });
+
+  it("fails when LLM returns completely unparseable response", async () => {
+    mockReadFile.mockResolvedValue("const x = 1;");
+    vi.mocked(mockLLM.chat).mockResolvedValue("---");
+
+    const item = makeClassified("`src/index.ts` exports default", ["src/index.ts"]);
     const result = await executeAssertionItem(item, baseContext);
 
     expect(result.passed).toBe(false);
     expect(result.evidence).toMatchObject({
       file: "src/index.ts",
       exists: true,
-      error: "LLM returned invalid JSON response",
+      error: "Could not parse LLM response",
     });
   });
 

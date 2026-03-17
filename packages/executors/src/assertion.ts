@@ -21,6 +21,106 @@ import type { ClassifiedItem, ExecutionResult, AssertionExecutionContext } from 
 /** Max file content size sent to LLM (bytes) */
 const MAX_FILE_BYTES = 20_000;
 
+// ---------------------------------------------------------------------------
+// Response parsing — tolerant of various LLM output formats
+// ---------------------------------------------------------------------------
+
+interface AssertionResult {
+  verified: boolean;
+  reasoning: string;
+  relevantLines: string;
+}
+
+/**
+ * Parse the LLM response for an assertion verification.
+ *
+ * Tries multiple strategies in order:
+ * 1. Extract JSON from fenced code blocks (```json ... ```)
+ * 2. Find JSON object in raw text ({ ... })
+ * 3. Fall back to text analysis — look for keywords indicating yes/no
+ *
+ * Returns null only if nothing can be extracted.
+ */
+function parseAssertionResponse(responseText: string): AssertionResult | null {
+  // Strategy 1: Extract from fenced code block
+  const fenced = responseText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced ? fenced[1] : responseText;
+
+  // Strategy 2: Find JSON object
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start !== -1 && end > start) {
+    try {
+      const obj = JSON.parse(candidate.slice(start, end + 1));
+      if (typeof obj.verified === "boolean") {
+        return {
+          verified: obj.verified,
+          reasoning: String(obj.reasoning || ""),
+          relevantLines: String(obj.relevantLines || obj.relevant_lines || obj.evidence || ""),
+        };
+      }
+      // Some models use "result" or "is_true" instead of "verified"
+      if (typeof obj.result === "boolean") {
+        return { verified: obj.result, reasoning: String(obj.reasoning || ""), relevantLines: "" };
+      }
+      if (typeof obj.is_true === "boolean") {
+        return { verified: obj.is_true, reasoning: String(obj.reasoning || ""), relevantLines: "" };
+      }
+    } catch {
+      // JSON parse failed — continue to text fallback
+    }
+  }
+
+  // Strategy 3: Text analysis fallback — look for clear yes/no signals
+  const lower = responseText.toLowerCase();
+
+  // Strong positive signals
+  const positivePatterns = [
+    /\bverified["']?\s*:\s*true\b/i,
+    /\bassertion is (?:true|correct|verified|confirmed|valid)\b/i,
+    /\byes[,.]?\s*(?:the|this)?\s*(?:file|code|assertion)/i,
+    /\bthe assertion (?:is|holds|appears to be) true\b/i,
+    /\bconfirmed?\b.*\bassertion\b/i,
+  ];
+
+  // Strong negative signals
+  const negativePatterns = [
+    /\bverified["']?\s*:\s*false\b/i,
+    /\bassertion is (?:false|incorrect|not verified|invalid|not true)\b/i,
+    /\bno[,.]?\s*(?:the|this)?\s*(?:file|code|assertion)/i,
+    /\bthe assertion (?:is|appears to be) false\b/i,
+    /\bnot found\b.*\bassertion\b/i,
+    /\bdoes not (?:contain|include|have|use|implement)\b/i,
+  ];
+
+  for (const pattern of positivePatterns) {
+    if (pattern.test(responseText)) {
+      // Extract first sentence as reasoning
+      const firstSentence = responseText.replace(/```[\s\S]*?```/g, "").trim().split(/[.\n]/)[0]?.trim() || "";
+      return { verified: true, reasoning: firstSentence.slice(0, 200), relevantLines: "" };
+    }
+  }
+
+  for (const pattern of negativePatterns) {
+    if (pattern.test(responseText)) {
+      const firstSentence = responseText.replace(/```[\s\S]*?```/g, "").trim().split(/[.\n]/)[0]?.trim() || "";
+      return { verified: false, reasoning: firstSentence.slice(0, 200), relevantLines: "" };
+    }
+  }
+
+  // Last resort: if "true" appears more than "false", assume positive
+  const trueCount = (lower.match(/\btrue\b/g) || []).length;
+  const falseCount = (lower.match(/\bfalse\b/g) || []).length;
+  if (trueCount > 0 && trueCount > falseCount) {
+    return { verified: true, reasoning: "Inferred from LLM response (non-JSON)", relevantLines: "" };
+  }
+  if (falseCount > 0 && falseCount > trueCount) {
+    return { verified: false, reasoning: "Inferred from LLM response (non-JSON)", relevantLines: "" };
+  }
+
+  return null;
+}
+
 /**
  * Execute a classified assertion item.
  *
@@ -136,26 +236,10 @@ export async function executeAssertionItem(
     };
   }
 
-  // Parse JSON response from LLM
-  let parsed: { verified: boolean; reasoning: string; relevantLines: string };
-  try {
-    // Try to extract JSON from fenced code block first
-    const fenced = responseText.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    const candidate = fenced ? fenced[1] : responseText;
+  // Parse response — try JSON first, then fall back to text analysis
+  const parsed = parseAssertionResponse(responseText);
 
-    // Find JSON object boundaries
-    const start = candidate.indexOf("{");
-    const end = candidate.lastIndexOf("}");
-    if (start === -1 || end === -1 || end <= start) {
-      throw new Error("No JSON object found in response");
-    }
-
-    parsed = JSON.parse(candidate.slice(start, end + 1));
-
-    if (typeof parsed.verified !== "boolean") {
-      throw new Error("Missing 'verified' boolean field");
-    }
-  } catch {
+  if (!parsed) {
     return {
       itemId,
       passed: false,
@@ -163,7 +247,7 @@ export async function executeAssertionItem(
       evidence: {
         file: filePath,
         exists: true,
-        error: "LLM returned invalid JSON response",
+        error: "Could not parse LLM response",
       },
     };
   }
