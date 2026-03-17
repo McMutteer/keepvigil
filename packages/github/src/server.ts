@@ -120,13 +120,17 @@ async function main(): Promise<void> {
     }
 
     if (req.url?.startsWith("/api/checkout") && req.method === "GET") {
-      handleCheckout(req, res, config).catch((err) => {
-        log.error({ err }, "Unhandled error in checkout");
-        if (!res.headersSent) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: "Internal error" }));
+      (async () => {
+        try {
+          await handleCheckout(req, res, config);
+        } catch (err) {
+          log.error({ err }, "Unhandled error in checkout");
+          if (!res.headersSent) {
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: "Internal error" }));
+          }
         }
-      });
+      })();
       return;
     }
 
@@ -135,9 +139,9 @@ async function main(): Promise<void> {
         const url = new URL(req.url!, `http://${req.headers.host}`);
         const customerId = url.searchParams.get("customer_id");
 
-        if (!customerId) {
+        if (!customerId || !/^cus_[a-zA-Z0-9]+$/.test(customerId)) {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Missing required query param: customer_id" }));
+          res.end(JSON.stringify({ error: "Missing or invalid customer_id" }));
           return;
         }
 
@@ -202,9 +206,9 @@ async function main(): Promise<void> {
         const url = new URL(req.url!, `http://${req.headers.host}`);
         const installationId = url.searchParams.get("installation_id");
 
-        if (!installationId || !/^\d+$/.test(installationId)) {
+        if (!installationId || !/^\d+$/.test(installationId) || Number(installationId) > 2147483647) {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Missing or non-numeric query param: installation_id" }));
+          res.end(JSON.stringify({ error: "Missing or invalid installation_id" }));
           return;
         }
 
