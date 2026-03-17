@@ -21,7 +21,7 @@ export default function ContractCheckerPage() {
         Weight: 10 | Tier: Pro | Requires LLM
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         The #1 source of runtime crashes in fullstack PRs: the backend returns
         one shape, the frontend expects another.
       </Callout>
