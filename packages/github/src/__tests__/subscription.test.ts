@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { checkPlan, isPro, upsertSubscription } from "../services/subscription.js";
-import type { Plan } from "../services/subscription.js";
 
 // Mock @vigil/core
 vi.mock("@vigil/core", () => ({
