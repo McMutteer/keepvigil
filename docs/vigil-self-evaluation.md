@@ -6,6 +6,9 @@ Tracking how Vigil evaluates its own PRs. Each entry captures the score, signal 
 
 | PR | Date | Score | Test Plan Items | Key Issue |
 |----|------|-------|-----------------|-----------|
+| #58 | 2026-03-17 | **70/100** | 1/2 (1 skip) | `pnpm --filter` not in allowlist, Coverage 0 (no landing tests) |
+| #57 | 2026-03-17 | **69/100** | 0/3 (1 skip) | Shell commands fail in sandbox, vague items |
+| #56 | 2026-03-17 | **42/100** | 1/4 (1 skip) | Shell sandbox + CI Bridge 0 + vague items |
 | #47 | 2026-03-17 | **94/100** | 12/12 passed | Best score — full paths + logic assertions |
 | #49 | 2026-03-17 | **91/100** | 12/12 passed | Smart reader deployed, well-written plan |
 | #53 | 2026-03-17 | **70/100** | 11/12 passed | Cross-file assertion failed, augmentor weak |
@@ -102,7 +105,19 @@ The augmentor generates 3-5 items that the test plan didn't include. Many fail b
 
 ---
 
-### P7: File truncation hiding definitions (FIXED)
+### P7: `pnpm --filter` not in shell allowlist
+
+**Seen in:** PR #58
+
+`pnpm --filter landing build` was skipped because the allowlist doesn't recognize `pnpm --filter <pkg>` as a valid command pattern. Only bare `pnpm build`, `pnpm test`, etc. are allowed.
+
+**Impact:** Legitimate monorepo commands get skipped instead of executed.
+
+**Fix needed:** Add `pnpm --filter` and `pnpm -r` patterns to the shell allowlist. These are standard monorepo commands.
+
+---
+
+### P8: File truncation hiding definitions (FIXED)
 
 **Seen in:** PR #48
 
@@ -146,5 +161,6 @@ PR #47 (94/100) and PR #49 (91/100) are the gold standard. What they have in com
 | **P1** | Detect API endpoints and skip/reroute gracefully | PR #50 |
 | **P1** | Multi-file assertion support | PR #53 |
 | **P1** | Augmentor guardrails (filter unverifiable items) | PRs #53, #51 |
+| **P1** | Add `pnpm --filter` and `pnpm -r` to shell allowlist | PR #58 |
 | **P2** | Auto-map vague items to shell commands | PRs #56, #50 |
 | **P2** | Augmentor score weighting for executor-limited failures | Multiple |
