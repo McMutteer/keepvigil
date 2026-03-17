@@ -48,39 +48,43 @@ const BACKEND_ONLY_DIFF = `diff --git a/packages/api/src/routes/targets.ts b/pac
 describe("checkContracts", () => {
   describe("skips gracefully", () => {
     it("returns neutral on empty diff", async () => {
-      const signal = await checkContracts({ diff: "", llm: makeLLM("unused") });
+      const { signal, verifiedFiles } = await checkContracts({ diff: "", llm: makeLLM("unused") });
       expect(signal.score).toBe(100);
       expect(signal.passed).toBe(true);
       expect(signal.details[0].status).toBe("skip");
+      expect(verifiedFiles.size).toBe(0);
     });
 
     it("skips when PR only touches backend files", async () => {
-      const signal = await checkContracts({ diff: BACKEND_ONLY_DIFF, llm: makeLLM("unused") });
+      const { signal, verifiedFiles } = await checkContracts({ diff: BACKEND_ONLY_DIFF, llm: makeLLM("unused") });
       expect(signal.score).toBe(100);
       expect(signal.passed).toBe(true);
       expect(signal.details[0].message).toContain("does not touch both");
+      expect(verifiedFiles.size).toBe(0);
     });
 
     it("returns neutral on LLM failure", async () => {
-      const signal = await checkContracts({
+      const { signal, verifiedFiles } = await checkContracts({
         diff: CROSS_BOUNDARY_DIFF,
         llm: makeLLM(new Error("API timeout")),
       });
       expect(signal.score).toBe(100);
       expect(signal.details[0].status).toBe("skip");
+      expect(verifiedFiles.size).toBe(0);
     });
 
     it("returns neutral on invalid LLM response", async () => {
-      const signal = await checkContracts({
+      const { signal, verifiedFiles } = await checkContracts({
         diff: CROSS_BOUNDARY_DIFF,
         llm: makeLLM("not json at all"),
       });
       expect(signal.details[0].status).toBe("skip");
+      expect(verifiedFiles.size).toBe(0);
     });
   });
 
   describe("contract analysis", () => {
-    it("all contracts compatible → score 100, passed true", async () => {
+    it("all contracts compatible → score 100, passed true, verifiedFiles populated", async () => {
       const response = JSON.stringify({
         contracts: [
           {
@@ -93,13 +97,15 @@ describe("checkContracts", () => {
         ],
       });
 
-      const signal = await checkContracts({ diff: CROSS_BOUNDARY_DIFF, llm: makeLLM(response) });
+      const { signal, verifiedFiles } = await checkContracts({ diff: CROSS_BOUNDARY_DIFF, llm: makeLLM(response) });
       expect(signal.score).toBe(100);
       expect(signal.passed).toBe(true);
       expect(signal.details.filter((d) => d.status === "pass")).toHaveLength(1);
+      expect(verifiedFiles.has("packages/api/src/routes/reports.ts")).toBe(true);
+      expect(verifiedFiles.has("packages/web/app/dashboard/reports/page.tsx")).toBe(true);
     });
 
-    it("incompatible contract → score 0, passed false", async () => {
+    it("incompatible contract → score 0, passed false, verifiedFiles empty", async () => {
       const response = JSON.stringify({
         contracts: [
           {
@@ -112,14 +118,15 @@ describe("checkContracts", () => {
         ],
       });
 
-      const signal = await checkContracts({ diff: CROSS_BOUNDARY_DIFF, llm: makeLLM(response) });
+      const { signal, verifiedFiles } = await checkContracts({ diff: CROSS_BOUNDARY_DIFF, llm: makeLLM(response) });
       expect(signal.score).toBe(0);
       expect(signal.passed).toBe(false);
       expect(signal.details.filter((d) => d.status === "fail")).toHaveLength(1);
       expect(signal.details[0].message).toContain("totals");
+      expect(verifiedFiles.size).toBe(0);
     });
 
-    it("mixed contracts → partial score", async () => {
+    it("mixed contracts → partial score, only compatible files verified", async () => {
       const response = JSON.stringify({
         contracts: [
           { producer: "a.ts", consumer: "b.tsx", endpoint: "GET /a", compatible: true, issue: "" },
@@ -127,29 +134,34 @@ describe("checkContracts", () => {
         ],
       });
 
-      const signal = await checkContracts({ diff: CROSS_BOUNDARY_DIFF, llm: makeLLM(response) });
-      expect(signal.score).toBe(50); // 1/2 compatible
+      const { signal, verifiedFiles } = await checkContracts({ diff: CROSS_BOUNDARY_DIFF, llm: makeLLM(response) });
+      expect(signal.score).toBe(50);
       expect(signal.passed).toBe(false);
+      expect(verifiedFiles.has("a.ts")).toBe(true);
+      expect(verifiedFiles.has("b.tsx")).toBe(true);
+      expect(verifiedFiles.has("c.ts")).toBe(false);
+      expect(verifiedFiles.has("d.tsx")).toBe(false);
     });
 
     it("empty contracts array → score 100", async () => {
       const response = JSON.stringify({ contracts: [] });
-      const signal = await checkContracts({ diff: CROSS_BOUNDARY_DIFF, llm: makeLLM(response) });
+      const { signal, verifiedFiles } = await checkContracts({ diff: CROSS_BOUNDARY_DIFF, llm: makeLLM(response) });
       expect(signal.score).toBe(100);
       expect(signal.passed).toBe(true);
+      expect(verifiedFiles.size).toBe(0);
     });
   });
 
   describe("signal metadata", () => {
     it("has correct signal id and requiresLLM", async () => {
-      const signal = await checkContracts({ diff: "", llm: makeLLM("unused") });
+      const { signal } = await checkContracts({ diff: "", llm: makeLLM("unused") });
       expect(signal.id).toBe("contract-checker");
       expect(signal.name).toBe("Contract Check");
       expect(signal.requiresLLM).toBe(true);
     });
 
     it("has weight 10", async () => {
-      const signal = await checkContracts({ diff: "", llm: makeLLM("unused") });
+      const { signal } = await checkContracts({ diff: "", llm: makeLLM("unused") });
       expect(signal.weight).toBe(10);
     });
   });

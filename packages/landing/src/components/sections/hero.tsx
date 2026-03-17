@@ -34,6 +34,25 @@ export function Hero() {
                 View on GitHub
               </a>
             </div>
+
+            {/* Zero-friction trust badges */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-5 text-xs text-text-muted">
+              <span>✓ Zero config</span>
+              <span className="hidden sm:inline">·</span>
+              <span>✓ No credit card</span>
+              <span className="hidden sm:inline">·</span>
+              <span>✓ 30-second install</span>
+            </div>
+
+            {/* See it live link */}
+            <a
+              href="https://github.com/McMutteer/siegekit/pull/5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-4 text-sm text-accent hover:text-accent-hover transition-colors"
+            >
+              See a real confidence score on GitHub →
+            </a>
           </div>
 
           {/* Score card column */}

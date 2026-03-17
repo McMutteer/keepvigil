@@ -165,6 +165,48 @@ describe("buildExecutorSignal", () => {
     expect(signal.score).toBe(50); // 1/2
   });
 
+  describe("contract-over-assertion trust", () => {
+    it("overrides assertion failure when file is contract-verified", () => {
+      const items = [makeClassified("tp-0", "check targets.ts", "HIGH", "assertion")];
+      const results = [makeResult("tp-0", false, { file: "packages/api/src/routes/targets.ts", verified: false })];
+      const contractFiles = new Set(["packages/api/src/routes/targets.ts"]);
+
+      const signal = buildExecutorSignal(items, results, undefined, contractFiles);
+      expect(signal.passed).toBe(true);
+      expect(signal.score).toBe(100);
+      expect(signal.details[0].status).toBe("pass");
+      expect(signal.details[0].message).toContain("Contract verified");
+    });
+
+    it("does NOT override when file is not contract-verified", () => {
+      const items = [makeClassified("tp-0", "check targets.ts", "HIGH", "assertion")];
+      const results = [makeResult("tp-0", false, { file: "packages/api/src/routes/targets.ts", verified: false })];
+      const contractFiles = new Set(["some/other/file.ts"]);
+
+      const signal = buildExecutorSignal(items, results, undefined, contractFiles);
+      expect(signal.passed).toBe(false);
+      expect(signal.details[0].status).toBe("fail");
+    });
+
+    it("does NOT override shell executor failures even if file matches", () => {
+      const items = [makeClassified("tp-0", "run build", "DETERMINISTIC", "shell")];
+      const results = [makeResult("tp-0", false, { file: "packages/api/src/routes/targets.ts" })];
+      const contractFiles = new Set(["packages/api/src/routes/targets.ts"]);
+
+      const signal = buildExecutorSignal(items, results, undefined, contractFiles);
+      expect(signal.passed).toBe(false);
+      expect(signal.details[0].status).toBe("fail");
+    });
+
+    it("works with empty contractVerifiedFiles (no override)", () => {
+      const items = [makeClassified("tp-0", "check file", "HIGH", "assertion")];
+      const results = [makeResult("tp-0", false, { file: "src/foo.ts", verified: false })];
+
+      const signal = buildExecutorSignal(items, results, undefined, undefined);
+      expect(signal.passed).toBe(false);
+    });
+  });
+
   describe("signal metadata", () => {
     it("has correct id", () => {
       expect(buildExecutorSignal([], []).id).toBe("executor");

@@ -168,6 +168,19 @@ export function Evidence() {
             </div>
           </div>
         </ScrollReveal>
+
+        <ScrollReveal delay={400}>
+          <p className="text-center text-sm mt-8">
+            <a
+              href="https://github.com/McMutteer/siegekit/pull/5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:text-accent-hover transition-colors"
+            >
+              See Vigil in action on a real PR →
+            </a>
+          </p>
+        </ScrollReveal>
       </div>
     </section>
   );
