@@ -150,7 +150,7 @@ Each section is a self-contained unit of work. When starting a section, create a
 
 ---
 
-### Section 7: Gap Analyzer (LLM) ⬜
+### Section 7: Gap Analyzer (LLM) ✅
 
 **Goal:** Identify areas of the codebase that changed but aren't addressed by the test plan.
 
@@ -271,7 +271,7 @@ Deferred to post-MVP:
 | S4: CI Bridge | ✅ Complete | `feat/v2-ci-bridge` | #32 merged |
 | S5: Coverage Mapper | ✅ Complete | `feat/v2-coverage-mapper` | #33 merged |
 | S6: Diff Analyzer | ✅ Complete | `feat/v2-diff-analyzer` | #35 merged |
-| S7: Gap Analyzer | ⬜ Not started | — | — |
+| S7: Gap Analyzer | ✅ Complete | `feat/v2-gap-analyzer` | #36 merged |
 | S8: Executor Adapter | ✅ Complete | `feat/v2-executor-adapter` | #34 merged |
 | S9: Pipeline v2 | ⬜ Not started | — | — |
 | S10: Free/Pro | ⬜ Not started | — | — |
