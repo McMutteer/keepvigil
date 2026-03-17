@@ -7,7 +7,7 @@
 import { randomUUID } from "node:crypto";
 import type { Probot, ProbotOctokit } from "probot";
 import type { ClassifiedItem, ExecutionResult, LLMClient, ParsedTestPlan, Signal, VerifyTestPlanJob, VigilConfig } from "@vigil/core";
-import { parseTestPlan, classifyItems, createLLMClient, scanCredentials, extractChangedFiles, mapCoverage, createLogger, runWithCorrelationId } from "@vigil/core";
+import { parseTestPlan, classifyItems, createLLMClient, createSignal, scanCredentials, extractChangedFiles, mapCoverage, createLogger, runWithCorrelationId } from "@vigil/core";
 import { reportResults } from "./reporter.js";
 import { cloneRepo, cleanupRepo } from "./repo-clone.js";
 import { detectPreviewUrl } from "./preview-url.js";
@@ -218,16 +218,39 @@ async function _runPipeline(
     signals.push(executorSignal);
     log.info({ signalId: executorSignal.id, score: executorSignal.score, passed: executorSignal.passed }, "Executor adapter complete");
 
-    // Stage 6.9: Diff Analyzer — LLM compares diff vs test plan claims (Pro tier)
-    if (diff) {
+    // Pro tier: LLM signals only when user provides their own LLM config
+    const isProTier = Boolean(vigiConfig?.llm?.provider && vigiConfig?.llm?.model);
+
+    if (diff && isProTier) {
+      // Stage 6.9: Diff Analyzer — LLM compares diff vs test plan claims
       const diffSignal = await analyzeDiff({ diff, classifiedItems, llm });
       signals.push(diffSignal);
       log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");
 
-      // Stage 6.10: Gap Analyzer — LLM identifies untested areas (Pro tier)
+      // Stage 6.10: Gap Analyzer — LLM identifies untested areas
       const gapSignal = await analyzeGaps({ diff, classifiedItems, llm });
       signals.push(gapSignal);
       log.info({ signalId: gapSignal.id, score: gapSignal.score, passed: gapSignal.passed, gaps: gapSignal.details.length }, "Gap analyzer complete");
+    } else if (!isProTier) {
+      // Free tier: add placeholder signals so they appear in the comment with Pro badge
+      signals.push(createSignal({
+        id: "diff-analyzer",
+        name: "Diff vs Claims",
+        score: 0,
+        passed: true,
+        details: [{ label: "Pro", status: "skip", message: "Add llm config to .vigil.yml to enable" }],
+        requiresLLM: true,
+        weight: 0,
+      }));
+      signals.push(createSignal({
+        id: "gap-analyzer",
+        name: "Gap Analysis",
+        score: 0,
+        passed: true,
+        details: [{ label: "Pro", status: "skip", message: "Add llm config to .vigil.yml to enable" }],
+        requiresLLM: true,
+        weight: 0,
+      }));
     }
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);

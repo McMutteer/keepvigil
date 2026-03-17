@@ -90,8 +90,13 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     "|--------|-------|--------|",
   );
   for (const signal of confidenceScore.signals) {
-    const statusSummary = buildSignalStatusSummary(signal);
-    parts.push(`| ${escapeTableCell(signal.name)} | ${signal.score}/100 | ${statusSummary} |`);
+    // Pro-gated signals (weight 0 + requiresLLM) show lock badge instead of score
+    if (signal.requiresLLM && signal.weight === 0) {
+      parts.push(`| ${escapeTableCell(signal.name)} | — | \uD83D\uDD12 Pro |`);
+    } else {
+      const statusSummary = buildSignalStatusSummary(signal);
+      parts.push(`| ${escapeTableCell(signal.name)} | ${signal.score}/100 | ${statusSummary} |`);
+    }
   }
   parts.push("");
 
