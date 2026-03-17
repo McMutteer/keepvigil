@@ -9,11 +9,13 @@ import type { ConfidenceScore, Signal, SignalDetail, SignalId, ScoreRecommendati
 
 /** Default weights for each signal type */
 export const SIGNAL_WEIGHTS: Record<SignalId, number> = {
-  "ci-bridge": 30,
-  "credential-scan": 25,
-  "executor": 20,
-  "diff-analyzer": 10,
-  "coverage-mapper": 10,
+  "ci-bridge": 25,
+  "credential-scan": 20,
+  "executor": 15,
+  "plan-augmentor": 15,
+  "contract-checker": 10,
+  "diff-analyzer": 5,
+  "coverage-mapper": 5,
   "gap-analyzer": 5,
 };
 

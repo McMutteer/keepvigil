@@ -246,7 +246,9 @@ export type SignalId =
   | "coverage-mapper"
   | "executor"
   | "diff-analyzer"
-  | "gap-analyzer";
+  | "gap-analyzer"
+  | "plan-augmentor"
+  | "contract-checker";
 
 /** One detail line within a signal — explains a specific finding */
 export interface SignalDetail {
