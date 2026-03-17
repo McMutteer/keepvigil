@@ -84,8 +84,11 @@ v2 confidence score engine is **deployed and production-tested**. See `docs/mast
 - [x] Augmentor reads CLAUDE.md for project context — reduces false positives — PR #48
 - [x] Onboarding tips on first Vigil run — collapsible tips in first comment — PR #48
 
+**Smart file reader:**
+- [x] Keyword-directed context extraction — replaces blind 20KB truncation — PR #49
+
 **Next (v3.1):**
-- [ ] **Smart file reader** — keyword-directed context extraction for assertion executor. Instead of truncating to first 20KB, search for the function/variable name in the full file and send relevant lines ± 30 lines of context. Discovered in PR #48: `buildOnboardingTips` at line 590 was invisible to LLM due to blind truncation. See `docs/plans/smart-file-reader.md`.
+- [x] ~~**Smart file reader**~~ — done PR #49
 - [ ] **Augmentor score semantics** — low score means "found issues" (good), not "failed" (bad). Consider separate presentation: findings count instead of pass/fail ratio.
 - [ ] **Comment narrative** — separate "Your test plan: 17/17 passed" from "Vigil found 4 additional concerns". Current format mixes them.
 - [ ] **Test plan quality signal** — evaluate the test plan itself: warn if >80% existence checks, suggest logic/contract items.
