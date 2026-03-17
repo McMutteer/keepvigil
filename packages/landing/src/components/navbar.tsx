@@ -22,10 +22,10 @@ export function Navbar() {
       }`}
     >
       <div className="mx-auto max-w-[1200px] px-6 h-16 flex items-center justify-between">
-        <a href="#" className="flex items-center gap-2.5">
+        <a href="/" className="flex items-center gap-2.5">
           <Image
             src="/brand/icon.svg"
-            alt=""
+            alt="Vigil"
             width={28}
             height={28}
             className="w-7 h-7"

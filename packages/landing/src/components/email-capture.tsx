@@ -22,7 +22,9 @@ export function EmailCapture() {
           onSubmit={handleSubmit}
           className="flex gap-2 max-w-[400px] mx-auto"
         >
+          <label htmlFor="email-capture" className="sr-only">Email address</label>
           <input
+            id="email-capture"
             type="email"
             placeholder="you@company.com"
             className="flex-1 px-4 py-2.5 rounded-[6px] text-sm bg-bg-deep border border-white/[0.06] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/40 transition-colors"
