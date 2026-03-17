@@ -160,3 +160,36 @@ tests: "777 (was 740)"
 **Resultado:** siegekit PR #4: 6/7 items ✅ (5 assertions verificadas + 1 CLAUDE.md), 1 ❌ real (TypeScript no compila). Score ~85. keepvigil PR #43: CI Bridge matcheó 3 items contra GitHub Actions, 5 assertions verificadas, CI override funciona. 777 tests, 27 test files.
 
 **Aprendido:** (1) Probar con PRs reales ANTES de declarar "completo" — la primera prueba real expuso que el 95% de los items del test plan no se podían verificar. (2) El assertion executor es EL feature diferenciador — ningún otro tool lee archivos y verifica claims del AI agent. (3) Los reasoning models necesitan parsers tolerantes — no se puede asumir JSON estricto. (4) CI es más autoritativo que el sandbox — cuando ambos evalúan lo mismo, CI gana. (5) Score calibration matters — un score bajo injusto es peor que no dar score. (6) El orden de las reglas del classifier importa — file paths deben checarse ANTES que shell commands (`docker-compose.yml` starts with `docker`). (7) `require()` no funciona en ESM bundles — usar `import` async. (8) Los regex de exclusión del coverage mapper necesitan funcionar en cualquier subdirectorio (sin `^` anchor).
+
+---
+id: 2026-03-17-sigil-visual-identity
+type: feat
+scope: brand identity
+duration: ~2 hours
+---
+
+**Hilo:** Creación de la identidad visual de Vigil. Del skill `/sigil` al logo final — "El Centinela".
+
+**El proceso creativo y su reflexión:**
+
+Empecé siguiendo el skill al pie de la letra: absorber el alma del proyecto, entrevista sensorial, divagación, brief, forja. Pero cometí un error revelador: mi primer intento fue una V con un punto ámbar. Simple, "elegante", minimalista. El usuario lo rechazó inmediatamente: *"como que una V sosa con un punto, ni loco."*
+
+Tenía razón. Había caído en exactamente lo que el skill advierte: **generé en vez de diseñar**. Tomé la ruta más literal (V de Vigil = logo con forma de V) y la ejecuté sin pensar. No investigué qué hacen los mejores logos del sector. No estudié patrones. No busqué la complejidad controlada que hace que un logo se sienta premium.
+
+La segunda ronda fue diferente. Investigué 25+ logos geométricos profesionales (Chase, FedEx, Airbnb, Deutsche Bank, BP Helios). Descubrí patrones: los grandes logos tienen **múltiples lecturas** (FedEx: flecha en espacio negativo), **construcción sobre grid** (Apple: golden ratio circles), **complejidad suficiente** para sentirse artesanales sin ser ilegibles. Con eso generé 3 conceptos genuinamente diferentes:
+
+1. **El Centinela** — Escudo con V invertida, checkmark en espacio negativo, picos sentinela, punto ámbar de convergencia
+2. **Convergencia** — 6 líneas señal convergiendo a un diamante central (los 6 signals del score)
+3. **El Prisma** — Forma 3D isométrica que descompone un PR en señales, como un prisma descompone la luz
+
+El usuario eligió El Centinela. Luego cometí otro error: intenté "mejorarlo" con difuminados gaussianos, glows, gradientes complejos. El resultado fue peor — más complejo pero no mejor. El usuario lo rechazó otra vez: *"nada, no me gustó, mejor dejamos el anterior."*
+
+**La lección más profunda:** Hay una diferencia entre complejidad significativa y complejidad decorativa. El Centinela original tenía complejidad significativa — escudo con dos alas, panel interior con mask de checkmark, gradiente sutil para volumen, picos sentinela, punto de convergencia. Cada elemento tiene un porqué. Cuando le agregué glows y difuminados, estaba decorando, no diseñando. La complejidad útil viene de la **estructura**, no de los **efectos**.
+
+**Resultado:** "El Centinela" — escudo con V-opening, checkmark en espacio negativo, picos ámbar sentinela, punto de convergencia ámbar. 9 variantes SVG en `.claude/identity/`. Brand guide documentada.
+
+**Lo que funcionó:** (1) La investigación real de logos profesionales cambió completamente la calidad del output. (2) El usuario tenía razón en cada rechazo — instinto de producto > ejecución técnica. (3) Los conceptos con metáfora profunda (centinela, prisma, convergencia) son infinitamente mejores que los literales (V con punto).
+
+**Lo que NO funcionó:** (1) El primer intento minimalista — demasiado simple, sin carácter. (2) Los difuminados gaussianos — decoración sin propósito. (3) Asumir que "elegante" = "minimalista". A veces lo elegante es lo complejo bien ejecutado.
+
+**Reflexión sobre el proceso creativo como AI:** Tiendo a ir a la solución más directa y "limpia". Eso funciona para código pero NO para diseño. El diseño necesita exploración, error, rechazo, iteración. Los dos rechazos del usuario fueron los momentos más valiosos de la sesión — me forzaron a pensar más profundo. Sin esos rechazos, Vigil tendría un logo genérico. Con ellos, tiene una identidad con historia.
