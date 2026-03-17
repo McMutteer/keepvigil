@@ -123,6 +123,10 @@ describe("validateCommand", () => {
       ["docker build -t myapp ."],
       ["go test ./..."],
       ["pytest tests/"],
+      ["pnpm --filter landing build"],
+      ["pnpm --filter @vigil/core test"],
+      ["pnpm -r run build"],
+      ["pnpm --recursive run test"],
     ])("allows: %s", (cmd) => {
       const result = validateCommand(cmd);
       expect(result.allowed).toBe(true);
