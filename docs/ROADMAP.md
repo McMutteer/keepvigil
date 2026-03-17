@@ -50,13 +50,22 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesión de t
 
 ---
 
-## v2 — Confidence Score Pivot
+## v2 — Confidence Score (COMPLETE + POLISHED)
 
-Vigil is pivoting from test plan executor to confidence score engine for AI-generated PRs. See `docs/master-plan-v2.md` for the full plan and `docs/vision-v2-confidence-score.md` for the vision.
+v2 confidence score engine is **deployed and production-tested**. See `docs/master-plan-v2.md` for the 10 sections (all complete).
 
-**10 sections** covering: Score Engine, BYOLLM Client, Credential Scanner, CI Bridge, Coverage Mapper, Diff Analyzer, Gap Analyzer, Executor Adapter, Pipeline v2, Free/Pro Gating.
-
-Track progress in `docs/master-plan-v2.md` → Status table.
+**Post-v2 improvements (2026-03-17):**
+- [x] Assertion executor — verifies code claims by reading files + LLM
+- [x] UX: infrastructure skips, `&&` chains, smart coverage, action items
+- [x] Score calibration — CI Bridge, diff/gap penalties, selective failure cap
+- [x] CI-over-sandbox trust — CI results override sandbox failures
+- [x] Tolerant LLM parser — handles reasoning model output
+- [x] Contextual recommendations — explains WHY, not just what
+- [x] Smart file search — infers file path from keywords
+- [ ] GitHub Marketplace listing
+- [ ] Stripe billing
+- [ ] Landing page
+- [ ] Rate limit handling for Groq
 
 ---
 

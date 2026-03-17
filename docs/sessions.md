@@ -141,3 +141,22 @@ tests: "740 (was 544)"
 **Resultado:** v2 MVP completo. 6 signals, score 0-100, Free/Pro tiers, BYOLLM, nuevo formato de PR comment con score header + signal table + v1 results colapsables. 740 tests (196 nuevos), 26 test files, todo en main.
 
 **Aprendido:** (1) Plan-de-planes funciona — cada sección tenía scope claro y dependencies explícitas. (2) Los signals puros (no-LLM) se implementan muy rápido (~15 min cada uno). (3) CodeRabbit es muy consistente en sus patterns — prompt injection y "unused signals" aparecieron en cada PR con LLM signals. (4) El patrón `createSignal()` + `weight: 0` para gating es elegante — reutiliza infraestructura existente sin code paths especiales.
+
+---
+id: 2026-03-17-post-v2-real-world-polish
+type: fix
+scope: product polish
+duration: ~6 hours
+prs: "#40-#42 + direct commits"
+tests: "777 (was 740)"
+---
+
+**Hilo:** Primera prueba real en siegekit reveló que el producto no era utilizable. Score 47/100 con 8 ❌ falsos. De "v2 completo" a "product-market fit" en una sesión intensiva.
+
+**Lo que pasó:** (1) False failures: el shell executor marcaba como ❌ items que no podía ejecutar (no preview, no Docker, `&&` bloqueado). Fix: nueva categoría `infra-skipped` con ⏭️, `&&` chains con validación por segmento, coverage mapper ignora archivos nuevos. (2) Assertion executor (game changer): 72% de los test plan items de AI agents son assertions sobre archivos (`Dockerfile uses non-root USER`). Nuevo executor lee el archivo real + LLM verifica la claim. De 5% utilidad a 89%. (3) Score calibration: CI Bridge no penaliza sin CI (100 en vez de 50), penalty caps en diff/gap analysis, failure cap solo para signals determinísticos, severity penalties reducidos. (4) UX: score explanation line, action items separados (Must Fix vs Consider), assertion file summary, recomendación contextual. (5) Groq model: `llama-3.3-70b-versatile` bloqueado a nivel org → migración a `openai/gpt-oss-120b`, configurable via `GROQ_MODEL` env var. (6) Tolerant parser: el reasoning model devuelve texto antes del JSON → parser de 3 estrategias (JSON → fenced → text analysis). (7) CI Bridge vs Sandbox: CI dice ✅ pero sandbox dice ❌ (no tiene deps) → CI gana cuando verifica el mismo item.
+
+**Obstáculos:** (1) Groq API key expirada — los LLM signals fallaban silenciosamente sin error visible en el comment (solo en logs). (2) `llama-3.3-70b-versatile` bloqueado a nivel de org en Groq — error 403 en runtime. (3) Pipeline no clonaba repo para assertion items (solo para shell). (4) PR de siegekit fue cerrado/mergeado — los push no triggereaban webhooks en PR cerrado. (5) Reasoning model (`gpt-oss-120b`) devuelve texto mixto con JSON — parser estricto fallaba.
+
+**Resultado:** siegekit PR #4: 6/7 items ✅ (5 assertions verificadas + 1 CLAUDE.md), 1 ❌ real (TypeScript no compila). Score ~85. keepvigil PR #43: CI Bridge matcheó 3 items contra GitHub Actions, 5 assertions verificadas, CI override funciona. 777 tests, 27 test files.
+
+**Aprendido:** (1) Probar con PRs reales ANTES de declarar "completo" — la primera prueba real expuso que el 95% de los items del test plan no se podían verificar. (2) El assertion executor es EL feature diferenciador — ningún otro tool lee archivos y verifica claims del AI agent. (3) Los reasoning models necesitan parsers tolerantes — no se puede asumir JSON estricto. (4) CI es más autoritativo que el sandbox — cuando ambos evalúan lo mismo, CI gana. (5) Score calibration matters — un score bajo injusto es peor que no dar score.
