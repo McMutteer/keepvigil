@@ -316,6 +316,63 @@ describe("parseCheckboxItems", () => {
     const items = parseCheckboxItems("- [ ] A\n- [ ] B\n- [ ] C\n");
     expect(items.map((i) => i.id)).toEqual(["tp-0", "tp-1", "tp-2"]);
   });
+
+  describe("boilerplate filtering", () => {
+    it("does not append 'Generated with Claude Code' line to last item", () => {
+      const body = [
+        "- [ ] `pnpm typecheck` passes with zero errors",
+        "",
+        "🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+      ].join("\n");
+      const items = parseCheckboxItems(body);
+      expect(items).toHaveLength(1);
+      expect(items[0].text).toBe("`pnpm typecheck` passes with zero errors");
+      expect(items[0].text).not.toContain("Generated");
+      expect(items[0].text).not.toContain("Claude Code");
+    });
+
+    it("does not append 'Generated with Cursor' to last item", () => {
+      const body = "- [ ] Last item\nGenerated with [Cursor](https://cursor.com)";
+      const items = parseCheckboxItems(body);
+      expect(items).toHaveLength(1);
+      expect(items[0].text).not.toContain("Cursor");
+    });
+
+    it("does not append HTML comment lines to last item", () => {
+      const body = "- [ ] Last item\n<!-- end of auto-generated comment -->";
+      const items = parseCheckboxItems(body);
+      expect(items).toHaveLength(1);
+      expect(items[0].text).not.toContain("auto-generated");
+    });
+
+    it("does not append --- separator to last item", () => {
+      const body = "- [ ] Last item\n---";
+      const items = parseCheckboxItems(body);
+      expect(items).toHaveLength(1);
+      expect(items[0].text).toBe("Last item");
+    });
+
+    it("does not append <sub> footer tags to last item", () => {
+      const body = "- [ ] Last item\n<sub>Vigil v0.1.0 | keepvigil.dev</sub>";
+      const items = parseCheckboxItems(body);
+      expect(items).toHaveLength(1);
+      expect(items[0].text).not.toContain("Vigil");
+    });
+
+    it("still appends legitimate continuation lines", () => {
+      const body = "- [ ] This is a long assertion that\n  continues on the next line";
+      const items = parseCheckboxItems(body);
+      expect(items).toHaveLength(1);
+      expect(items[0].text).toContain("continues on the next line");
+    });
+
+    it("handles emoji-prefixed boilerplate line", () => {
+      const body = "- [ ] Run tests\n🤖 Generated with [Claude Code](https://claude.com)";
+      const items = parseCheckboxItems(body);
+      expect(items).toHaveLength(1);
+      expect(items[0].text).toBe("Run tests");
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

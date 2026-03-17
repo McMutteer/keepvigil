@@ -17,6 +17,8 @@ import { collectCISignal } from "./ci-bridge.js";
 import { buildExecutorSignal } from "./executor-adapter.js";
 import { analyzeDiff } from "./diff-analyzer.js";
 import { analyzeGaps } from "./gap-analyzer.js";
+import { augmentPlan } from "./plan-augmentor.js";
+import { checkContracts } from "./contract-checker.js";
 
 const log = createLogger("pipeline");
 
@@ -207,11 +209,11 @@ async function _runPipeline(
     signals.push(ciSignal);
     log.info({ signalId: ciSignal.id, score: ciSignal.score, passed: ciSignal.passed, matched: ciSignal.details.filter((d) => d.status !== "skip").length }, "CI Bridge complete");
 
-    // Stage 6.7: Coverage Mapper (maps changed files to test files)
+    // Stage 6.7: Coverage Mapper (maps changed files to test files + plan references)
     if (diff) {
       const changedFiles = extractChangedFilesWithStatus(diff);
       const repoFiles = await fetchRepoFileList({ octokit, owner, repo, headSha });
-      const coverageSignal = mapCoverage(changedFiles, repoFiles);
+      const coverageSignal = mapCoverage(changedFiles, repoFiles, classifiedItems);
       signals.push(coverageSignal);
       log.info({ signalId: coverageSignal.id, score: coverageSignal.score, passed: coverageSignal.passed }, "Coverage mapper complete");
     }
@@ -242,6 +244,16 @@ async function _runPipeline(
       const gapSignal = await analyzeGaps({ diff, classifiedItems, llm });
       signals.push(gapSignal);
       log.info({ signalId: gapSignal.id, score: gapSignal.score, passed: gapSignal.passed, gaps: gapSignal.details.length }, "Gap analyzer complete");
+
+      // Stage 6.11: Plan Augmentor — generates and verifies items the test plan missed
+      const augmentorSignal = await augmentPlan({ diff, classifiedItems, llm, repoPath });
+      signals.push(augmentorSignal);
+      log.info({ signalId: augmentorSignal.id, score: augmentorSignal.score, passed: augmentorSignal.passed, items: augmentorSignal.details.length }, "Plan augmentor complete");
+
+      // Stage 6.12: Contract Checker — cross-file API/frontend shape verification
+      const contractSignal = await checkContracts({ diff, llm });
+      signals.push(contractSignal);
+      log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed }, "Contract checker complete");
     }
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);

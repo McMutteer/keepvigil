@@ -38,7 +38,7 @@ describe("computeScore", () => {
       ];
       const result = computeScore(signals);
 
-      // (100*30 + 100*25 + 80*20) / (30+25+20) = 7100/75 = 94.67 → 95
+      // (100*25 + 100*20 + 80*15) / (25+20+15) = 5700/60 = 95
       expect(result.score).toBe(95);
       expect(result.recommendation).toBe("safe");
       expect(result.signals).toEqual(signals);
@@ -61,7 +61,7 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 100 }),
       ];
       const result = computeScore(signals);
-      // Weighted average would be (100*30 + 0*25 + 100*20) / 75 = 5000/75 = 66.67 → 67
+      // Weighted average: (100*25 + 0*20 + 100*15) / 60 = 4000/60 = 66.67 → 67
       // 67 < FAILURE_CAP, so cap doesn't apply
       expect(result.score).toBe(67);
       expect(result.recommendation).toBe("review");
@@ -74,7 +74,7 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 100 }),
       ];
       const result = computeScore(signals);
-      // Weighted average: (100*30 + 90*25 + 100*20) / 75 = 7250/75 = 96.67 → 97
+      // Weighted average: (100*25 + 90*20 + 100*15) / 60 = 5800/60 = 96.67 → 97
       // But passed: false → capped at 70
       expect(result.score).toBe(FAILURE_CAP);
       expect(result.recommendation).toBe("review");
@@ -97,7 +97,7 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 85 }),
       ];
       const result = computeScore(signals);
-      // (90*30 + 85*20) / 50 = 4400/50 = 88
+      // (90*25 + 85*15) / 40 = 3525/40 = 88.125 → 88
       expect(result.score).toBe(88);
       expect(result.recommendation).toBe("safe");
     });
@@ -129,7 +129,7 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 20, passed: false }),
       ];
       const result = computeScore(signals);
-      // (10*30 + 0*25 + 20*20) / 75 = 700/75 = 9.33 → 9
+      // (10*25 + 0*20 + 20*15) / 60 = 550/60 = 9.17 → 9
       expect(result.score).toBe(9);
       expect(result.recommendation).toBe("caution");
     });
@@ -220,7 +220,7 @@ describe("createSignal", () => {
       details: [],
     });
     expect(signal.weight).toBe(SIGNAL_WEIGHTS["ci-bridge"]);
-    expect(signal.weight).toBe(30);
+    expect(signal.weight).toBe(25);
   });
 
   it("allows custom weight override", () => {
@@ -301,11 +301,13 @@ describe("createSignal", () => {
 
   it("uses correct default weight for each signal type", () => {
     const ids: Array<{ id: Parameters<typeof createSignal>[0]["id"]; expected: number }> = [
-      { id: "ci-bridge", expected: 30 },
-      { id: "credential-scan", expected: 25 },
-      { id: "executor", expected: 20 },
-      { id: "diff-analyzer", expected: 10 },
-      { id: "coverage-mapper", expected: 10 },
+      { id: "ci-bridge", expected: 25 },
+      { id: "credential-scan", expected: 20 },
+      { id: "executor", expected: 15 },
+      { id: "plan-augmentor", expected: 15 },
+      { id: "contract-checker", expected: 10 },
+      { id: "diff-analyzer", expected: 5 },
+      { id: "coverage-mapper", expected: 5 },
       { id: "gap-analyzer", expected: 5 },
     ];
     for (const { id, expected } of ids) {
@@ -323,11 +325,13 @@ describe("constants", () => {
   it("SIGNAL_WEIGHTS has all signal IDs", () => {
     expect(Object.keys(SIGNAL_WEIGHTS).sort()).toEqual([
       "ci-bridge",
+      "contract-checker",
       "coverage-mapper",
       "credential-scan",
       "diff-analyzer",
       "executor",
       "gap-analyzer",
+      "plan-augmentor",
     ]);
   });
 

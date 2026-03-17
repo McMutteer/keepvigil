@@ -190,9 +190,9 @@ describe("analyzeDiff", () => {
       expect(signal.requiresLLM).toBe(true);
     });
 
-    it("has weight 10", async () => {
+    it("has weight 5", async () => {
       const signal = await analyzeDiff({ diff: "", classifiedItems: [], llm: makeLLM("") });
-      expect(signal.weight).toBe(10);
+      expect(signal.weight).toBe(5);
     });
   });
 });

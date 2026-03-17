@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  /* Background scale — the night has layers */
+  --color-bg-deep: #080d1a;
+  --color-bg-surface: #0f1729;
+  --color-bg-elevated: #1a2744;
+  --color-bg-subtle: #1e2d4a;
+
+  /* Text scale — never pure white */
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+
+  /* Accent — the vigil candle */
+  --color-accent: #e8a820;
+  --color-accent-hover: #f0b429;
+
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-failure: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* Code */
+  --color-code-bg: #060a14;
+  --color-code-text: #c4cee0;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-code: 8px;
+
+  /* Fonts */
+  --font-sans: "Geist Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "Cascadia Code", monospace;
+}
+
+/* Accent glow utility */
+@utility accent-glow {
+  box-shadow: 0 0 60px 20px rgba(232, 168, 32, 0.08),
+    0 0 120px 40px rgba(232, 168, 32, 0.04);
+}
+
+/* Subtle border utility */
+@utility border-subtle {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@utility border-active {
+  border: 1px solid rgba(232, 168, 32, 0.3);
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background-color: var(--color-bg-deep);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection color */
+::selection {
+  background-color: rgba(232, 168, 32, 0.25);
+  color: var(--color-text-primary);
+}

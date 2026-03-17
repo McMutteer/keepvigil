@@ -6,7 +6,7 @@
  */
 
 import path from "node:path";
-import type { Signal, SignalDetail } from "./types.js";
+import type { ClassifiedItem, Signal, SignalDetail } from "./types.js";
 import { createSignal } from "./score-engine.js";
 
 // ---------------------------------------------------------------------------
@@ -157,16 +157,59 @@ export function extractChangedFilesWithStatus(diff: string): ChangedFile[] {
 // ---------------------------------------------------------------------------
 
 /**
+ * Check if a test plan item references a specific file path.
+ * Matches against code blocks and text content.
+ */
+function testPlanReferencesFile(items: ClassifiedItem[], filePath: string): string | null {
+  const fileName = path.basename(filePath);
+  const fileNameNoExt = path.basename(filePath, path.extname(filePath));
+
+  for (const ci of items) {
+    // Check code blocks for exact path or filename
+    for (const block of ci.item.hints.codeBlocks) {
+      if (block.includes(filePath) || block.includes(fileName)) {
+        return ci.item.text.slice(0, 60);
+      }
+    }
+    // Check item text for file references
+    const text = ci.item.text;
+    if (text.includes(filePath) || text.includes(fileName)) {
+      return text.slice(0, 60);
+    }
+    // Fuzzy: check for the base name (without extension) in backtick-delimited text
+    const backtickRefs = text.match(/`([^`]+)`/g);
+    if (backtickRefs) {
+      for (const ref of backtickRefs) {
+        const inner = ref.slice(1, -1);
+        if (inner.includes(filePath) || inner.includes(fileName) || inner === fileNameNoExt) {
+          return text.slice(0, 60);
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Map changed files to test files and build a coverage Signal.
  *
  * Accepts either `string[]` (backward compat) or `ChangedFile[]`.
  * When `ChangedFile[]` is passed, new files are skipped — they're
  * expected to not have tests yet.
  *
+ * When `classifiedItems` is provided, files without test files but
+ * referenced by the test plan are counted as "plan-covered" — this
+ * prevents projects without test suites from being penalized to 0.
+ *
  * @param changedFiles - File paths from the PR diff
  * @param repoFiles - All file paths in the repository (for checking existence)
+ * @param classifiedItems - Optional test plan items for plan-coverage analysis
  */
-export function mapCoverage(changedFiles: (string | ChangedFile)[], repoFiles: string[]): Signal {
+export function mapCoverage(
+  changedFiles: (string | ChangedFile)[],
+  repoFiles: string[],
+  classifiedItems?: ClassifiedItem[],
+): Signal {
   if (changedFiles.length === 0) {
     return createSignal({
       id: "coverage-mapper",
@@ -180,7 +223,8 @@ export function mapCoverage(changedFiles: (string | ChangedFile)[], repoFiles: s
   const repoFileSet = new Set(repoFiles);
   const details: SignalDetail[] = [];
   let sourceCount = 0;
-  let coveredCount = 0;
+  let testCoveredCount = 0;
+  let planCoveredCount = 0;
 
   for (const entry of changedFiles) {
     const file = typeof entry === "string" ? entry : entry.path;
@@ -206,12 +250,29 @@ export function mapCoverage(changedFiles: (string | ChangedFile)[], repoFiles: s
     const matchedTest = candidates.find((c) => repoFileSet.has(c));
 
     if (matchedTest) {
-      coveredCount++;
+      testCoveredCount++;
       details.push({
         label: file,
         status: "pass",
         message: `Test file found: ${matchedTest}`,
       });
+    } else if (classifiedItems && classifiedItems.length > 0) {
+      // No test file — check if the test plan references this file
+      const planRef = testPlanReferencesFile(classifiedItems, file);
+      if (planRef) {
+        planCoveredCount++;
+        details.push({
+          label: file,
+          status: "pass",
+          message: `Plan-covered: "${planRef}..."`,
+        });
+      } else {
+        details.push({
+          label: file,
+          status: "fail",
+          message: "No test file or test plan reference found",
+        });
+      }
     } else {
       details.push({
         label: file,
@@ -231,6 +292,7 @@ export function mapCoverage(changedFiles: (string | ChangedFile)[], repoFiles: s
     });
   }
 
+  const coveredCount = testCoveredCount + planCoveredCount;
   const score = Math.round((coveredCount / sourceCount) * 100);
 
   return createSignal({

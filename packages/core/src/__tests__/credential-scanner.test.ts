@@ -229,9 +229,9 @@ describe("scanCredentials", () => {
       expect(signal.requiresLLM).toBe(false);
     });
 
-    it("has weight 25", () => {
+    it("has weight 20", () => {
       const signal = scanCredentials("");
-      expect(signal.weight).toBe(25);
+      expect(signal.weight).toBe(20);
     });
   });
 
