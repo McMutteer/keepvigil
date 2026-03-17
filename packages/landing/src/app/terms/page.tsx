@@ -1,36 +1,11 @@
 import type { Metadata } from "next";
+import { SectionTitle, P, Li, UL } from "@/components/legal-helpers";
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones | Vigil",
   description:
     "Términos y Condiciones de Uso del servicio Vigil, operado por Nqual5 S. de R.L. de C.V.",
 };
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-      {children}
-    </h2>
-  );
-}
-
-function P({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-text-secondary leading-relaxed mb-4">{children}</p>
-  );
-}
-
-function Li({ children }: { children: React.ReactNode }) {
-  return <li className="text-text-secondary leading-relaxed">{children}</li>;
-}
-
-function UL({ children }: { children: React.ReactNode }) {
-  return (
-    <ul className="list-disc ml-6 text-text-secondary leading-relaxed mb-4 space-y-1">
-      {children}
-    </ul>
-  );
-}
 
 export default function TermsPage() {
   return (
