@@ -197,7 +197,7 @@ Each section is a self-contained unit of work. When starting a section, create a
 
 ---
 
-### Section 10: Free/Pro Tier Gating ⬜
+### Section 10: Free/Pro Tier Gating ✅
 
 **Goal:** Implement the two-tier experience. Free runs non-LLM signals. Pro adds LLM signals.
 
@@ -274,4 +274,4 @@ Deferred to post-MVP:
 | S7: Gap Analyzer | ✅ Complete | `feat/v2-gap-analyzer` | #36 merged |
 | S8: Executor Adapter | ✅ Complete | `feat/v2-executor-adapter` | #34 merged |
 | S9: Pipeline v2 | ✅ Complete | `feat/section-9-score-reporter` | #37 merged |
-| S10: Free/Pro | ⬜ Not started | — | — |
+| S10: Free/Pro | ✅ Complete | `feat/v2-free-pro-gating` | #38 merged |
