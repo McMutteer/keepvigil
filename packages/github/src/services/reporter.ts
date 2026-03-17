@@ -151,7 +151,7 @@ async function findExistingComment(
   return existing?.id ?? null;
 }
 
-async function postOrUpdateComment(
+async function _postOrUpdateComment(
   octokit: ProbotOctokit,
   owner: string,
   repo: string,
