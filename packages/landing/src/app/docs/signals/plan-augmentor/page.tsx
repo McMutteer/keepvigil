@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Callout } from "@/components/docs/callout";
-import { CodeBlock } from "@/components/docs/code-block";
 import { PrevNext } from "@/components/docs/prev-next";
 import { getPrevNext } from "@/lib/docs-nav";
 
@@ -22,7 +21,7 @@ export default function PlanAugmentorPage() {
         Weight: 15 | Tier: Pro | Requires LLM
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         The Plan Augmentor goes beyond verifying what you wrote &mdash; it finds
         what you forgot to write.
       </Callout>

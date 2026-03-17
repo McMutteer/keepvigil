@@ -8,6 +8,11 @@ const AppConfigSchema = z.object({
   databaseUrl:         z.string().url("DATABASE_URL must be a valid URL"),
   groqApiKey:          z.string().default(""),
   groqModel:           z.string().default("openai/gpt-oss-120b"),
+  stripeGatewayUrl:      z.string().default(""),
+  stripeGatewayApiKey:   z.string().default(""),
+  stripeForwardingSecret: z.string().default(""),
+  stripeProPriceId:      z.string().default(""),
+  stripeTeamPriceId:     z.string().default(""),
   port:                z.coerce.number().int().min(1).max(65535).default(3200),
   nodeEnv:             z.string().default("development"),
 });
@@ -24,6 +29,11 @@ export function loadConfig(): AppConfig {
     databaseUrl:         process.env.DATABASE_URL,
     groqApiKey:          process.env.GROQ_API_KEY,
     groqModel:           process.env.GROQ_MODEL,
+    stripeGatewayUrl:       process.env.STRIPE_GATEWAY_URL,
+    stripeGatewayApiKey:    process.env.STRIPE_GATEWAY_API_KEY,
+    stripeForwardingSecret: process.env.STRIPE_FORWARDING_SECRET,
+    stripeProPriceId:       process.env.STRIPE_PRO_PRICE_ID,
+    stripeTeamPriceId:      process.env.STRIPE_TEAM_PRICE_ID,
     port:                process.env.PORT,
     nodeEnv:             process.env.NODE_ENV,
   });

@@ -37,6 +37,15 @@ vi.mock("../services/executor-router.js", () => ({
   routeToExecutors: mockRouteToExecutors,
 }));
 
+vi.mock("../services/subscription.js", () => ({
+  checkPlan: vi.fn().mockResolvedValue("free"),
+  isPro: vi.fn().mockReturnValue(false),
+}));
+
+vi.mock("../services/rate-limiter.js", () => ({
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true }),
+}));
+
 // ---------------------------------------------------------------------------
 // Import after mocks
 // ---------------------------------------------------------------------------

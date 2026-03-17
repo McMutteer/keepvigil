@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import type { Probot, ProbotOctokit } from "probot";
 import type { ClassifiedItem, ExecutionResult, LLMClient, ParsedTestPlan, Signal, VerifyTestPlanJob, VigilConfig } from "@vigil/core";
 import { parseTestPlan, classifyItems, createLLMClient, scanCredentials, extractChangedFilesWithStatus, mapCoverage, createLogger, runWithCorrelationId } from "@vigil/core";
+import type { Database } from "@vigil/core/db";
 import { reportResults } from "./reporter.js";
 import { cloneRepo, cleanupRepo } from "./repo-clone.js";
 import { detectPreviewUrl } from "./preview-url.js";
@@ -19,8 +20,17 @@ import { analyzeDiff } from "./diff-analyzer.js";
 import { analyzeGaps } from "./gap-analyzer.js";
 import { augmentPlan } from "./plan-augmentor.js";
 import { checkContracts } from "./contract-checker.js";
+import { checkPlan, isPro } from "./subscription.js";
+import { checkRateLimit } from "./rate-limiter.js";
 
 const log = createLogger("pipeline");
+
+let pipelineDb: Database | null = null;
+
+/** Set the database instance for subscription lookups */
+export function setPipelineDb(database: Database): void {
+  pipelineDb = database;
+}
 
 /**
  * Run the full verification pipeline for a single PR job.
@@ -163,6 +173,17 @@ async function _runPipeline(
 
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
+  // Stage 0: Check subscription plan + rate limit
+  const plan = pipelineDb ? await checkPlan(pipelineDb, Number(installationId)) : "free";
+  const proEnabled = isPro(plan);
+  log.info({ installationId, plan, proEnabled }, "Subscription plan resolved");
+
+  const rateCheck = checkRateLimit(Number(installationId), plan);
+  if (!rateCheck.allowed) {
+    log.warn({ installationId, message: rateCheck.message }, "Rate limited — skipping pipeline");
+    return;
+  }
+
   const octokit = await probot.auth(Number(installationId));
 
   let repoPath: string | null = null;
@@ -245,9 +266,9 @@ async function _runPipeline(
     log.info({ signalId: executorSignal.id, score: executorSignal.score, passed: executorSignal.passed, ciOverrides: ciVerifiedIds.size, contractOverrides: contractVerifiedFiles.size }, "Executor adapter complete");
 
     // LLM signals: Diff Analyzer + Gap Analyzer + Plan Augmentor
-    // TODO: Re-enable Pro tier gating when ready for paid users.
-    // For now, all signals run using the platform LLM key for testing.
-    if (diff) {
+    // Pro tier: all three LLM signals run
+    // Free tier: only Plan Augmentor (uses platform key)
+    if (diff && proEnabled) {
       // Stage 6.9: Diff Analyzer — LLM compares diff vs test plan claims
       const diffSignal = await analyzeDiff({ diff, classifiedItems, llm });
       signals.push(diffSignal);
@@ -263,6 +284,11 @@ async function _runPipeline(
       const augmentorSignal = await augmentPlan({ diff, classifiedItems, llm, repoPath, contractCheckerActive: contractVerifiedFiles.size > 0 });
       signals.push(augmentorSignal);
       log.info({ signalId: augmentorSignal.id, score: augmentorSignal.score, passed: augmentorSignal.passed, items: augmentorSignal.details.length }, "Plan augmentor complete");
+    } else if (diff) {
+      // Free tier: only Plan Augmentor runs (uses platform key)
+      const augmentorSignal = await augmentPlan({ diff, classifiedItems, llm, repoPath, contractCheckerActive: contractVerifiedFiles.size > 0 });
+      signals.push(augmentorSignal);
+      log.info({ signalId: augmentorSignal.id, score: augmentorSignal.score, passed: augmentorSignal.passed, plan }, "Plan augmentor complete (free tier)");
     }
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);

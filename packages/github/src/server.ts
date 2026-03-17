@@ -8,6 +8,9 @@ import { loadConfig } from "./config.js";
 import { vigilApp } from "./app.js";
 import { initQueue, closeQueue, getQueue } from "./services/queue.js";
 import { setDatabase } from "./webhooks/installation.js";
+import { handleStripeWebhook, setStripeWebhookDeps } from "./webhooks/stripe.js";
+import { handleCheckout } from "./services/checkout.js";
+import { setPipelineDb } from "./services/pipeline.js";
 import { createWorker } from "./worker.js";
 import { handleMetrics } from "./metrics.js";
 
@@ -55,6 +58,12 @@ async function main(): Promise<void> {
   // Initialize database
   const { db, pool } = createDb(config.databaseUrl);
   setDatabase(db);
+  setPipelineDb(db);
+
+  const stripeSecret = config.stripeForwardingSecret;
+  if (stripeSecret) {
+    setStripeWebhookDeps(db, stripeSecret);
+  }
 
   // Initialize BullMQ queue
   await initQueue(config.redisUrl);
@@ -93,6 +102,28 @@ async function main(): Promise<void> {
         if (!res.headersSent) {
           res.writeHead(500, { "Content-Type": "text/plain" });
           res.end("# metrics error");
+        }
+      });
+      return;
+    }
+
+    if (req.url === "/api/stripe/webhooks" && req.method === "POST") {
+      handleStripeWebhook(req, res).catch((err) => {
+        log.error({ err }, "Unhandled error in Stripe webhook");
+        if (!res.headersSent) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: "Internal error" }));
+        }
+      });
+      return;
+    }
+
+    if (req.url?.startsWith("/api/checkout") && req.method === "GET") {
+      handleCheckout(req, res, config).catch((err) => {
+        log.error({ err }, "Unhandled error in checkout");
+        if (!res.headersSent) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: "Internal error" }));
         }
       });
       return;

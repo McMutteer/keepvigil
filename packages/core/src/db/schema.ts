@@ -40,3 +40,17 @@ export const healthChecks = pgTable("health_checks", {
   message: text("message"),
   checkedAt: timestamp("checked_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Tracks Stripe subscriptions per GitHub App installation */
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  installationId: integer("installation_id").notNull().unique(),
+  accountLogin: varchar("account_login", { length: 255 }).notNull(),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }).notNull(),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
+  plan: varchar("plan", { length: 50 }).notNull().default("free"),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
