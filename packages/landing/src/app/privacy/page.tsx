@@ -150,7 +150,9 @@ export default function PrivacyPage() {
           Estos datos son procesados exclusivamente en memoria y NO son
           almacenados.
         </strong>{" "}
-        Se descartan tras completar el análisis del PR.
+        Se descartan tras completar el análisis del PR. Ni Vigil ni sus
+        proveedores de LLM utilizan el código del Usuario para entrenar, refinar
+        o influenciar modelos de inteligencia artificial.
       </P>
 
       <Sub>3.3 Metadata almacenada</Sub>

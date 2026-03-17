@@ -418,6 +418,16 @@ export default function TermsPage() {
         </Li>
       </UL>
       <P>
+        <strong className="text-text-primary">
+          No entrenamiento de modelos:
+        </strong>{" "}
+        Ni Vigil ni sus proveedores de LLM (Groq, en la configuración por
+        defecto) utilizan el código del Usuario para entrenar, refinar o
+        influenciar modelos de inteligencia artificial. El código se procesa
+        exclusivamente para generar los resultados del análisis y se descarta
+        inmediatamente después.
+      </P>
+      <P>
         <strong className="text-text-primary">BYOLLM:</strong> Cuando el
         Usuario configura su propio LLM mediante{" "}
         <code className="font-mono text-sm text-accent">.vigil.yml</code>,
@@ -529,16 +539,29 @@ export default function TermsPage() {
       {/* --- S12: Garantías y Renuncias --- */}
       <SectionTitle>Sección 12: Garantías y Renuncias</SectionTitle>
       <P>
-        12.1 <strong className="text-text-primary">Servicio &quot;tal cual&quot;:</strong>{" "}
-        El Servicio Vigil se proporciona &quot;tal cual&quot; y &quot;según
-        disponibilidad&quot;. La Empresa no ofrece garantías de ningún tipo,
-        expresas o implícitas, incluyendo garantías de comerciabilidad,
-        idoneidad para un propósito particular, disponibilidad ininterrumpida,
-        ausencia de errores o detección completa de bugs en el código del
-        Usuario.
+        12.1{" "}
+        <strong className="text-text-primary">Garantía limitada:</strong> La
+        Empresa garantiza que el Servicio funcionará de manera sustancialmente
+        conforme a su documentación durante los primeros 30 días posteriores a
+        la instalación o al inicio de una suscripción de pago. Si el Servicio no
+        cumple con esta garantía durante dicho período, la Empresa, a su
+        elección, corregirá la no conformidad o reembolsará las tarifas pagadas,
+        y cualquiera de las partes podrá dar por terminado el acuerdo.
       </P>
       <P>
         12.2{" "}
+        <strong className="text-text-primary">
+          Servicio &quot;tal cual&quot; (salvo la garantía del 12.1):
+        </strong>{" "}
+        El Servicio Vigil se proporciona &quot;tal cual&quot; y &quot;según
+        disponibilidad&quot;. La Empresa no ofrece garantías adicionales de
+        ningún tipo, expresas o implícitas, incluyendo garantías de
+        comerciabilidad, idoneidad para un propósito particular, disponibilidad
+        ininterrumpida, ausencia de errores o detección completa de bugs en el
+        código del Usuario.
+      </P>
+      <P>
+        12.3{" "}
         <strong className="text-text-primary">
           Exclusión de responsabilidad por terceros:
         </strong>{" "}
@@ -547,7 +570,7 @@ export default function TermsPage() {
         cuales se regirán por sus propios términos y condiciones.
       </P>
       <P>
-        12.3{" "}
+        12.4{" "}
         <strong className="text-text-primary">Aceptación de riesgos:</strong> Al
         utilizar el Servicio, el Usuario acepta asumir todos los riesgos
         derivados de las decisiones tomadas con base en los confidence scores,
@@ -585,11 +608,12 @@ export default function TermsPage() {
       {/* --- S14: Indemnización --- */}
       <SectionTitle>Sección 14: Indemnización</SectionTitle>
       <P>
-        El Usuario acepta indemnizar, defender y mantener indemne a la Empresa,
-        sus afiliados, directores, empleados, representantes y proveedores
-        frente a cualquier reclamación, demanda, daño, pérdida, obligación,
-        costo o gasto (incluidos honorarios razonables de abogados) que se
-        derive de:
+        14.1{" "}
+        <strong className="text-text-primary">Por parte del Usuario:</strong> El
+        Usuario acepta indemnizar, defender y mantener indemne a la Empresa, sus
+        afiliados, directores, empleados, representantes y proveedores frente a
+        cualquier reclamación, demanda, daño, pérdida, obligación, costo o gasto
+        (incluidos honorarios razonables de abogados) que se derive de:
       </P>
       <UL>
         <Li>El uso indebido del Servicio o de sus resultados.</Li>
@@ -602,8 +626,29 @@ export default function TermsPage() {
         </Li>
       </UL>
       <P>
-        Esta obligación subsistirá incluso después de la desinstalación de la
-        GitHub App o la cancelación de la cuenta.
+        14.2{" "}
+        <strong className="text-text-primary">Por parte de la Empresa:</strong>{" "}
+        La Empresa indemnizará al Usuario frente a reclamaciones de terceros que
+        aleguen que el Servicio (excluyendo el código open source bajo licencia
+        MIT) infringe derechos de propiedad intelectual de dicho tercero. Si se
+        determina infracción, la Empresa podrá, a su elección: (a) obtener el
+        derecho de uso continuado, (b) modificar el Servicio para eliminar la
+        infracción, o (c) dar por terminado el acuerdo y reembolsar las tarifas
+        prepagadas no utilizadas. Esta indemnización no aplica cuando la
+        infracción resulte del uso del Servicio en combinación con productos no
+        proporcionados por la Empresa, del uso indebido del Servicio, o de
+        modificaciones realizadas por el Usuario.
+      </P>
+      <P>
+        14.3{" "}
+        <strong className="text-text-primary">Procedimiento:</strong> La parte
+        indemnizada deberá notificar prontamente a la parte indemnizadora,
+        otorgarle control exclusivo de la defensa, y proporcionar la asistencia
+        razonable necesaria.
+      </P>
+      <P>
+        Estas obligaciones subsistirán incluso después de la desinstalación de
+        la GitHub App o la cancelación de la cuenta.
       </P>
 
       {/* --- S15: Resolución de Conflictos --- */}
