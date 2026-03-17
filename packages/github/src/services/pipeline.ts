@@ -217,9 +217,17 @@ async function _runPipeline(
     }
 
     // Stage 6.8: Executor Adapter (wraps v1 execution results as signal)
-    const executorSignal = buildExecutorSignal(classifiedItems, executionResults);
+    // Pass CI-verified item IDs so sandbox failures don't override CI results
+    const ciVerifiedIds = new Set<string>();
+    for (const ci of classifiedItems) {
+      const ciDetail = ciSignal.details.find((d) => d.label === ci.item.text.slice(0, 80));
+      if (ciDetail?.status === "pass") {
+        ciVerifiedIds.add(ci.item.id);
+      }
+    }
+    const executorSignal = buildExecutorSignal(classifiedItems, executionResults, ciVerifiedIds.size > 0 ? ciVerifiedIds : undefined);
     signals.push(executorSignal);
-    log.info({ signalId: executorSignal.id, score: executorSignal.score, passed: executorSignal.passed }, "Executor adapter complete");
+    log.info({ signalId: executorSignal.id, score: executorSignal.score, passed: executorSignal.passed, ciOverrides: ciVerifiedIds.size }, "Executor adapter complete");
 
     // LLM signals: Diff Analyzer + Gap Analyzer
     // TODO: Re-enable Pro tier gating when ready for paid users.

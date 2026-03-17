@@ -7,6 +7,10 @@
  * Mirrors the conclusion logic from check-run-updater.ts:
  * - DETERMINISTIC/HIGH fail → signal.passed = false (blocking)
  * - MEDIUM/LOW fail → signal.passed = true (non-blocking, score still affected)
+ *
+ * CI Bridge override: if CI already verified an item as passed, a sandbox
+ * failure is treated as "CI verified" (pass) — CI is more authoritative than
+ * the sandbox which may lack dependencies.
  */
 
 import type { ClassifiedItem, ExecutionResult, Signal, SignalDetail } from "@vigil/core";
@@ -15,12 +19,13 @@ import { createSignal } from "@vigil/core";
 /**
  * Build an executor Signal from classified items and their execution results.
  *
- * Skipped items (SKIP confidence, none executor, retries, disabled categories)
- * are excluded from the score. Only actually-executed items count.
+ * @param ciVerifiedItemIds - Item IDs that CI Bridge already verified as passing.
+ *   If a shell executor fails but CI verified the same item, the CI result wins.
  */
 export function buildExecutorSignal(
   classifiedItems: ClassifiedItem[],
   executionResults: ExecutionResult[],
+  ciVerifiedItemIds?: Set<string>,
 ): Signal {
   if (classifiedItems.length === 0 || executionResults.length === 0) {
     return createSignal({
@@ -55,12 +60,23 @@ export function buildExecutorSignal(
     executedCount++;
     const isBlocking = item.confidence === "DETERMINISTIC" || item.confidence === "HIGH";
 
+    // CI Bridge override: if CI verified this item as passing, trust CI over sandbox
+    const ciVerified = ciVerifiedItemIds?.has(item.item.id) ?? false;
+
     if (result.passed) {
       passedCount++;
       details.push({
         label: item.item.text.slice(0, 80),
         status: "pass",
         message: `${item.executorType} execution passed (${result.duration}ms)`,
+      });
+    } else if (ciVerified) {
+      // Sandbox failed but CI passed — trust CI
+      passedCount++;
+      details.push({
+        label: item.item.text.slice(0, 80),
+        status: "pass",
+        message: `CI verified (sandbox failed but GitHub Actions passed)`,
       });
     } else {
       if (isBlocking) blockingFailed = true;
