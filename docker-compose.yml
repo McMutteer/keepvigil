@@ -39,6 +39,20 @@ services:
           memory: 1G
     restart: unless-stopped
 
+  landing:
+    build:
+      context: .
+      dockerfile: packages/landing/Dockerfile
+    networks:
+      - dokploy-network
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+    restart: unless-stopped
+
   postgres:
     image: postgres:16-alpine
     environment:
