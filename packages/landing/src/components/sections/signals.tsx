@@ -100,7 +100,7 @@ export function Signals() {
         <ScrollReveal>
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-4">
-              Eight signals. One score.
+              Nine signals. One score.
             </h2>
             <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[720px] mx-auto">
               Vigil doesn&apos;t just run tests. It collects multiple

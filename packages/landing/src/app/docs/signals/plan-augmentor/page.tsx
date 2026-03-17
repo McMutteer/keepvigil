@@ -18,7 +18,7 @@ export default function PlanAugmentorPage() {
         Plan Augmentor
       </h1>
       <p className="text-text-secondary mb-8">
-        Weight: 15 | Tier: Pro | Requires LLM
+        Weight: 15 | Tier: Free | Requires LLM
       </p>
 
       <Callout variant="info">

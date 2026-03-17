@@ -18,7 +18,7 @@ export default function TestExecutionPage() {
         Test Execution
       </h1>
       <p className="text-text-secondary mb-8">
-        Weight: 20 &middot; Free tier
+        Weight: 15 &middot; Free tier
       </p>
 
       <p className="text-text-secondary leading-relaxed mb-4">

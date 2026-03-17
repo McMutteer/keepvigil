@@ -91,7 +91,7 @@ export default function GettingStartedPage() {
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>Parses the test plan from the PR body</li>
         <li>Classifies each item (shell command, file assertion, API test, etc.)</li>
-        <li>Collects 8 independent signals in parallel</li>
+        <li>Collects 9 independent signals in parallel</li>
         <li>Calculates a weighted confidence score from 0 to 100</li>
         <li>Posts results as a PR comment and GitHub Check Run</li>
       </ul>
@@ -104,10 +104,12 @@ export default function GettingStartedPage() {
 | CI Bridge         |   100 |   ✅   |
 | Credential Scan   |   100 |   ✅   |
 | Test Execution    |    75 |   ⚠️   |
+| Plan Augmentor    |    90 |   ✅   |
+| Contract Checker  |   100 |   ✅   |
 | Coverage Mapper   |    60 |   ⚠️   |
-| Assertion Verifier|   100 |   ✅   |
 | Diff vs Claims    |    80 |   ✅   |
-| Gap Analysis      |    70 |   ⚠️   |`}
+| Gap Analysis      |    70 |   ⚠️   |
+| Assertion Verifier|   100 |   ✅   |`}
       />
 
       {/* Step 4 */}
