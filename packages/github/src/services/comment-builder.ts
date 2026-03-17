@@ -136,6 +136,17 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   }
   parts.push("");
 
+  // Pro upsell — show when signals are gated (Free tier)
+  const hasGatedSignals = confidenceScore.signals.some((s) => s.requiresLLM && s.weight === 0);
+  if (hasGatedSignals && !isRetry) {
+    parts.push(
+      "---",
+      "",
+      "\uD83D\uDCA1 **Unlock the full confidence score** — Diff Analysis, Gap Analysis, and Contract Checking detect issues your test plan missed. [Upgrade to Pro \u2192](https://keepvigil.dev/#pricing)",
+      "",
+    );
+  }
+
   // Action items — highlight failures and warnings
   const actionItems = buildActionItems(confidenceScore, items);
   if (actionItems) {
