@@ -7,6 +7,7 @@ export interface NavItem {
 
 export const docsNav: NavItem[] = [
   { title: "Getting Started", href: "/docs/getting-started" },
+  { title: "Writing Test Plans", href: "/docs/writing-test-plans" },
   { title: "How It Works", href: "/docs/how-it-works" },
   { title: "Configuration", href: "/docs/configuration" },
   {
