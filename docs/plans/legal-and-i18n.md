@@ -107,6 +107,24 @@ Privacy sections that transfer:
 - **BYOLLM:** Mantener disclaimer — fragmentos de código van al LLM provider del usuario
 - **Sub-procesadores:** GitHub (API), Groq (LLM default), Contabo/Dokploy (hosting EU), Stripe (pagos)
 
+## CodeRabbit Benchmark (improvements applied)
+
+Analyzed CodeRabbit's Terms, Privacy, and DPA. Three improvements adopted:
+
+1. **No-model-training clause** (Terms S8 + Privacy S3): "Ni Vigil ni sus proveedores de LLM utilizan el código del Usuario para entrenar modelos." CodeRabbit has this explicitly with OpenAI/Anthropic — we added the same for Groq.
+2. **30-day limited warranty** (Terms S12.1): If the service doesn't work per documentation within 30 days, Vigil corrects or refunds. Standard SaaS practice that CodeRabbit includes.
+3. **Bidirectional indemnification** (Terms S14.2): Vigil indemnifies users if the hosted service infringes third-party IP. Excludes MIT code, user modifications, and combinations. CodeRabbit has this — it's standard B2B SaaS.
+
+### Deferred (future)
+
+| Item | Priority | When |
+|------|----------|------|
+| DPA (Data Processing Agreement) as `/dpa` | Medium | When Team tier launches (enterprise GDPR requirement) |
+| GDPR Art. 27 EU/UK representatives | Low | When significant European user base exists |
+| SOC2 Type II compliance | Low | Enterprise readiness milestone |
+| DPO formal designation | Low | When legally required by volume |
+| Data storage opt-out mechanism | Medium | With Team tier settings UI |
+
 ## i18n (companion task — GTM S9)
 
 When implementing i18n for the full landing:
