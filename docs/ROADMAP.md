@@ -67,6 +67,29 @@ v2 confidence score engine is **deployed and production-tested**. See `docs/mast
 - [ ] Landing page
 - [ ] Rate limit handling for Groq
 
+## v3 — Signal Improvements (2026-03-17)
+
+**New signals:**
+- [x] Plan Augmentor — generates and verifies items the test plan missed — PR #45
+- [x] Contract Checker — cross-file API/frontend shape verification — PR #45
+- [x] Coverage Mapper Reform — plan-covered files, not just test files — PR #45
+- [x] Parser fix — boilerplate footer no longer appends to last item — PR #45
+
+**Signal coordination:**
+- [x] Contract-over-assertion trust — mirrors CI override pattern — PR #47
+- [x] Pipeline reorder — Contract Checker before Executor Adapter — PR #47
+- [x] Augmentor contract filtering — skips contract items when checker active — PR #47
+
+**Context & onboarding:**
+- [x] Augmentor reads CLAUDE.md for project context — reduces false positives — PR #48
+- [x] Onboarding tips on first Vigil run — collapsible tips in first comment — PR #48
+
+**Next (v3.1):**
+- [ ] **Smart file reader** — keyword-directed context extraction for assertion executor. Instead of truncating to first 20KB, search for the function/variable name in the full file and send relevant lines ± 30 lines of context. Discovered in PR #48: `buildOnboardingTips` at line 590 was invisible to LLM due to blind truncation. See `docs/plans/smart-file-reader.md`.
+- [ ] **Augmentor score semantics** — low score means "found issues" (good), not "failed" (bad). Consider separate presentation: findings count instead of pass/fail ratio.
+- [ ] **Comment narrative** — separate "Your test plan: 17/17 passed" from "Vigil found 4 additional concerns". Current format mixes them.
+- [ ] **Test plan quality signal** — evaluate the test plan itself: warn if >80% existence checks, suggest logic/contract items.
+
 ---
 
 ## Notas
@@ -75,5 +98,7 @@ v2 confidence score engine is **deployed and production-tested**. See `docs/mast
 - P3 CI pipeline + graceful degradation completos (PRs #20, #21)
 - P4 100% completo — todos los items resueltos
 - P2: config file (#22), config UX (#23), retry (#24), webhooks (#25) completos — queda Marketplace
-- v1 feature-complete — focus shifts to v2 confidence score
+- v1 feature-complete, v2 feature-complete + polished, v3 signal improvements deployed
+- **Real-world testing:** siegekit PRs #8-#14, keepvigil PRs #45-#48
+- **Best score:** 95/100 on keepvigil PR #47 (first above 80)
 - Cuando se complete un item, marcarlo aqui Y en el GitHub Issue correspondiente
