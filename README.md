@@ -61,7 +61,7 @@ Any signal failure (e.g., credentials detected) caps the score at 70 — one pro
 
 ## BYOLLM (Bring Your Own LLM)
 
-Pro tier signals use your own LLM API key. Configure in `.vigil.yml`:
+Pro-tier signals use your own LLM API key. Configure in `.vigil.yml`:
 
 ```yaml
 version: 1
