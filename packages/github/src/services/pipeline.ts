@@ -251,6 +251,7 @@ async function _runPipeline(
         vigiConfig,
         configWarnings,
         retryItemIds,
+        signals: signals.length > 0 ? signals : undefined,
       });
     } catch (reportErr) {
       log.error({ err: reportErr }, "Failed to report results");

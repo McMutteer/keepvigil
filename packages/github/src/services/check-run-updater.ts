@@ -1,4 +1,5 @@
 import type { ProbotOctokit } from "probot";
+import type { ConfidenceScore } from "@vigil/core";
 import type { ReportItem, ReportSummary, CheckConclusion } from "./reporter.js";
 
 export interface UpdateCheckRunParams {
@@ -11,6 +12,7 @@ export interface UpdateCheckRunParams {
   items: ReportItem[];
   pipelineError?: string;
   correlationId?: string;
+  confidenceScore?: ConfidenceScore;
 }
 
 /** GitHub Check Run text field limit is 65,535 bytes. We target 60,000 bytes to stay well clear. */
@@ -19,9 +21,9 @@ const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Update the pending Check Run with final results and conclusion. */
 export async function updateCheckRun(params: UpdateCheckRunParams): Promise<void> {
-  const { octokit, owner, repo, checkRunId, conclusion, summary, items, pipelineError, correlationId } = params;
-  const title = pipelineError && items.length === 0 ? pipelineError : buildCheckRunTitle(summary);
-  const summaryMd = buildCheckRunSummary(summary, conclusion, pipelineError, correlationId);
+  const { octokit, owner, repo, checkRunId, conclusion, summary, items, pipelineError, correlationId, confidenceScore } = params;
+  const title = pipelineError && items.length === 0 ? pipelineError : buildCheckRunTitle(summary, confidenceScore);
+  const summaryMd = buildCheckRunSummary(summary, conclusion, pipelineError, correlationId, confidenceScore);
   const text = buildCheckRunText(items);
 
   await octokit.rest.checks.update({
@@ -62,8 +64,19 @@ export function determineConclusion(items: ReportItem[]): CheckConclusion {
   return "success";
 }
 
+/** Map a ConfidenceScore recommendation to a CheckConclusion. */
+export function conclusionFromScore(score: ConfidenceScore): CheckConclusion {
+  if (score.recommendation === "safe") return "success";
+  if (score.recommendation === "review") return "neutral";
+  return "failure";
+}
+
 /** Build the Check Run title string. */
-export function buildCheckRunTitle(summary: ReportSummary): string {
+export function buildCheckRunTitle(summary: ReportSummary, confidenceScore?: ConfidenceScore): string {
+  if (confidenceScore) {
+    return `Confidence: ${confidenceScore.score}/100 — ${confidenceScore.recommendation}`;
+  }
+
   const { passed, failed, needsReview, skipped, total } = summary;
 
   if (total === 0) return "No test plan items found";
@@ -83,8 +96,25 @@ export function buildCheckRunTitle(summary: ReportSummary): string {
 }
 
 /** Build the Check Run summary markdown. */
-export function buildCheckRunSummary(summary: ReportSummary, conclusion: CheckConclusion, pipelineError?: string, correlationId?: string): string {
-  const lines: string[] = [
+export function buildCheckRunSummary(summary: ReportSummary, conclusion: CheckConclusion, pipelineError?: string, correlationId?: string, confidenceScore?: ConfidenceScore): string {
+  const lines: string[] = [];
+
+  if (confidenceScore) {
+    lines.push(
+      `## Vigil Confidence Score: ${confidenceScore.score}/100`,
+      "",
+      `**Recommendation:** ${confidenceScore.recommendation}`,
+      "",
+      "| Signal | Score | Weight | Passed |",
+      "|--------|-------|--------|--------|",
+    );
+    for (const sig of confidenceScore.signals) {
+      lines.push(`| ${sig.name} | ${sig.score}/100 | ${sig.weight} | ${sig.passed ? "Yes" : "No"} |`);
+    }
+    lines.push("");
+  }
+
+  lines.push(
     "## Vigil Test Plan Results",
     "",
     "| Metric | Count |",
@@ -95,15 +125,21 @@ export function buildCheckRunSummary(summary: ReportSummary, conclusion: CheckCo
     `| Skipped | ${summary.skipped} |`,
     `| **Total** | **${summary.total}** |`,
     "",
-  ];
+  );
 
-  const explanations: Record<CheckConclusion, string> = {
-    success: "All high-confidence items passed verification.",
-    failure: "One or more high-confidence items failed.",
-    neutral: summary.total - summary.skipped === 0
-      ? "No verifiable items found — all items require human review."
-      : "Non-blocking issues found. High-confidence items passed, but some lower-confidence items need review.",
-  };
+  const explanations: Record<CheckConclusion, string> = confidenceScore
+    ? {
+        success: "Score-based signals indicate this PR is safe to merge.",
+        failure: "Score-based signals recommend caution before merging.",
+        neutral: "Score-based signals recommend human review before merging.",
+      }
+    : {
+        success: "All high-confidence items passed verification.",
+        failure: "One or more high-confidence items failed.",
+        neutral: summary.total - summary.skipped === 0
+          ? "No verifiable items found — all items require human review."
+          : "Non-blocking issues found. High-confidence items passed, but some lower-confidence items need review.",
+      };
 
   lines.push(`**Conclusion:** \`${conclusion}\` — ${explanations[conclusion]}`);
 
