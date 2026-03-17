@@ -188,15 +188,23 @@ function parseResponse(raw: string): Contract[] | null {
 // Signal builder
 // ---------------------------------------------------------------------------
 
-function neutralSignal(message: string): Signal {
-  return createSignal({
-    id: "contract-checker",
-    name: "Contract Check",
-    score: 100,
-    passed: true,
-    details: [{ label: "Skipped", status: "skip", message }],
-    requiresLLM: true,
-  });
+export interface ContractCheckerResult {
+  signal: Signal;
+  verifiedFiles: Set<string>;
+}
+
+function neutralResult(message: string): ContractCheckerResult {
+  return {
+    signal: createSignal({
+      id: "contract-checker",
+      name: "Contract Check",
+      score: 100,
+      passed: true,
+      details: [{ label: "Skipped", status: "skip", message }],
+      requiresLLM: true,
+    }),
+    verifiedFiles: new Set(),
+  };
 }
 
 /**
@@ -205,21 +213,24 @@ function neutralSignal(message: string): Signal {
  * Only runs when the PR diff contains both producer (API) and consumer (frontend) files.
  * Uses LLM to analyze the diff and identify shape mismatches.
  */
-export async function checkContracts(options: ContractCheckerOptions): Promise<Signal> {
+export async function checkContracts(options: ContractCheckerOptions): Promise<ContractCheckerResult> {
   const { diff, llm } = options;
 
-  if (!diff.trim()) return neutralSignal("Empty diff — nothing to check");
+  if (!diff.trim()) return neutralResult("Empty diff — nothing to check");
 
   // Fast path: skip if PR doesn't touch both producer and consumer
   if (!hasContractRisk(diff)) {
-    return createSignal({
-      id: "contract-checker",
-      name: "Contract Check",
-      score: 100,
-      passed: true,
-      details: [{ label: "No cross-boundary changes", status: "pass", message: "PR does not touch both API and frontend files" }],
-      requiresLLM: true,
-    });
+    return {
+      signal: createSignal({
+        id: "contract-checker",
+        name: "Contract Check",
+        score: 100,
+        passed: true,
+        details: [{ label: "No cross-boundary changes", status: "pass", message: "PR does not touch both API and frontend files" }],
+        requiresLLM: true,
+      }),
+      verifiedFiles: new Set(),
+    };
   }
 
   let responseText: string;
@@ -232,24 +243,27 @@ export async function checkContracts(options: ContractCheckerOptions): Promise<S
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     log.warn({ error: msg.replace(/ghs_[A-Za-z0-9]+/g, "***") }, "Contract checker LLM call failed");
-    return neutralSignal("LLM analysis unavailable");
+    return neutralResult("LLM analysis unavailable");
   }
 
   const contracts = parseResponse(responseText);
   if (!contracts) {
     log.warn("Contract checker received invalid JSON from LLM");
-    return neutralSignal("LLM returned invalid response");
+    return neutralResult("LLM returned invalid response");
   }
 
   if (contracts.length === 0) {
-    return createSignal({
-      id: "contract-checker",
-      name: "Contract Check",
-      score: 100,
-      passed: true,
-      details: [{ label: "No contracts", status: "pass", message: "No API/frontend contracts found in diff" }],
-      requiresLLM: true,
-    });
+    return {
+      signal: createSignal({
+        id: "contract-checker",
+        name: "Contract Check",
+        score: 100,
+        passed: true,
+        details: [{ label: "No contracts", status: "pass", message: "No API/frontend contracts found in diff" }],
+        requiresLLM: true,
+      }),
+      verifiedFiles: new Set(),
+    };
   }
 
   // Build details
@@ -277,17 +291,29 @@ export async function checkContracts(options: ContractCheckerOptions): Promise<S
     }
   }
 
+  // Collect file paths from compatible contracts for trust override
+  const verifiedFiles = new Set<string>();
+  for (const contract of contracts) {
+    if (contract.compatible) {
+      verifiedFiles.add(contract.producer);
+      verifiedFiles.add(contract.consumer);
+    }
+  }
+
   const total = compatible + incompatible;
   const score = total > 0 ? Math.round((compatible / total) * 100) : 100;
 
-  return createSignal({
-    id: "contract-checker",
-    name: "Contract Check",
-    score,
-    passed: incompatible === 0,
-    details,
-    requiresLLM: true,
-  });
+  return {
+    signal: createSignal({
+      id: "contract-checker",
+      name: "Contract Check",
+      score,
+      passed: incompatible === 0,
+      details,
+      requiresLLM: true,
+    }),
+    verifiedFiles,
+  };
 }
 
 /** Shorten a path to just filename for display */
