@@ -147,11 +147,14 @@ function validateChain(command: string, extraAllowPrefixes: string[]): Validatio
       return { allowed: false, reason: "Empty segment in && chain" };
     }
 
-    // `cd <path>` is safe as long as there's no path traversal
+    // `cd <path>` is safe as long as there's no path traversal or absolute paths
     if (/^cd\s+/.test(segment)) {
       const cdPath = segment.replace(/^cd\s+/, "").trim();
       if (cdPath.includes("..")) {
         return { allowed: false, reason: `Path traversal not allowed in cd: "${segment}"` };
+      }
+      if (cdPath.startsWith("/")) {
+        return { allowed: false, reason: `Absolute paths not allowed in cd: "${segment}"` };
       }
       continue;
     }
