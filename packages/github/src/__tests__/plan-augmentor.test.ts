@@ -171,6 +171,68 @@ describe("augmentPlan", () => {
     });
   });
 
+  describe("contract filtering", () => {
+    it("filters out contract items when contractCheckerActive is true", async () => {
+      const generateResponse = JSON.stringify({
+        items: [
+          { file: "package.json", assertion: "Has name field", category: "logic", severity: "medium" },
+          { file: "src/api.ts", assertion: "Response matches interface", category: "contract", severity: "high" },
+        ],
+      });
+      const verifyResponse = JSON.stringify({ verified: true, reasoning: "ok" });
+
+      const signal = await augmentPlan({
+        diff: SAMPLE_DIFF,
+        classifiedItems: [makeItem("tp-0", "test")],
+        llm: makeLLM([generateResponse, verifyResponse]),
+        repoPath: process.cwd(),
+        contractCheckerActive: true,
+      });
+
+      // Only the logic item should remain (contract filtered out)
+      expect(signal.details.filter((d) => d.status === "pass")).toHaveLength(1);
+      expect(signal.details.some((d) => d.label.includes("[contract]"))).toBe(false);
+    });
+
+    it("keeps contract items when contractCheckerActive is false", async () => {
+      const generateResponse = JSON.stringify({
+        items: [
+          { file: "package.json", assertion: "Has name field", category: "contract", severity: "medium" },
+        ],
+      });
+      const verifyResponse = JSON.stringify({ verified: true, reasoning: "ok" });
+
+      const signal = await augmentPlan({
+        diff: SAMPLE_DIFF,
+        classifiedItems: [makeItem("tp-0", "test")],
+        llm: makeLLM([generateResponse, verifyResponse]),
+        repoPath: process.cwd(),
+        contractCheckerActive: false,
+      });
+
+      expect(signal.details.filter((d) => d.status === "pass")).toHaveLength(1);
+    });
+
+    it("returns neutral when all items are contracts and checker is active", async () => {
+      const generateResponse = JSON.stringify({
+        items: [
+          { file: "src/api.ts", assertion: "Matches interface", category: "contract", severity: "high" },
+        ],
+      });
+
+      const signal = await augmentPlan({
+        diff: SAMPLE_DIFF,
+        classifiedItems: [makeItem("tp-0", "test")],
+        llm: makeLLM([generateResponse]),
+        repoPath: process.cwd(),
+        contractCheckerActive: true,
+      });
+
+      expect(signal.details[0].status).toBe("skip");
+      expect(signal.details[0].message).toContain("Contract Checker");
+    });
+  });
+
   describe("signal metadata", () => {
     it("has correct signal id and requiresLLM", async () => {
       const signal = await augmentPlan({

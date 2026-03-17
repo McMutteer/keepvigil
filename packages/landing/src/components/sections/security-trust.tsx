@@ -53,8 +53,27 @@ export function SecurityTrust() {
           ))}
         </div>
 
+        {/* Security badges */}
         <ScrollReveal delay={400}>
-          <p className="text-center text-sm text-text-muted mt-8">
+          <div className="flex flex-wrap justify-center gap-3 mt-10">
+            {[
+              { icon: "🔒", label: "Docker Sandbox" },
+              { icon: "🛡️", label: "No Data Retention" },
+              { icon: "📜", label: "MIT Licensed" },
+              { icon: "🌍", label: "EU Servers" },
+            ].map((badge) => (
+              <span
+                key={badge.label}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-text-muted bg-bg-surface border border-white/[0.06]"
+              >
+                {badge.icon} {badge.label}
+              </span>
+            ))}
+          </div>
+        </ScrollReveal>
+
+        <ScrollReveal delay={500}>
+          <p className="text-center text-sm text-text-muted mt-6">
             Open source under MIT &middot;{" "}
             <a
               href="/docs/security"
