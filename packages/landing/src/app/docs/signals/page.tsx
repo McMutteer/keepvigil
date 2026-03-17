@@ -6,7 +6,7 @@ import { getPrevNext } from "@/lib/docs-nav";
 export const metadata: Metadata = {
   title: "Signals Overview | Vigil Docs",
   description:
-    "Eight independent signals combined into one confidence score for your PR.",
+    "Nine independent signals combined into one confidence score for your PR.",
 };
 
 export default function SignalsPage() {
@@ -18,7 +18,7 @@ export default function SignalsPage() {
         Signals
       </h1>
       <p className="text-text-secondary mb-8">
-        Eight independent signals. One confidence score.
+        Nine independent signals. One confidence score.
       </p>
 
       <p className="text-text-secondary leading-relaxed mb-4">
