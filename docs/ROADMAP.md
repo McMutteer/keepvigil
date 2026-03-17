@@ -4,104 +4,81 @@ Backlog de mejoras priorizadas. Referencia principal para cualquier sesión de t
 
 ---
 
-## P0 — Bugs de produccion (audit MEDIUM, alto impacto)
+## Completado
 
-- [x] **M4**: Parse vacio deja check run en "pending" forever — fixed PR #15
-- [x] **M1**: Health endpoint no verifica DB/Redis — fixed PR #15
-- [x] **M8**: Regex DoS en metadata checker — fixed PR #15
-- [x] **M13**: Queue sin validacion de tamano de payload — fixed PR #15
-- [x] **M11**: NPX allowlist acepta flags peligrosos — fixed PR #15
+### v1 — Core (PRs #1-#10)
+Project bootstrap, GitHub App, parser, classifier, executors (shell, API, browser), reporter, orchestrator, deployment.
 
-## P1 — Correctness y robustez (audit MEDIUM, menor impacto)
+### v2 — Confidence Score (PRs #29-#38)
+Score engine, BYOLLM, credential scanner, CI bridge, coverage mapper, diff analyzer, gap analyzer, executor adapter, pipeline integration, free/pro gating.
 
-- [x] **M3**: Race condition en inicializacion de queue — fixed PR #15
-- [x] **M12**: jobId sin installationId = posible colision — fixed PR #14
-- [x] **M14**: Error de parsing genera reporte confuso — fixed PR #15
+### v3 — Signal Improvements (PRs #45-#49)
+Plan Augmentor, Contract Checker, coverage reform, signal coordination, CLAUDE.md context, onboarding tips, smart file reader.
 
-## P2 — Features de alto valor
+### Production Hardening (PRs #14-#21)
+All P0/P1 bugs fixed, structured logging, metrics, 836+ tests, CI pipeline, graceful degradation, all audit items resolved.
 
-- [x] **Config file** (`.vigil.yml`): timeouts, categorias ignoradas, custom shell allowlist por repo — done PR #22
-- [x] **Config file UX**: warnings de valores rechazados en el comentario del PR, bloque collapsible con config aplicada — done PR #23
-- [x] **Retry individual items**: `/vigil retry` (full re-run) y `/vigil retry tp-N` (items específicos) via comment command — done PR #24
-- [x] **Webhook notificaciones**: enviar resultado a Slack/Discord cuando un plan falla — done PR #25
-- [ ] **GitHub App Marketplace listing**: publicar para que otros instalen
+### P2 Features (PRs #22-#25)
+`.vigil.yml` config, config UX warnings, `/vigil retry` command, webhook notifications (Slack/Discord).
 
-## P3 — Mejoras tecnicas / DX
-
-- [x] **Structured logging**: pino con correlation IDs — done PR #17
-- [x] **Metrics/observability**: Prometheus endpoint — done PR #17
-- [x] **Test coverage**: 417 tests, coverage thresholds enforced — done PR #19
-- [x] **CI pipeline**: GitHub Actions para build/test/lint/typecheck en PRs — done PR #20
-- [ ] **Integration tests**: E2E con PR real (mock GitHub o test repo)
-- [x] **Graceful degradation**: si Groq esta caido, clasificar todo como "manual" — done PR #21
-
-## P4 — Hardening (audit LOW)
-
-- [x] **L1**: Bold heading regex — documented, edge case tested PR #19
-- [x] **L2**: Hints codeBlocks accumulation — fixed PR #14, tested PR #19
-- [x] **L3**: Status code rule false positives — negative lookahead added PR #14, tested PR #19
-- [x] **L4**: assertText pasa con empty string — already guarded, verified with tests PR #21
-- [x] **L5**: http-client binary response corrupted como text — binary Content-Type detection + stream drain already in place
-- [x] **L6**: Shell metacharacters regex — completed PR #14
-- [x] **L7**: Console error collection sin limite — fixed PR #16
-- [x] **L8**: Truncation suffix puede exceder limite — byte-safe truncation PR #21
-- [x] **L9**: comment-builder usa type assertions inseguros — Array.isArray guards PR #21
-- [x] **L10**: Dockerfile Alpine sin SHA pin — pinned via ARG + digest PR #21
+### Go-to-Market Infrastructure
+- [x] Stripe billing integration (tenant, products, checkout, webhooks)
+- [x] Subscriptions table + feature gating + rate limiting
+- [x] Landing page (13 sections, 20 docs pages, legal, SEO)
+- [x] Dedicated /pricing page with comparison table + monthly/annual toggle
+- [x] /checkout/success page
+- [x] Billing endpoints (/api/billing-portal, /api/account)
+- [x] /docs/billing documentation page
+- [x] MIT LICENSE
+- [x] Repo made public
+- [x] GitHub Marketplace listing submitted (pending review)
 
 ---
 
-## v2 — Confidence Score (COMPLETE + POLISHED)
+## Next Up
 
-v2 confidence score engine is **deployed and production-tested**. See `docs/master-plan-v2.md` for the 10 sections (all complete).
+### S10 — Announce (blocked: waiting for Marketplace approval)
+- [ ] Twitter/X thread — hook + demo + CTA
+- [ ] Reddit post — r/programming, r/devtools, r/github
+- [ ] Hacker News — "Show HN: Vigil — Confidence scores for AI-generated PRs"
+- [ ] Dev.to article — explain the problem, show real results
+- **Timing:** After Marketplace listing is approved and live
 
-**Post-v2 improvements (2026-03-17):**
-- [x] Assertion executor — verifies code claims by reading files + LLM
-- [x] UX: infrastructure skips, `&&` chains, smart coverage, action items
-- [x] Score calibration — CI Bridge, diff/gap penalties, selective failure cap
-- [x] CI-over-sandbox trust — CI results override sandbox failures
-- [x] Tolerant LLM parser — handles reasoning model output
-- [x] Contextual recommendations — explains WHY, not just what
-- [x] Smart file search — infers file path from keywords
-- [ ] GitHub Marketplace listing
-- [ ] Stripe billing
-- [ ] Landing page
-- [ ] Rate limit handling for Groq
+### Landing & Documentation Improvements
+- [ ] Better hero section — more compelling, show real PR comment
+- [ ] Add real testimonials/case studies when available
+- [ ] Improve mobile responsiveness
+- [ ] Add changelog/releases page
+- [ ] Docs: add more signal examples with real PR data
 
-## v3 — Signal Improvements (2026-03-17)
+### i18n — Bilingual (EN/ES)
+- [ ] Path-based routing (`/en/`, `/es/`)
+- [ ] Dictionary system for all UI text
+- [ ] Translate all 31 pages
+- [ ] Language toggle in navbar
+- [ ] SEO: hreflang tags
+- **Priority:** Nice-to-have, not blocking launch
 
-**New signals:**
-- [x] Plan Augmentor — generates and verifies items the test plan missed — PR #45
-- [x] Contract Checker — cross-file API/frontend shape verification — PR #45
-- [x] Coverage Mapper Reform — plan-covered files, not just test files — PR #45
-- [x] Parser fix — boilerplate footer no longer appends to last item — PR #45
+### Product Improvements (v3.1)
+- [ ] **Augmentor score semantics** — low score means "found issues" (good), not "failed". Consider findings count instead of pass/fail ratio.
+- [ ] **Comment narrative** — separate "Your test plan: 17/17 passed" from "Vigil found 4 additional concerns"
+- [ ] **Test plan quality signal** — warn if >80% existence checks, suggest logic/contract items
+- [ ] **Rate limit handling for Groq** — graceful fallback when API rate limited
+- [ ] Integration tests — E2E with real PR (mock GitHub or test repo)
 
-**Signal coordination:**
-- [x] Contract-over-assertion trust — mirrors CI override pattern — PR #47
-- [x] Pipeline reorder — Contract Checker before Executor Adapter — PR #47
-- [x] Augmentor contract filtering — skips contract items when checker active — PR #47
-
-**Context & onboarding:**
-- [x] Augmentor reads CLAUDE.md for project context — reduces false positives — PR #48
-- [x] Onboarding tips on first Vigil run — collapsible tips in first comment — PR #48
-
-**Smart file reader:**
-- [x] Keyword-directed context extraction — replaces blind 20KB truncation — PR #49
-
-**Next (v3.1):**
-- [x] ~~**Smart file reader**~~ — done PR #49
-- [ ] **Augmentor score semantics** — low score means "found issues" (good), not "failed" (bad). Consider separate presentation: findings count instead of pass/fail ratio.
-- [ ] **Comment narrative** — separate "Your test plan: 17/17 passed" from "Vigil found 4 additional concerns". Current format mixes them.
-- [ ] **Test plan quality signal** — evaluate the test plan itself: warn if >80% existence checks, suggest logic/contract items.
+### Future
+- [ ] Usage dashboard for Pro/Team users
+- [ ] Team features (shared dashboard, SSO, custom scoring rules)
+- [ ] Annual Stripe prices (Pro $190/yr, Team $490/yr)
+- [ ] GitLab / Bitbucket support (evaluate demand)
+- [ ] Auto-merge support (score > threshold → auto-approve)
+- [ ] Onboarding email sequence (after install)
 
 ---
 
-## Notas
+## Notes
 
-- P0/P1 todos resueltos (PRs #14, #15)
-- P3 CI pipeline + graceful degradation completos (PRs #20, #21)
-- P4 100% completo — todos los items resueltos
-- P2: config file (#22), config UX (#23), retry (#24), webhooks (#25) completos — queda Marketplace
-- v1 feature-complete, v2 feature-complete + polished, v3 signal improvements deployed
-- **Real-world testing:** siegekit PRs #8-#14, keepvigil PRs #45-#48
-- **Best score:** 95/100 on keepvigil PR #47 (first above 80)
-- Cuando se complete un item, marcarlo aqui Y en el GitHub Issue correspondiente
+- **Real-world testing:** siegekit PRs #8-#14, keepvigil PRs #45-#53
+- **Best score:** 95/100 on keepvigil PR #47
+- v1 complete, v2 complete, v3 complete, GTM infrastructure complete
+- Marketplace review pending — GitHub will notify via email
