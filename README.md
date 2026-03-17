@@ -1,83 +1,104 @@
-# Vigil
+<p align="center">
+  <img src=".claude/identity/icon.svg" width="64" alt="Vigil">
+</p>
 
-**Confidence scores for AI-generated PRs.**
+<h1 align="center">Vigil</h1>
 
-Vigil is a GitHub App that gives every pull request a **confidence score** — a number from 0-100 that tells you how safe it is to merge. Built for developers who use AI coding agents daily and want to merge with confidence, not with guilt.
+<p align="center"><strong>Confidence scores for AI-generated PRs.</strong></p>
 
-```text
-┌─────────────────────────────────────┐
-│   Vigil Confidence Score: 82/100    │
-│                                     │
-│   ✅ CI checks passed (3/3)         │
-│   ✅ No credentials in diff         │
-│   ✅ Test execution: 4/5 passed     │
-│   ⚠️  Test coverage: 60% of files   │
-│   🔒 Diff analysis (Pro)            │
-│   🔒 Gap analysis (Pro)             │
-│                                     │
-│   Recommendation: Safe to merge     │
-└─────────────────────────────────────┘
-```
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+  <a href="https://github.com/McMutteer/keepvigil/actions"><img src="https://github.com/McMutteer/keepvigil/actions/workflows/ci.yml/badge.svg" alt="Build"></a>
+  <a href="https://keepvigil.dev"><img src="https://img.shields.io/badge/website-keepvigil.dev-e8a820" alt="Website"></a>
+</p>
 
 ---
 
-## The problem
+## The Problem
 
 AI agents (Claude Code, Cursor, Copilot) generate PRs with beautiful test plans that nobody verifies. Developers merge on blind trust. As agent usage grows, the gap between "what was promised" and "what was verified" widens.
 
 No tool exists that answers: **"Can I safely merge this AI-generated PR?"**
 
+Vigil does. It gives every pull request a **confidence score from 0 to 100** based on 9 independent signals — so you can merge with confidence, not with guilt.
+
 ---
 
-## How it works
+## How It Works
 
-1. A PR is opened with a test plan section in the description
-2. Vigil collects **multiple signals** about the PR — not just running tests
-3. Each signal contributes to a weighted **confidence score (0-100)**
-4. The score, recommendation, and detailed breakdown appear as a GitHub Check Run and PR comment
+1. **Install** — Add Vigil from the [GitHub Marketplace](https://github.com/marketplace/keepvigil) or self-host
+2. **Push a PR** — Include a test plan section with checkboxes in the PR description
+3. **Get a Score** — Vigil runs 9 signals, posts a confidence score and recommendation as a PR comment
 
-### Signals
+```text
+┌──────────────────────────────────────────┐
+│   Vigil Confidence Score: 95/100         │
+│                                          │
+│   ✅ CI checks passed (3/3)        w25   │
+│   ✅ No credentials in diff        w20   │
+│   ✅ Test execution: 12/12 passed  w15   │
+│   ✅ Plan augmentor: 5/5 verified  w15   │
+│   ✅ Contracts compatible          w10   │
+│   ✅ Coverage: 100% of files       w5    │
+│   ✅ Diff matches claims           w5    │
+│   ✅ No gaps detected              w5    │
+│   ✅ Assertions verified (7 files) —     │
+│                                          │
+│   Recommendation: Safe to merge          │
+└──────────────────────────────────────────┘
+```
 
-| Signal | LLM? | Free | Description |
-|--------|------|------|-------------|
-| CI Bridge | No | ✅ | Maps test plan items to GitHub Actions results |
-| Credential Scan | No | ✅ | Scans diff for hardcoded secrets, API keys, passwords |
-| Coverage Mapper | No | ✅ | Checks if changed files have corresponding test files |
-| Test Execution | No | ✅ | Runs shell, API, and browser tests from the test plan |
-| Diff vs Claims | Yes | Pro | LLM compares what changed vs what the test plan promises |
-| Gap Analysis | Yes | Pro | LLM identifies untested areas in the code changes |
+---
+
+## Signals
+
+Vigil evaluates every PR across 9 signals. Each contributes to a weighted score.
+
+| Signal | Weight | Tier | Description |
+|--------|--------|------|-------------|
+| CI Bridge | 25 | Free | Maps test plan items to GitHub Actions results |
+| Credential Scan | 20 | Free | Detects hardcoded secrets, API keys, and passwords in the diff |
+| Test Execution | 15 | Free | Runs test plan items in Docker sandbox, browser, or assertion mode |
+| Plan Augmentor | 15 | Free | Auto-generates and verifies items the test plan missed |
+| Contract Checker | 10 | Pro | Verifies API/frontend type contracts match across files |
+| Coverage Mapper | 5 | Free | Checks changed files have test files or test plan references |
+| Diff vs Claims | 5 | Pro | LLM compares actual changes vs test plan promises |
+| Gap Analysis | 5 | Pro | LLM identifies untested code changes |
+| Assertion Verifier | — | Free | Reads source files and verifies claims via LLM (shares executor weight) |
 
 ### Score & Recommendation
 
 | Score | Recommendation | Check Run |
 |-------|---------------|-----------|
-| 80-100 | Safe to merge ✅ | Success |
-| 50-79 | Review needed ⚠️ | Neutral |
-| 0-49 | Caution 🔴 | Failure |
+| 80–100 | Safe to merge | Success |
+| 50–79 | Review needed | Neutral |
+| 0–49 | Caution | Failure |
 
-Any signal failure (e.g., credentials detected) caps the score at 70 — one problem means it's never "safe to merge."
+Any deterministic signal failure (CI, credentials, execution, coverage) caps the score at 70 — one hard failure means it's never "safe to merge."
 
 ---
 
-## BYOLLM (Bring Your Own LLM)
+## Quick Start
 
-Pro-tier signals use your own LLM API key. Configure in `.vigil.yml`:
+### GitHub Marketplace (hosted)
 
-```yaml
-version: 1
-llm:
-  provider: groq          # openai | groq | ollama
-  model: llama-3.3-70b-versatile
-  api_key: gsk_your_key_here
+Install from the [GitHub Marketplace](https://github.com/marketplace/keepvigil), select your repos, and you're done. Free tier runs 6 signals with zero configuration.
+
+### Self-host
+
+```bash
+git clone https://github.com/McMutteer/keepvigil.git
+cd keepvigil
+cp .env.example .env
+# Fill in GITHUB_APP_ID, GITHUB_PRIVATE_KEY, WEBHOOK_SECRET, DATABASE_URL, REDIS_URL
+docker compose up
 ```
-
-Without `llm:` config, Vigil runs Free tier signals only — still valuable, zero LLM cost.
 
 ---
 
 ## Configuration
 
-Per-repo configuration via `.vigil.yml`:
+Per-repo configuration via `.vigil.yml` in the repository root:
 
 ```yaml
 version: 1
@@ -116,6 +137,27 @@ llm:
 
 ---
 
+## BYOLLM (Bring Your Own LLM)
+
+Pro-tier signals use LLM analysis. Configure your own provider in `.vigil.yml`:
+
+```yaml
+llm:
+  provider: groq          # openai | groq | ollama
+  model: llama-3.3-70b-versatile
+  api_key: gsk_your_key_here
+```
+
+Supported providers: **OpenAI**, **Groq**, **Ollama** (local). Without `llm:` config, Vigil runs Free tier signals only — still valuable, zero LLM cost.
+
+---
+
+## Documentation
+
+Full documentation is available at **[keepvigil.dev](https://keepvigil.dev)**.
+
+---
+
 ## Stack
 
 | Layer | Technology |
@@ -126,39 +168,24 @@ llm:
 | Browser Automation | Playwright |
 | Task Queue | BullMQ + Redis 7 |
 | Database | PostgreSQL 16 + Drizzle ORM |
+| Build | tsup (ESM) + pnpm workspaces |
 | Containerization | Docker + Docker Compose |
-
----
-
-## Project status
-
-Vigil v2 (confidence score) is **feature-complete**. 740 tests across 26 files.
-
-| v2 Section | Status |
-|------------|--------|
-| Score Engine | ✅ |
-| BYOLLM Client | ✅ |
-| Credential Scanner | ✅ |
-| CI Bridge | ✅ |
-| Coverage Mapper | ✅ |
-| Diff Analyzer (LLM) | ✅ |
-| Gap Analyzer (LLM) | ✅ |
-| Executor Adapter | ✅ |
-| Pipeline v2 Integration | ✅ |
-| Free/Pro Tier Gating | ✅ |
 
 ---
 
 ## Development
 
-This is a pnpm monorepo with three packages:
+This is a pnpm monorepo with four packages:
 
 ```text
 packages/
-  core/       — types, parser, classifier, score engine, credential scanner, coverage mapper
-  github/     — Probot app, webhooks, pipeline, signals, reporter
-  executors/  — shell, API, and browser test execution
+  core/         — types, parser, classifier, score engine, credential scanner, coverage mapper, smart reader
+  github/       — Probot app, webhooks, pipeline, signals, reporter
+  executors/    — shell, API, browser, and assertion test execution
+  landing/      — Next.js 15 landing page (keepvigil.dev)
 ```
+
+836+ tests across 30+ files. v3 is feature-complete.
 
 **Quality gates** (must pass before every PR):
 
@@ -173,8 +200,7 @@ pnpm typecheck
 
 ```bash
 cp .env.example .env
-# fill in GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GROQ_API_KEY, etc.
-
+# Fill in GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GROQ_API_KEY, etc.
 docker compose up
 ```
 
@@ -182,4 +208,4 @@ docker compose up
 
 ## License
 
-MIT
+[MIT](LICENSE)

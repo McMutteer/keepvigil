@@ -51,6 +51,7 @@ export const docsNav: NavItem[] = [
   { title: "Shell Allowlist", href: "/docs/shell-allowlist" },
   { title: "Security", href: "/docs/security" },
   { title: "Billing & Plans", href: "/docs/billing" },
+  { title: "Changelog", href: "/docs/changelog" },
 ];
 
 function flattenNav(items: NavItem[]): NavItem[] {
