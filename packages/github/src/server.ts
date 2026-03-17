@@ -2,7 +2,8 @@ import { createServer, type ServerResponse } from "node:http";
 import type { Worker } from "bullmq";
 import type { Pool } from "pg";
 import { createProbot, createNodeMiddleware } from "probot";
-import { createDb } from "@vigil/core/db";
+import { createDb, schema } from "@vigil/core/db";
+import { eq } from "drizzle-orm";
 import { createLogger } from "@vigil/core";
 import { loadConfig } from "./config.js";
 import { vigilApp } from "./app.js";
@@ -121,6 +122,113 @@ async function main(): Promise<void> {
     if (req.url?.startsWith("/api/checkout") && req.method === "GET") {
       handleCheckout(req, res, config).catch((err) => {
         log.error({ err }, "Unhandled error in checkout");
+        if (!res.headersSent) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: "Internal error" }));
+        }
+      });
+      return;
+    }
+
+    if (req.url?.startsWith("/api/billing-portal") && req.method === "GET") {
+      (async () => {
+        const url = new URL(req.url!, `http://${req.headers.host}`);
+        const customerId = url.searchParams.get("customer_id");
+
+        if (!customerId) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Missing required query param: customer_id" }));
+          return;
+        }
+
+        if (!config.stripeGatewayUrl || !config.stripeGatewayApiKey) {
+          res.writeHead(503, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Billing not configured" }));
+          return;
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
+
+        let response: Response;
+        try {
+          response = await fetch(`${config.stripeGatewayUrl}/billing-portal/sessions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": config.stripeGatewayApiKey,
+            },
+            body: JSON.stringify({
+              customerId,
+              returnUrl: "https://keepvigil.dev",
+            }),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+
+        if (!response.ok) {
+          log.error({ status: response.status }, "Stripe Gateway billing-portal returned non-OK status");
+          res.writeHead(502, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Billing service unavailable" }));
+          return;
+        }
+
+        const result = await response.json() as { success: boolean; data?: { url: string } };
+        if (!result.success || !result.data?.url) {
+          log.error({ result }, "Failed to create billing portal session");
+          res.writeHead(502, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to create billing portal session" }));
+          return;
+        }
+
+        res.writeHead(303, { Location: result.data.url });
+        res.end();
+        log.info({ customerId }, "Billing portal session created, redirecting");
+      })().catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        log.error({ error: msg }, "Unhandled error in billing-portal");
+        if (!res.headersSent) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: "Internal error" }));
+        }
+      });
+      return;
+    }
+
+    if (req.url?.startsWith("/api/account") && req.method === "GET") {
+      (async () => {
+        const url = new URL(req.url!, `http://${req.headers.host}`);
+        const installationId = url.searchParams.get("installation_id");
+
+        if (!installationId || !/^\d+$/.test(installationId)) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Missing or non-numeric query param: installation_id" }));
+          return;
+        }
+
+        const rows = await db.select().from(schema.subscriptions)
+          .where(eq(schema.subscriptions.installationId, Number(installationId)))
+          .limit(1);
+
+        const sub = rows[0];
+        if (!sub) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ plan: "free", status: "active" }));
+          return;
+        }
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          plan: sub.plan,
+          status: sub.status,
+          currentPeriodEnd: sub.currentPeriodEnd,
+          accountLogin: sub.accountLogin,
+          stripeCustomerId: sub.stripeCustomerId,
+        }));
+      })().catch((err) => {
+        log.error({ err }, "Unhandled error in account endpoint");
         if (!res.headersSent) {
           res.writeHead(500);
           res.end(JSON.stringify({ error: "Internal error" }));

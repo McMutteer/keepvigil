@@ -37,6 +37,12 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           <a
+            href="/pricing"
+            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-[6px] text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
+          >
+            Pricing
+          </a>
+          <a
             href="/docs/getting-started"
             className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-[6px] text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
           >

@@ -118,7 +118,7 @@ function PricingCard({
 
 export function Pricing() {
   return (
-    <section className="py-24 sm:py-32">
+    <section id="pricing" className="py-24 sm:py-32">
       <div className="mx-auto max-w-[1000px] px-6">
         <ScrollReveal>
           <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary text-center mb-12 sm:mb-16">
