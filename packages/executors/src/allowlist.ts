@@ -26,6 +26,7 @@ export const SHELL_METACHARACTERS = DANGEROUS_METACHARACTERS;
 const ALLOWED_PATTERNS: RegExp[] = [
   /^npm\s+(run|test|build|install|ci|lint)\b/,
   /^pnpm\s+(run|test|build|install|dlx|lint|typecheck)\b/,
+  /^pnpm\s+(--filter|-r|--recursive)\s/,
   /^yarn\s+(run|test|build|install|lint)\b/,
   /^bun\s+(run|test|build|install|lint)\b/,
   // npx: restricted to known-safe dev tools only.
