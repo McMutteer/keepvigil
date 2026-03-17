@@ -210,16 +210,24 @@ async function _runPipeline(
     log.info({ signalId: ciSignal.id, score: ciSignal.score, passed: ciSignal.passed, matched: ciSignal.details.filter((d) => d.status !== "skip").length }, "CI Bridge complete");
 
     // Stage 6.7: Coverage Mapper (maps changed files to test files + plan references)
+    let contractVerifiedFiles = new Set<string>();
     if (diff) {
       const changedFiles = extractChangedFilesWithStatus(diff);
       const repoFiles = await fetchRepoFileList({ octokit, owner, repo, headSha });
       const coverageSignal = mapCoverage(changedFiles, repoFiles, classifiedItems);
       signals.push(coverageSignal);
       log.info({ signalId: coverageSignal.id, score: coverageSignal.score, passed: coverageSignal.passed }, "Coverage mapper complete");
+
+      // Stage 6.7.5: Contract Checker — cross-file API/frontend shape verification
+      // Runs BEFORE executor adapter so verified files can override assertion failures
+      const { signal: contractSignal, verifiedFiles } = await checkContracts({ diff, llm });
+      signals.push(contractSignal);
+      contractVerifiedFiles = verifiedFiles;
+      log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed, verifiedFiles: verifiedFiles.size }, "Contract checker complete");
     }
 
     // Stage 6.8: Executor Adapter (wraps v1 execution results as signal)
-    // Pass CI-verified item IDs so sandbox failures don't override CI results
+    // Pass CI-verified item IDs and contract-verified files for trust overrides
     const ciVerifiedIds = new Set<string>();
     for (const ci of classifiedItems) {
       const ciDetail = ciSignal.details.find((d) => d.label === ci.item.text.slice(0, 80));
@@ -227,11 +235,16 @@ async function _runPipeline(
         ciVerifiedIds.add(ci.item.id);
       }
     }
-    const executorSignal = buildExecutorSignal(classifiedItems, executionResults, ciVerifiedIds.size > 0 ? ciVerifiedIds : undefined);
+    const executorSignal = buildExecutorSignal(
+      classifiedItems,
+      executionResults,
+      ciVerifiedIds.size > 0 ? ciVerifiedIds : undefined,
+      contractVerifiedFiles.size > 0 ? contractVerifiedFiles : undefined,
+    );
     signals.push(executorSignal);
-    log.info({ signalId: executorSignal.id, score: executorSignal.score, passed: executorSignal.passed, ciOverrides: ciVerifiedIds.size }, "Executor adapter complete");
+    log.info({ signalId: executorSignal.id, score: executorSignal.score, passed: executorSignal.passed, ciOverrides: ciVerifiedIds.size, contractOverrides: contractVerifiedFiles.size }, "Executor adapter complete");
 
-    // LLM signals: Diff Analyzer + Gap Analyzer
+    // LLM signals: Diff Analyzer + Gap Analyzer + Plan Augmentor
     // TODO: Re-enable Pro tier gating when ready for paid users.
     // For now, all signals run using the platform LLM key for testing.
     if (diff) {
@@ -246,14 +259,10 @@ async function _runPipeline(
       log.info({ signalId: gapSignal.id, score: gapSignal.score, passed: gapSignal.passed, gaps: gapSignal.details.length }, "Gap analyzer complete");
 
       // Stage 6.11: Plan Augmentor — generates and verifies items the test plan missed
-      const augmentorSignal = await augmentPlan({ diff, classifiedItems, llm, repoPath });
+      // Skips contract items when Contract Checker is active (it handles those better)
+      const augmentorSignal = await augmentPlan({ diff, classifiedItems, llm, repoPath, contractCheckerActive: contractVerifiedFiles.size > 0 });
       signals.push(augmentorSignal);
       log.info({ signalId: augmentorSignal.id, score: augmentorSignal.score, passed: augmentorSignal.passed, items: augmentorSignal.details.length }, "Plan augmentor complete");
-
-      // Stage 6.12: Contract Checker — cross-file API/frontend shape verification
-      const contractSignal = await checkContracts({ diff, llm });
-      signals.push(contractSignal);
-      log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed }, "Contract checker complete");
     }
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);
