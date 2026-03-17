@@ -149,11 +149,13 @@ function validateChain(command: string, extraAllowPrefixes: string[]): Validatio
 
     // `cd <path>` is safe as long as there's no path traversal or absolute paths
     if (/^cd\s+/.test(segment)) {
-      const cdPath = segment.replace(/^cd\s+/, "").trim();
+      const cdPathRaw = segment.replace(/^cd\s+/, "").trim();
+      // Strip surrounding quotes so `cd "/etc"` is caught
+      const cdPath = cdPathRaw.replace(/^['"]|['"]$/g, "");
       if (cdPath.includes("..")) {
         return { allowed: false, reason: `Path traversal not allowed in cd: "${segment}"` };
       }
-      if (cdPath.startsWith("/")) {
+      if (cdPath.startsWith("/") || cdPath.startsWith("~") || /^[a-zA-Z]:[\\/]/.test(cdPath)) {
         return { allowed: false, reason: `Absolute paths not allowed in cd: "${segment}"` };
       }
       continue;

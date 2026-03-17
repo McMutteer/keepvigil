@@ -207,6 +207,36 @@ describe("validateCommand", () => {
       expect(result.allowed).toBe(false);
       expect(result.reason).toContain("Empty segment");
     });
+
+    it("blocks: cd /etc && cat passwd (absolute path)", () => {
+      const result = validateCommand("cd /etc && cat passwd");
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain("Absolute paths");
+    });
+
+    it('blocks: cd "/etc" && cat passwd (quoted absolute path)', () => {
+      const result = validateCommand('cd "/etc" && cat passwd');
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain("Absolute paths");
+    });
+
+    it("blocks: cd '/etc' && cat passwd (single-quoted absolute path)", () => {
+      const result = validateCommand("cd '/etc' && cat passwd");
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain("Absolute paths");
+    });
+
+    it("blocks: cd ~ && ls (home directory expansion)", () => {
+      const result = validateCommand("cd ~ && ls");
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain("Absolute paths");
+    });
+
+    it("blocks: cd C:\\Windows && dir (Windows absolute path)", () => {
+      const result = validateCommand("cd C:\\Windows && dir");
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain("Absolute paths");
+    });
   });
 });
 
