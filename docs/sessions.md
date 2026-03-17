@@ -193,3 +193,27 @@ El usuario eligió El Centinela. Luego cometí otro error: intenté "mejorarlo" 
 **Lo que NO funcionó:** (1) El primer intento minimalista — demasiado simple, sin carácter. (2) Los difuminados gaussianos — decoración sin propósito. (3) Asumir que "elegante" = "minimalista". A veces lo elegante es lo complejo bien ejecutado.
 
 **Reflexión sobre el proceso creativo como AI:** Tiendo a ir a la solución más directa y "limpia". Eso funciona para código pero NO para diseño. El diseño necesita exploración, error, rechazo, iteración. Los dos rechazos del usuario fueron los momentos más valiosos de la sesión — me forzaron a pensar más profundo. Sin esos rechazos, Vigil tendría un logo genérico. Con ellos, tiene una identidad con historia.
+
+---
+
+---
+id: 2026-03-17-landing-to-portal
+type: feat
+project: vigil
+branch: main
+pr: 46
+date: 2026-03-17
+tags: [landing-page, docs-site, sales-portal, design-system, seo, go-to-market, deploy]
+summary: "From zero to full sales portal — landing page, 18 docs pages, legal, SEO, Dokploy deploy, and go-to-market master plan in one session."
+related: []
+---
+
+### De Landing a Portal de Venta
+
+**Hilo:** Vigil v3 feature-complete pero invisible al mundo. Esta sesión transformó el proyecto de "backend que funciona" a "producto con presencia pública completa" — landing, docs, legal, deploy, y plan de lanzamiento.
+
+**Lo que paso:** Arrancamos con `/design-landing` — el skill de 7 fases. Absorbí toda la identidad de Vigil (brand.md, vision, README, strategy notes) y presenté el Phase 0 sin preguntar nada al usuario. Aprobó sin cambios. Comprimí Phases 1-5 en una sola pasada: soul, landscape research (12 competidores analizados de memoria porque WebFetch fue denegado), design system completo con tokens Tailwind v4, y specs de 9 secciones. El hero con score card animado (count-up 0→82, signal stagger) fue el momento de diseño más fuerte. Turbopack rompió las fuentes locales de Geist — fix: quitar `--turbopack` del dev script. VSCode volvió a cambiar branches silenciosamente — los commits iban a `feat/signal-improvements` en vez de `feat/landing-setup`. Fix: force-push al branch correcto. Después vino la expansión: 18 páginas de docs (3 agentes en paralelo escribiendo getting-started, signals, features), luego la guía de test plans (el contenido más valioso — before/after real de siegekit), legal (privacy, terms, about), FAQ, security trust badges, y SEO (robots.txt, sitemap, JSON-LD). Analizamos CodeRabbit en detalle y adoptamos lo bueno: trust badges en hero, link a PR real (#47 con 95/100), email capture, security badges visuales. Actualizamos de 7 a 8 señales (Plan Augmentor + Contract Checker). Deploy a Dokploy con nginx sirviendo el static export y Traefik ruteando landing vs API por path priority. Cerramos con el go-to-market master plan de 10 secciones para el billing agent.
+
+**Resultado:** keepvigil.dev live con 13 secciones de landing + 18 docs + 3 legal pages + SEO. Plus: `docs/go-to-market.md` y `docs/master-plan-gtm.md` como handoff para billing.
+
+**Aprendido:** (1) WebFetch en agentes background puede ser denegado — escribir landscape research de memoria funciona igual de bien. (2) El 95/100 de PR #47 con datos reales es 10x más convincente que un mockup de 82/100 inventado. (3) Turbopack + next/font/local en monorepos no funciona en Next 15.5 — usar webpack. (4) Traefik path priority es la forma limpia de servir landing + API desde el mismo dominio. (5) El go-to-market doc es el artefacto más importante de la sesión — sin él, otro agente empezaría de cero.
