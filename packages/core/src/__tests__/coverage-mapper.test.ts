@@ -1,6 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { mapCoverage, extractChangedFiles, extractChangedFilesWithStatus } from "../coverage-mapper.js";
 import type { ChangedFile } from "../coverage-mapper.js";
+import type { ClassifiedItem } from "../types.js";
+
+function makeItem(id: string, text: string, codeBlocks: string[] = []): ClassifiedItem {
+  return {
+    item: { id, text, checked: false, raw: text, indent: 0, hints: { isManual: false, codeBlocks, urls: [] } },
+    confidence: "HIGH",
+    executorType: "assertion",
+    category: "assertion",
+    reasoning: "test",
+  };
+}
 
 // ---------------------------------------------------------------------------
 // extractChangedFiles
@@ -269,8 +280,72 @@ describe("mapCoverage", () => {
       expect(mapCoverage([], []).requiresLLM).toBe(false);
     });
 
-    it("has weight 10", () => {
-      expect(mapCoverage([], []).weight).toBe(10);
+    it("has weight 5", () => {
+      expect(mapCoverage([], []).weight).toBe(5);
+    });
+  });
+
+  describe("plan-coverage (classifiedItems)", () => {
+    it("file referenced by test plan item text → plan-covered", () => {
+      const changed = ["src/routes/targets.ts"];
+      const repo = ["src/routes/targets.ts"]; // no test file
+      const items = [makeItem("tp-0", "`src/routes/targets.ts` has PATCH route")];
+      const signal = mapCoverage(changed, repo, items);
+      expect(signal.score).toBe(100);
+      expect(signal.passed).toBe(true);
+      expect(signal.details[0].status).toBe("pass");
+      expect(signal.details[0].message).toContain("Plan-covered");
+    });
+
+    it("file referenced by code block → plan-covered", () => {
+      const changed = ["src/app.ts"];
+      const repo = ["src/app.ts"];
+      const items = [makeItem("tp-0", "app exports router", ["src/app.ts"])];
+      const signal = mapCoverage(changed, repo, items);
+      expect(signal.score).toBe(100);
+      expect(signal.details[0].message).toContain("Plan-covered");
+    });
+
+    it("file NOT referenced by plan → still fails", () => {
+      const changed = ["src/unmentioned.ts"];
+      const repo = ["src/unmentioned.ts"];
+      const items = [makeItem("tp-0", "something about targets.ts")];
+      const signal = mapCoverage(changed, repo, items);
+      expect(signal.score).toBe(0);
+      expect(signal.passed).toBe(false);
+    });
+
+    it("mix of test-covered and plan-covered", () => {
+      const changed = ["src/a.ts", "src/b.ts"];
+      const repo = ["src/a.ts", "src/b.ts", "src/__tests__/a.test.ts"];
+      const items = [makeItem("tp-0", "`src/b.ts` does something")];
+      const signal = mapCoverage(changed, repo, items);
+      expect(signal.score).toBe(100); // both covered
+      expect(signal.passed).toBe(true);
+    });
+
+    it("filename match (not full path) → plan-covered", () => {
+      const changed = ["packages/web/app/dashboard/page.tsx"];
+      const repo = ["packages/web/app/dashboard/page.tsx"];
+      const items = [makeItem("tp-0", "`page.tsx` shows dashboard")];
+      const signal = mapCoverage(changed, repo, items);
+      expect(signal.score).toBe(100);
+      expect(signal.details[0].message).toContain("Plan-covered");
+    });
+
+    it("without classifiedItems → backward compat (no plan coverage)", () => {
+      const changed = ["src/foo.ts"];
+      const repo = ["src/foo.ts"];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(0);
+      expect(signal.details[0].message).toContain("No corresponding test");
+    });
+
+    it("empty classifiedItems → no plan coverage", () => {
+      const changed = ["src/foo.ts"];
+      const repo = ["src/foo.ts"];
+      const signal = mapCoverage(changed, repo, []);
+      expect(signal.score).toBe(0);
     });
   });
 });
