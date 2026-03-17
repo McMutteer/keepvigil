@@ -67,7 +67,7 @@ function createPipelineLLM(vigiConfig: VigilConfig | undefined, groqApiKey: stri
   // Fallback: platform Groq key
   return createLLMClient({
     provider: "groq",
-    model: "llama-3.3-70b-versatile",
+    model: "openai/gpt-oss-120b",
     apiKey: groqApiKey,
   });
 }
