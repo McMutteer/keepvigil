@@ -46,10 +46,10 @@ export interface ParsedTestPlan {
 export type ConfidenceTier = "DETERMINISTIC" | "HIGH" | "MEDIUM" | "LOW" | "SKIP";
 
 /** Which executor handles this item */
-export type ExecutorType = "shell" | "api" | "browser" | "none";
+export type ExecutorType = "shell" | "api" | "browser" | "assertion" | "none";
 
 /** Category label for a classified item */
-export type CategoryLabel = "build" | "api" | "ui-flow" | "visual" | "metadata" | "manual" | "vague";
+export type CategoryLabel = "build" | "api" | "ui-flow" | "visual" | "metadata" | "assertion" | "manual" | "vague";
 
 /** A test plan item after classification */
 export interface ClassifiedItem {
@@ -118,6 +118,19 @@ export interface ShellExecutionContext {
   sandboxImage?: string;
   /** Additional command prefixes allowed beyond the built-in allowlist (from .vigil.yml) */
   extraAllowPrefixes?: string[];
+}
+
+/**
+ * Context provided by the orchestrator to the assertion executor.
+ * Reads files from the cloned repo and uses LLM to verify claims.
+ */
+export interface AssertionExecutionContext {
+  /** Absolute path to the cloned repository on the host */
+  repoPath: string;
+  /** LLM client for assertion verification */
+  llm: LLMClient;
+  /** Timeout in milliseconds (default: 30_000) */
+  timeoutMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -295,6 +308,8 @@ export interface VigilConfig {
     api?: number;
     /** Browser executor timeout in seconds (default: 60) */
     browser?: number;
+    /** Assertion executor timeout in seconds (default: 30) */
+    assertion?: number;
   };
   /** Categories to skip entirely — items are returned as skipped, not executed */
   skip?: {

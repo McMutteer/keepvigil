@@ -15,6 +15,7 @@ You receive test plan items extracted from pull request descriptions. For each i
    - "ui-flow" — Interact with a UI (click, navigate, fill forms, verify elements)
    - "visual" — Check visual appearance (layout, animations, loading states)
    - "metadata" — Verify HTML meta tags, SEO, headers, or static page properties
+   - "assertion" — Verify claims about file contents by reading the file
    - "manual" — Requires human judgment or external action
    - "vague" — Too ambiguous to classify with confidence
 
@@ -29,6 +30,7 @@ You receive test plan items extracted from pull request descriptions. For each i
    - "shell" — Run shell commands (build, lint, test suites)
    - "api" — Make HTTP requests (REST endpoints, status codes)
    - "browser" — Browser automation (navigation, clicks, visual checks)
+   - "assertion" — Verify claims about file contents by reading the file
    - "none" — Cannot or should not be automated
 
 4. **reasoning** — Brief explanation (1 sentence) of why you chose this classification.
@@ -99,6 +101,20 @@ export const FEW_SHOT_EXAMPLES: FewShotExample[] = [
     confidence: "HIGH",
     executorType: "browser",
     reasoning: "Browser navigation and UI interaction with verifiable outcome",
+  },
+  {
+    text: "`packages/api/Dockerfile` uses non-root USER directive",
+    category: "assertion",
+    confidence: "HIGH",
+    executorType: "assertion",
+    reasoning: "File path reference with assertion about Dockerfile content",
+  },
+  {
+    text: "`src/auth.ts` guards against missing token before accessing user data",
+    category: "assertion",
+    confidence: "HIGH",
+    executorType: "assertion",
+    reasoning: "File path reference with assertion about code behavior",
   },
 ];
 

@@ -3,6 +3,7 @@
  * Implements shell, API, and browser executors.
  */
 
+export { executeAssertionItem } from "./assertion.js";
 export { executeApiItem } from "./api.js";
 export { generateApiSpec } from "./api-spec-generator.js";
 export { makeRequest, validateBaseUrl } from "./http-client.js";

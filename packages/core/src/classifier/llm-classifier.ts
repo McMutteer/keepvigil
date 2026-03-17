@@ -23,6 +23,7 @@ const VALID_EXECUTOR: Set<string> = new Set([
   "shell",
   "api",
   "browser",
+  "assertion",
   "none",
 ]);
 const VALID_CATEGORY: Set<string> = new Set([
@@ -31,6 +32,7 @@ const VALID_CATEGORY: Set<string> = new Set([
   "ui-flow",
   "visual",
   "metadata",
+  "assertion",
   "manual",
   "vague",
 ]);
