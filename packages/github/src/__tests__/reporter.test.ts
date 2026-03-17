@@ -9,13 +9,15 @@ import type {
   ExecutorType,
   CategoryLabel,
 } from "@vigil/core";
+import type { ConfidenceScore, Signal } from "@vigil/core";
+import { createSignal } from "@vigil/core";
 import {
   buildReportItems,
   computeSummary,
   reportResults,
 } from "../services/reporter.js";
 import type { ReportItem, ReportSummary, ReportContext } from "../services/reporter.js";
-import { updateCheckRun as updateCheckRunFn, determineConclusion, buildCheckRunTitle, buildCheckRunSummary, buildCheckRunText, truncateToBytes } from "../services/check-run-updater.js";
+import { updateCheckRun as updateCheckRunFn, determineConclusion, conclusionFromScore, buildCheckRunTitle, buildCheckRunSummary, buildCheckRunText, truncateToBytes } from "../services/check-run-updater.js";
 import { buildCommentBody, buildSummaryLine, buildResultsTable, buildEvidenceBlock, formatEvidence, buildConfigBlock, COMMENT_MARKER } from "../services/comment-builder.js";
 
 // ---------------------------------------------------------------------------
@@ -1081,5 +1083,343 @@ describe("truncateToBytes", () => {
     }));
     const text = buildCheckRunText(items);
     expect(Buffer.byteLength(text, "utf8")).toBeLessThanOrEqual(60_000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Signal helpers for score-based tests
+// ---------------------------------------------------------------------------
+
+function makeSignal(id: Signal["id"], name: string, score: number, passed: boolean, details: Signal["details"] = []): Signal {
+  return createSignal({ id, name, score, passed, details });
+}
+
+function makeConfidenceScore(overrides: Partial<ConfidenceScore> = {}): ConfidenceScore {
+  return {
+    score: 85,
+    recommendation: "safe",
+    signals: [
+      makeSignal("ci-bridge", "CI Bridge", 100, true, [
+        { label: "npm run build", status: "pass" },
+        { label: "npm test", status: "pass" },
+      ]),
+      makeSignal("credential-scan", "Credential Scan", 100, true, []),
+      makeSignal("executor", "Test Plan Executor", 60, true, [
+        { label: "tp-0", status: "pass" },
+        { label: "tp-1", status: "fail" },
+      ]),
+    ],
+    skippedSignals: [],
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// conclusionFromScore
+// ---------------------------------------------------------------------------
+
+describe("conclusionFromScore", () => {
+  it("returns success for safe recommendation", () => {
+    expect(conclusionFromScore(makeConfidenceScore({ recommendation: "safe" }))).toBe("success");
+  });
+
+  it("returns neutral for review recommendation", () => {
+    expect(conclusionFromScore(makeConfidenceScore({ recommendation: "review" }))).toBe("neutral");
+  });
+
+  it("returns failure for caution recommendation", () => {
+    expect(conclusionFromScore(makeConfidenceScore({ recommendation: "caution" }))).toBe("failure");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildCheckRunTitle with confidenceScore
+// ---------------------------------------------------------------------------
+
+describe("buildCheckRunTitle — score-based", () => {
+  it("returns confidence title when score is provided", () => {
+    const score = makeConfidenceScore({ score: 82, recommendation: "safe" });
+    const title = buildCheckRunTitle({ total: 3, passed: 2, failed: 1, skipped: 0, needsReview: 0 }, score);
+    expect(title).toBe("Confidence: 82/100 — safe");
+  });
+
+  it("falls back to v1 title when score is undefined", () => {
+    const title = buildCheckRunTitle({ total: 3, passed: 3, failed: 0, skipped: 0, needsReview: 0 });
+    expect(title).toBe("All 3 items verified successfully");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildCheckRunSummary with confidenceScore
+// ---------------------------------------------------------------------------
+
+describe("buildCheckRunSummary — score-based", () => {
+  it("includes signal breakdown table when score is provided", () => {
+    const score = makeConfidenceScore();
+    const summary: ReportSummary = { total: 3, passed: 2, failed: 1, skipped: 0, needsReview: 0 };
+    const md = buildCheckRunSummary(summary, "success", undefined, undefined, score);
+    expect(md).toContain("Vigil Confidence Score: 85/100");
+    expect(md).toContain("CI Bridge");
+    expect(md).toContain("Credential Scan");
+    expect(md).toContain("Test Plan Executor");
+    // Should also contain the v1 test plan results table
+    expect(md).toContain("Vigil Test Plan Results");
+  });
+
+  it("does not include signal table when score is undefined", () => {
+    const summary: ReportSummary = { total: 3, passed: 3, failed: 0, skipped: 0, needsReview: 0 };
+    const md = buildCheckRunSummary(summary, "success");
+    expect(md).not.toContain("Confidence Score");
+    expect(md).toContain("Vigil Test Plan Results");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildCommentBody with confidenceScore
+// ---------------------------------------------------------------------------
+
+describe("buildCommentBody — score-based format", () => {
+  const items: ReportItem[] = [
+    {
+      classified: makeClassified("build passes", { id: "tp-0" }),
+      result: makeResult("tp-0", true),
+      verdict: "passed",
+    },
+    {
+      classified: makeClassified("lint passes", { id: "tp-1" }),
+      result: makeResult("tp-1", false, { exitCode: 1 }),
+      verdict: "failed",
+    },
+  ];
+  const summary: ReportSummary = { total: 2, passed: 1, failed: 1, skipped: 0, needsReview: 0 };
+
+  it("renders score-based format when confidenceScore is provided", () => {
+    const score = makeConfidenceScore({ score: 82, recommendation: "safe" });
+    const body = buildCommentBody(items, summary, undefined, undefined, undefined, undefined, undefined, score);
+
+    expect(body).toContain(COMMENT_MARKER);
+    expect(body).toContain("Vigil Confidence Score: 82/100");
+    expect(body).toContain("Safe to merge");
+    expect(body).toContain("| Signal | Score | Status |");
+    expect(body).toContain("CI Bridge");
+    expect(body).toContain("100/100");
+    expect(body).toContain("<details>");
+    expect(body).toContain("Test plan results");
+  });
+
+  it("renders review recommendation with warning emoji", () => {
+    const score = makeConfidenceScore({ score: 65, recommendation: "review" });
+    const body = buildCommentBody(items, summary, undefined, undefined, undefined, undefined, undefined, score);
+
+    expect(body).toContain("Review recommended");
+    expect(body).toContain("\u26A0\uFE0F");
+  });
+
+  it("renders caution recommendation with red circle emoji", () => {
+    const score = makeConfidenceScore({ score: 30, recommendation: "caution" });
+    const body = buildCommentBody(items, summary, undefined, undefined, undefined, undefined, undefined, score);
+
+    expect(body).toContain("Merge with caution");
+  });
+
+  it("preserves v1 format when confidenceScore is undefined", () => {
+    const body = buildCommentBody(items, summary);
+
+    expect(body).toContain(COMMENT_MARKER);
+    expect(body).toContain("Vigil Test Plan Results");
+    expect(body).not.toContain("Confidence Score");
+    expect(body).not.toContain("Signal");
+  });
+
+  it("includes retry banner in score-based format", () => {
+    const score = makeConfidenceScore();
+    const body = buildCommentBody(items, summary, undefined, undefined, undefined, undefined, ["tp-1"], score);
+
+    expect(body).toContain("_(retry)_");
+    expect(body).toContain("re-ran tp-1");
+  });
+
+  it("includes pipeline error in score-based format", () => {
+    const score = makeConfidenceScore();
+    const body = buildCommentBody(items, summary, "Clone failed", undefined, undefined, undefined, undefined, score);
+
+    expect(body).toContain("Clone failed");
+  });
+
+  it("includes config block in score-based format", () => {
+    const score = makeConfidenceScore();
+    const config = { timeouts: { shell: 30 } };
+    const body = buildCommentBody(items, summary, undefined, undefined, config, undefined, undefined, score);
+
+    expect(body).toContain("Config applied");
+    expect(body).toContain("Shell timeout");
+  });
+
+  it("includes correlation ID in footer", () => {
+    const score = makeConfidenceScore();
+    const body = buildCommentBody(items, summary, undefined, "abc-123", undefined, undefined, undefined, score);
+
+    expect(body).toContain("abc-123");
+  });
+
+  it("signal status summary shows pass/fail/warn counts", () => {
+    const score = makeConfidenceScore({
+      signals: [
+        makeSignal("ci-bridge", "CI Bridge", 100, true, [
+          { label: "build", status: "pass" },
+          { label: "test", status: "pass" },
+          { label: "lint", status: "pass" },
+        ]),
+        makeSignal("credential-scan", "Credentials", 100, true, []),
+        makeSignal("executor", "Executor", 50, false, [
+          { label: "tp-0", status: "pass" },
+          { label: "tp-1", status: "fail" },
+          { label: "tp-2", status: "warn" },
+        ]),
+      ],
+    });
+    const body = buildCommentBody(items, summary, undefined, undefined, undefined, undefined, undefined, score);
+
+    expect(body).toContain("3 passed");
+    expect(body).toContain("1 failed");
+    expect(body).toContain("1 warning");
+  });
+
+  it("stays within 60KB byte limit with score format", () => {
+    const bigItems: ReportItem[] = Array.from({ length: 20 }, (_, i) => ({
+      classified: makeClassified(`test item ${"x".repeat(50)} ${i}`, { id: `tp-${i}` }),
+      result: makeResult(`tp-${i}`, false, { stdout: "a".repeat(500), exitCode: 1, commands: ["test"] }),
+      verdict: "failed" as const,
+    }));
+    const bigSummary: ReportSummary = { total: 20, passed: 0, failed: 20, skipped: 0, needsReview: 0 };
+    const score = makeConfidenceScore();
+    const body = buildCommentBody(bigItems, bigSummary, undefined, undefined, undefined, undefined, undefined, score);
+    expect(Buffer.byteLength(body, "utf8")).toBeLessThanOrEqual(60_000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// reportResults — score-based integration
+// ---------------------------------------------------------------------------
+
+describe("reportResults — score-based paths", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function makeMockOctokit(overrides: {
+    updateCheckRun?: ReturnType<typeof vi.fn>;
+    listComments?: ReturnType<typeof vi.fn>;
+    createComment?: ReturnType<typeof vi.fn>;
+    updateComment?: ReturnType<typeof vi.fn>;
+  } = {}) {
+    const updateFn = overrides.updateCheckRun ?? vi.fn().mockResolvedValue({});
+    const listComments = overrides.listComments ?? vi.fn().mockResolvedValue([]);
+    const createComment = overrides.createComment ?? vi.fn().mockResolvedValue({});
+    const updateComment = overrides.updateComment ?? vi.fn().mockResolvedValue({});
+
+    return {
+      rest: {
+        checks: { update: updateFn },
+        issues: {
+          listComments: { endpoint: { merge: vi.fn().mockReturnValue({}) } },
+          createComment,
+          updateComment,
+        },
+      },
+      paginate: listComments,
+    } as unknown as ProbotOctokit;
+  }
+
+  it("uses conclusionFromScore when signals are provided", async () => {
+    const updateFn = vi.fn().mockResolvedValue({});
+    const createComment = vi.fn().mockResolvedValue({});
+    const listComments = vi.fn().mockResolvedValue([]);
+    const octokit = makeMockOctokit({ updateCheckRun: updateFn, listComments, createComment });
+
+    const classified = [makeClassified("build passes", { id: "tp-0" })];
+    const results = [makeResult("tp-0", true)];
+    const signals: Signal[] = [
+      makeSignal("ci-bridge", "CI Bridge", 100, true),
+      makeSignal("credential-scan", "Credentials", 100, true),
+    ];
+
+    await reportResults({
+      octokit,
+      owner: "owner",
+      repo: "repo",
+      pullNumber: 7,
+      headSha: "abc123",
+      checkRunId: 42,
+      classifiedItems: classified,
+      executionResults: results,
+      signals,
+    });
+
+    const checkCall = updateFn.mock.calls[0][0];
+    // Score is high enough → "safe" → "success"
+    expect(checkCall.conclusion).toBe("success");
+    // confidenceScore should be passed through
+    expect(checkCall.output.title).toContain("Confidence:");
+
+    // Comment should contain score-based format
+    const commentBody = createComment.mock.calls[0][0].body;
+    expect(commentBody).toContain("Confidence Score");
+  });
+
+  it("uses determineConclusion when no signals are provided", async () => {
+    const updateFn = vi.fn().mockResolvedValue({});
+    const createComment = vi.fn().mockResolvedValue({});
+    const listComments = vi.fn().mockResolvedValue([]);
+    const octokit = makeMockOctokit({ updateCheckRun: updateFn, listComments, createComment });
+
+    const classified = [makeClassified("build passes", { id: "tp-0" })];
+    const results = [makeResult("tp-0", true)];
+
+    await reportResults({
+      octokit,
+      owner: "owner",
+      repo: "repo",
+      pullNumber: 7,
+      headSha: "abc123",
+      checkRunId: 42,
+      classifiedItems: classified,
+      executionResults: results,
+      // no signals
+    });
+
+    const checkCall = updateFn.mock.calls[0][0];
+    expect(checkCall.conclusion).toBe("success");
+    expect(checkCall.output.title).not.toContain("Confidence:");
+
+    const commentBody = createComment.mock.calls[0][0].body;
+    expect(commentBody).toContain("Vigil Test Plan Results");
+    expect(commentBody).not.toContain("Confidence Score");
+  });
+
+  it("uses determineConclusion when signals array is empty", async () => {
+    const updateFn = vi.fn().mockResolvedValue({});
+    const createComment = vi.fn().mockResolvedValue({});
+    const listComments = vi.fn().mockResolvedValue([]);
+    const octokit = makeMockOctokit({ updateCheckRun: updateFn, listComments, createComment });
+
+    const classified = [makeClassified("build passes", { id: "tp-0" })];
+    const results = [makeResult("tp-0", true)];
+
+    await reportResults({
+      octokit,
+      owner: "owner",
+      repo: "repo",
+      pullNumber: 7,
+      headSha: "abc123",
+      checkRunId: 42,
+      classifiedItems: classified,
+      executionResults: results,
+      signals: [],
+    });
+
+    const checkCall = updateFn.mock.calls[0][0];
+    expect(checkCall.conclusion).toBe("success");
+    expect(checkCall.output.title).not.toContain("Confidence:");
   });
 });

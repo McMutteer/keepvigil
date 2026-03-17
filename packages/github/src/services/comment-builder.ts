@@ -1,4 +1,4 @@
-import type { VigilConfig } from "@vigil/core";
+import type { VigilConfig, ConfidenceScore, Signal } from "@vigil/core";
 import type { ReportItem, ReportSummary } from "./reporter.js";
 import { truncateToBytes } from "./check-run-updater.js";
 
@@ -9,7 +9,15 @@ const MAX_EVIDENCE_BLOCK_BYTES = 2000;
 const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
-export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[]): string {
+export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], confidenceScore?: ConfidenceScore): string {
+  if (confidenceScore) {
+    return buildScoreCommentBody(items, summary, confidenceScore, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds);
+  }
+  return buildV1CommentBody(items, summary, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds);
+}
+
+/** V1 comment format — backward compatible, used when no confidence score is available. */
+function buildV1CommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[]): string {
   const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
   const parts: string[] = [
     COMMENT_MARKER,
@@ -51,6 +59,109 @@ export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pi
   body = truncateToBytes(body, MAX_COMMENT_BYTES, TRUNCATION_SUFFIX);
 
   return body;
+}
+
+/** Score-based comment format — shows confidence score, signal table, and test plan results in a details block. */
+function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[]): string {
+  const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
+  const recommendationEmoji: Record<string, string> = { safe: "\u2705", review: "\u26A0\uFE0F", caution: "\uD83D\uDD34" };
+  const emoji = recommendationEmoji[confidenceScore.recommendation] ?? "";
+  const recLabel = confidenceScore.recommendation === "safe" ? "Safe to merge" : confidenceScore.recommendation === "review" ? "Review recommended" : "Merge with caution";
+
+  const parts: string[] = [
+    COMMENT_MARKER,
+    isRetry ? `## Vigil Confidence Score: ${confidenceScore.score}/100 _(retry)_` : `## Vigil Confidence Score: ${confidenceScore.score}/100`,
+    "",
+    `**Recommendation:** ${recLabel} ${emoji}`,
+    "",
+  ];
+
+  if (isRetry) {
+    parts.push(`> **Retry:** re-ran ${retryItemIds!.join(", ")} — other items not re-executed.`, "");
+  }
+
+  if (pipelineError) {
+    parts.push(`> **Note:** ${pipelineError}`, "");
+  }
+
+  // Signal table
+  parts.push(
+    "| Signal | Score | Status |",
+    "|--------|-------|--------|",
+  );
+  for (const signal of confidenceScore.signals) {
+    const statusSummary = buildSignalStatusSummary(signal);
+    parts.push(`| ${escapeTableCell(signal.name)} | ${signal.score}/100 | ${statusSummary} |`);
+  }
+  parts.push("");
+
+  // Test plan results in a collapsible details block
+  const v1Content = buildV1DetailsContent(items, summary);
+  parts.push(
+    "<details>",
+    "<summary>Test plan results</summary>",
+    "",
+    v1Content,
+    "",
+    "</details>",
+  );
+
+  const configBlock = buildConfigBlock(vigiConfig, configWarnings);
+  if (configBlock) {
+    parts.push("", configBlock);
+  }
+
+  const footer = correlationId
+    ? `<sub>Vigil v0.1.0 | keepvigil.dev | run: ${correlationId}</sub>`
+    : `<sub>Vigil v0.1.0 | keepvigil.dev</sub>`;
+  parts.push("", "---", footer);
+
+  let body = parts.join("\n");
+  body = truncateToBytes(body, MAX_COMMENT_BYTES, TRUNCATION_SUFFIX);
+
+  return body;
+}
+
+/** Build the inner content for the test plan details block (reuses v1 building blocks). */
+function buildV1DetailsContent(items: ReportItem[], summary: ReportSummary): string {
+  const parts: string[] = [
+    buildSummaryLine(summary),
+    "",
+    buildResultsTable(items),
+  ];
+
+  const evidenceBlocks = items
+    .filter(i => i.verdict === "failed" || i.verdict === "error" || isNeedsReview(i))
+    .map(i => buildEvidenceBlock(i))
+    .filter(Boolean);
+
+  if (evidenceBlocks.length > 0) {
+    parts.push("", ...evidenceBlocks);
+  }
+
+  return parts.join("\n");
+}
+
+/** Build a short status summary for a signal (e.g., "3/3 passed", "1 warning"). */
+function buildSignalStatusSummary(signal: Signal): string {
+  const details = signal.details;
+  if (details.length === 0) {
+    return signal.passed ? "\u2705 Passed" : "\u274C Failed";
+  }
+
+  const pass = details.filter(d => d.status === "pass").length;
+  const fail = details.filter(d => d.status === "fail").length;
+  const warn = details.filter(d => d.status === "warn").length;
+  const skip = details.filter(d => d.status === "skip").length;
+
+  const statusParts: string[] = [];
+  if (pass > 0) statusParts.push(`${pass} passed`);
+  if (fail > 0) statusParts.push(`${fail} failed`);
+  if (warn > 0) statusParts.push(`${warn} warning${warn > 1 ? "s" : ""}`);
+  if (skip > 0) statusParts.push(`${skip} skipped`);
+
+  const icon = signal.passed ? "\u2705" : (fail > 0 ? "\u274C" : "\u26A0\uFE0F");
+  return `${icon} ${statusParts.join(", ")}`;
 }
 
 /** Build the summary counts line. */

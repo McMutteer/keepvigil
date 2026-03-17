@@ -1,7 +1,7 @@
 import type { ProbotOctokit } from "probot";
-import type { ClassifiedItem, ExecutionResult, VigilConfig } from "@vigil/core";
-import { createLogger } from "@vigil/core";
-import { updateCheckRun, determineConclusion } from "./check-run-updater.js";
+import type { ClassifiedItem, ExecutionResult, VigilConfig, Signal, ConfidenceScore } from "@vigil/core";
+import { createLogger, computeScore } from "@vigil/core";
+import { updateCheckRun, determineConclusion, conclusionFromScore } from "./check-run-updater.js";
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
 import { notifyWebhooks } from "./webhook-notifier.js";
 
@@ -53,6 +53,8 @@ export interface ReportContext {
   configWarnings?: string[];
   /** Item IDs included in this retry run — shown in comment header when set. */
   retryItemIds?: string[];
+  /** Signals collected during the pipeline — used to compute confidence score. */
+  signals?: Signal[];
 }
 
 // ---------------------------------------------------------------------------
@@ -174,7 +176,17 @@ async function postOrUpdateComment(
 export async function reportResults(context: ReportContext): Promise<void> {
   const items = buildReportItems(context.classifiedItems, context.executionResults);
   const summary = computeSummary(items);
-  const conclusion = context.pipelineError && items.length === 0 ? "neutral" : determineConclusion(items);
+
+  // When signals are available, compute score-based conclusion; otherwise use v1 logic
+  let confidenceScore: ConfidenceScore | undefined;
+  let conclusion: CheckConclusion;
+
+  if (context.signals && context.signals.length > 0) {
+    confidenceScore = computeScore(context.signals);
+    conclusion = conclusionFromScore(confidenceScore);
+  } else {
+    conclusion = context.pipelineError && items.length === 0 ? "neutral" : determineConclusion(items);
+  }
 
   // Critical — let errors propagate so BullMQ can retry
   await updateCheckRun({
@@ -187,6 +199,7 @@ export async function reportResults(context: ReportContext): Promise<void> {
     items,
     pipelineError: context.pipelineError ?? undefined,
     correlationId: context.correlationId,
+    confidenceScore,
   });
 
   // Secondary — catch errors so a comment failure doesn't re-trigger the whole job
@@ -199,6 +212,7 @@ export async function reportResults(context: ReportContext): Promise<void> {
       context.vigiConfig,
       context.configWarnings,
       context.retryItemIds,
+      confidenceScore,
     );
     await postOrUpdateComment(
       context.octokit,
