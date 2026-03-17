@@ -241,3 +241,27 @@ related: [2026-03-17-post-v2-real-world-polish]
 **Resultado:** 4 PRs mergeados (#45, #47, #48, #49). 836 tests (subieron de 777). 8 signals en produccion. Score record: 95/100. Docs del landing actualizados. Guia de test plans publicada. Idea documentada en mother.
 
 **Aprendido:** La calidad del test plan determina todo. Un test plan con 6 items de existencia saca 100% y no encuentra nada. El mismo PR con 15 items categorizados saca 100% Y encuentra bugs reales. El Plan Augmentor es la red de seguridad — pero la guia de categorias (existence ≤30%, logic 30-40%, contracts 20-30%, edge cases 10-20%) es lo que transforma el producto. Tambien: cuando multiples signals verifican lo mismo, necesitan trust hierarchies (CI > contract > assertion) para no contradecirse.
+
+---
+
+---
+id: 2026-03-17-billing-infrastructure
+type: feat
+project: vigil
+branch: main
+pr: 50, 51
+date: 2026-03-17
+tags: [stripe, billing, feature-gating, rate-limiting, checkout, upsell, go-to-market]
+summary: "Complete billing infrastructure: Stripe tenant registration, subscriptions, feature gating, rate limiting, checkout flow, and PR upsell — S1-S6 of GTM master plan."
+related: [2026-03-17-landing-to-portal]
+---
+
+### El Motor Comercial
+
+**Hilo:** Vigil tiene cara pública (landing + docs), ahora necesita motor comercial. Esta sesión convierte el producto gratuito en un negocio con billing real.
+
+**Lo que paso:** Registré Vigil como tenant en el Stripe Gateway (miia-03), creé productos Pro ($19) y Team ($49) con precios recurrentes. Luego el agente construyó la infraestructura completa en un solo PR: tabla subscriptions en Drizzle, servicio con checkPlan/isPro/upsertSubscription, webhook handler para Stripe events (con HMAC timing-safe — CodeRabbit lo pidió), checkout endpoint que redirige a Stripe, rate limiter in-memory por tier, y feature gating real en pipeline.ts. CodeRabbit encontró 9 issues legítimos: timing-safe HMAC, unsafe Plan cast, variable shadowing (plan vs tier en pipeline), Contract Checker sin gate, rate limit silencioso. Todos corregidos. El PR del upsell fue pequeño pero reveló algo importante: escribimos el test plan usando nombres cortos (pricing.tsx) en vez de full paths — exactamente el error que nuestra propia guía advierte. Vigil nos dio 70/100 con 7 "File not found". Los 2 items con full paths pasaron. Nuestro producto nos enseñó nuestra propia regla.
+
+**Resultado:** S1-S6 del GTM master plan completos. Stripe registrado, productos creados, billing infrastructure mergeada (PRs #50, #51). 836 tests passing. Falta: LICENSE, repo público, Marketplace.
+
+**Aprendido:** (1) Siempre full paths en test plans — Vigil nos lo confirmó en carne propia. (2) El Stripe Gateway está en miia-03, no en el server de Vigil — la admin key se saca del container directamente. (3) `timingSafeEqual` obligatorio para HMAC verification — CodeRabbit tiene razón. (4) Variable shadowing es invisible hasta que alguien lo reporta — `plan` (subscription tier) vs `plan` (parsed test plan) causó confusión silenciosa. (5) El go-to-market doc + master plan son los artefactos más valiosos para handoff entre agentes.
