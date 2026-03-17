@@ -16,6 +16,7 @@ import { fetchPRDiff, fetchRepoFileList } from "./diff-fetcher.js";
 import { collectCISignal } from "./ci-bridge.js";
 import { buildExecutorSignal } from "./executor-adapter.js";
 import { analyzeDiff } from "./diff-analyzer.js";
+import { analyzeGaps } from "./gap-analyzer.js";
 
 const log = createLogger("pipeline");
 
@@ -222,6 +223,11 @@ async function _runPipeline(
       const diffSignal = await analyzeDiff({ diff, classifiedItems, llm });
       signals.push(diffSignal);
       log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");
+
+      // Stage 6.10: Gap Analyzer — LLM identifies untested areas (Pro tier)
+      const gapSignal = await analyzeGaps({ diff, classifiedItems, llm });
+      signals.push(gapSignal);
+      log.info({ signalId: gapSignal.id, score: gapSignal.score, passed: gapSignal.passed, gaps: gapSignal.details.length }, "Gap analyzer complete");
     }
   } catch (err) {
     const rawMsg = err instanceof Error ? err.message : String(err);
