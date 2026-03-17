@@ -3,30 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 
 const SIGNALS = [
-  { icon: "✅", name: "CI checks passed", detail: "3/3", status: "success" },
-  {
-    icon: "✅",
-    name: "No credentials in diff",
-    detail: "",
-    status: "success",
-  },
-  {
-    icon: "✅",
-    name: "Test execution",
-    detail: "5/6 passed",
-    status: "success",
-  },
-  {
-    icon: "⚠️",
-    name: "Test coverage",
-    detail: "60% of files",
-    status: "warning",
-  },
-  { icon: "🔒", name: "Diff analysis", detail: "Pro", status: "locked" },
-  { icon: "🔒", name: "Gap analysis", detail: "Pro", status: "locked" },
+  { icon: "✅", name: "Credential Scan", detail: "100", status: "success" },
+  { icon: "✅", name: "CI Bridge", detail: "100", status: "success" },
+  { icon: "✅", name: "Test Execution", detail: "12/12", status: "success" },
+  { icon: "⚠️", name: "Coverage Mapper", detail: "50", status: "warning" },
+  { icon: "✅", name: "Diff vs Claims", detail: "Pro", status: "success" },
+  { icon: "✅", name: "Gap Analysis", detail: "96", status: "success" },
+  { icon: "✅", name: "Plan Augmentation", detail: "5/5", status: "success" },
+  { icon: "✅", name: "Contract Check", detail: "100", status: "success" },
 ] as const;
 
-const TARGET_SCORE = 82;
+const TARGET_SCORE = 95;
 
 function useCountUp(target: number, duration: number) {
   const [count, setCount] = useState(0);
@@ -150,8 +137,8 @@ export function ScoreCard() {
               </span>
               <span
                 className={`font-mono text-[13px] ${
-                  signal.status === "locked"
-                    ? "text-text-muted"
+                  signal.status === "warning"
+                    ? "text-warning"
                     : "text-text-secondary"
                 }`}
               >

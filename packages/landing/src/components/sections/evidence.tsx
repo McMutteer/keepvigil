@@ -3,51 +3,58 @@ import { ScrollReveal } from "../scroll-reveal";
 const SIGNAL_ROWS = [
   {
     name: "Credential Scan",
-    score: 100,
+    score: "100/100",
     status: "✅ Passed",
     detail: "No secrets detected",
     color: "text-success",
   },
   {
     name: "CI Bridge",
-    score: 100,
+    score: "100/100",
     status: "✅ Passed",
-    detail: "3/3 check runs passed",
+    detail: "12 items mapped",
     color: "text-success",
   },
   {
     name: "Test Execution",
-    score: 67,
-    status: "⚠️ Partial",
-    detail: "4/6 items passed",
-    color: "text-warning",
+    score: "100/100",
+    status: "✅ Passed",
+    detail: "12/12 items passed",
+    color: "text-success",
   },
   {
     name: "Coverage Mapper",
-    score: 75,
+    score: "50/100",
     status: "⚠️ Partial",
-    detail: "3/4 changed files covered",
+    detail: "4/8 changed files covered",
     color: "text-warning",
   },
   {
-    name: "Assertion Verifier",
-    score: 100,
-    status: "✅ Passed",
-    detail: "📁 5 files verified",
-    color: "text-success",
-  },
-  {
     name: "Diff vs Claims",
-    score: 85,
-    status: "✅ Passed",
-    detail: "1 minor gap found",
-    color: "text-success",
+    score: "47/100",
+    status: "⚠️ Gaps found",
+    detail: "8 passed, 4 warnings",
+    color: "text-warning",
   },
   {
     name: "Gap Analysis",
-    score: 90,
+    score: "96/100",
     status: "✅ Passed",
     detail: "No critical gaps",
+    color: "text-success",
+  },
+  {
+    name: "Plan Augmentation",
+    score: "100/100",
+    status: "✅ Passed",
+    detail: "5/5 auto-generated items verified",
+    color: "text-success",
+  },
+  {
+    name: "Contract Check",
+    score: "100/100",
+    status: "✅ Passed",
+    detail: "Cross-file contracts compatible",
     color: "text-success",
   },
 ];
@@ -57,7 +64,10 @@ export function Evidence() {
     <section className="py-24 sm:py-32">
       <div className="mx-auto max-w-[900px] px-6">
         <ScrollReveal>
-          <div className="text-center mb-12">
+          <div className="text-center mb-4">
+            <p className="text-xs font-medium uppercase tracking-[0.05em] text-accent mb-3">
+              Real result from keepvigil PR #47
+            </p>
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-4">
               This appears on every PR.
             </h2>
@@ -85,14 +95,17 @@ export function Evidence() {
             <div className="mb-4">
               <p className="text-lg sm:text-xl font-semibold text-text-primary">
                 🛡️ Vigil Confidence Score:{" "}
-                <span className="text-accent">82/100</span> — Safe to merge ✅
+                <span className="text-accent">95/100</span> — Safe to merge ✅
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                12/12 test plan items passed · 5 auto-generated items verified
               </p>
             </div>
 
             {/* Score explanation line */}
             <div className="text-xs font-mono text-text-muted mb-6 px-3 py-2 bg-code-bg rounded-[8px]">
-              Credential Scan ✅ • CI Bridge ✅ • Test Execution ⚠️ • Coverage
-              ⚠️ • Assertion ✅ • Diff ✅ • Gap ✅
+              Credential ✅ • CI Bridge ✅ • Execution ✅ • Coverage ⚠️ • Diff
+              ⚠️ • Gap ✅ • Augmentor ✅ • Contract ✅
             </div>
 
             {/* Signal table */}
@@ -145,24 +158,14 @@ export function Evidence() {
               </p>
               <div className="space-y-1.5">
                 <p className="text-[13px] text-text-secondary">
-                  <span className="font-medium text-failure">Must Fix:</span>
-                </p>
-                <p className="text-[13px] text-text-secondary pl-4">
-                  ❌{" "}
-                  <code className="font-mono text-xs bg-code-bg px-1.5 py-0.5 rounded">
-                    npm test
-                  </code>{" "}
-                  exits with code 1 — fix failing test
-                </p>
-                <p className="text-[13px] text-text-secondary mt-2">
                   <span className="font-medium text-warning">Consider:</span>
                 </p>
                 <p className="text-[13px] text-text-secondary pl-4">
-                  ⚠️{" "}
-                  <code className="font-mono text-xs bg-code-bg px-1.5 py-0.5 rounded">
-                    src/utils/auth.ts
-                  </code>{" "}
-                  changed but has no test file
+                  ⚠️ 4 changed files have no corresponding test coverage
+                </p>
+                <p className="text-[13px] text-text-secondary pl-4">
+                  ⚠️ Diff analysis found 4 areas not explicitly covered by test
+                  plan
                 </p>
               </div>
             </div>
@@ -172,12 +175,12 @@ export function Evidence() {
         <ScrollReveal delay={400}>
           <p className="text-center text-sm mt-8">
             <a
-              href="https://github.com/McMutteer/siegekit/pull/5"
+              href="https://github.com/McMutteer/keepvigil/pull/47"
               target="_blank"
               rel="noopener noreferrer"
               className="text-accent hover:text-accent-hover transition-colors"
             >
-              See Vigil in action on a real PR →
+              See this exact result on GitHub →
             </a>
           </p>
         </ScrollReveal>
