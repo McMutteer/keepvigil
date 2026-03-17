@@ -14,7 +14,7 @@
  * }
  */
 
-import { readFile } from "node:fs/promises";
+import { readFile, access } from "node:fs/promises";
 import path from "node:path";
 import type { ClassifiedItem, ExecutionResult, AssertionExecutionContext } from "@vigil/core/types";
 
@@ -147,16 +147,13 @@ const KNOWN_FILE_KEYWORDS: Array<{ keyword: RegExp; candidates: string[] }> = [
  * Try to infer a file path from the item text when no explicit code block exists.
  * Checks known file keywords and verifies the file exists in the repo.
  */
-function inferFilePath(text: string, repoPath: string): string | null {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- dynamic require for sync check
-  const fs = require("node:fs");
-
+async function inferFilePath(text: string, repoPath: string): Promise<string | null> {
   for (const { keyword, candidates } of KNOWN_FILE_KEYWORDS) {
     if (keyword.test(text)) {
       for (const candidate of candidates) {
         const fullPath = path.join(repoPath, candidate);
         try {
-          fs.accessSync(fullPath);
+          await access(fullPath);
           return candidate;
         } catch {
           // File doesn't exist, try next candidate
@@ -182,7 +179,7 @@ export async function executeAssertionItem(
 
   // Smart file search: if no code block, try to find a file reference in the text
   if (!filePath) {
-    filePath = inferFilePath(item.item.text, context.repoPath);
+    filePath = await inferFilePath(item.item.text, context.repoPath);
   }
 
   if (!filePath) {

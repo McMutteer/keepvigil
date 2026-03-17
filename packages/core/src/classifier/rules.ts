@@ -77,10 +77,22 @@ export function applyRules(item: TestPlanItem): ClassifiedItem | null {
     };
   }
 
-  // Rule 2 & 3: Code blocks with recognizable commands
+  // Rule 2, 3, 3b: Code blocks — check file paths FIRST, then commands
   if (item.hints.codeBlocks.length > 0) {
     for (const block of item.hints.codeBlocks) {
       const trimmed = block.trim();
+
+      // Rule 2b: File path assertions (checked BEFORE shell commands)
+      // Prevents "docker-compose.prod.yml" from matching the "docker" shell prefix
+      if (FILE_PATH_PATTERN.test(trimmed) || FILE_REF_PATTERN.test(trimmed)) {
+        return {
+          item,
+          confidence: "HIGH",
+          executorType: "assertion",
+          category: "assertion",
+          reasoning: "File path reference — will verify assertion against file contents",
+        };
+      }
 
       // Rule 2: curl → API call
       if (CURL_PATTERN.test(trimmed)) {
@@ -106,17 +118,6 @@ export function applyRules(item: TestPlanItem): ClassifiedItem | null {
         }
       }
 
-      // Rule 3b: File path assertions
-      // Code blocks containing file paths (not commands) are assertions about file contents
-      if (FILE_PATH_PATTERN.test(trimmed) || FILE_REF_PATTERN.test(trimmed)) {
-        return {
-          item,
-          confidence: "HIGH",
-          executorType: "assertion",
-          category: "assertion",
-          reasoning: "File path reference — will verify assertion against file contents",
-        };
-      }
     }
   }
 
