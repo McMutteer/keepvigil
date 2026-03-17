@@ -119,14 +119,14 @@ When implementing i18n for the full landing:
 
 ## Implementation Order
 
-1. Write terms markdown in Spanish (adapt MIIA → Vigil)
-2. Write privacy markdown in Spanish (adapt MIIA → Vigil)
-3. Create new page components that render markdown (like MIIA does with fetch + parse)
-4. Deploy Spanish versions replacing current basic pages
+1. ~~Write terms in Spanish (adapt MIIA → Vigil)~~ ✅ Done (PR pending)
+2. ~~Write privacy in Spanish (adapt MIIA → Vigil)~~ ✅ Done (PR pending)
+3. ~~Create page components~~ ✅ Done — TSX with shared helper components
+4. ~~Deploy Spanish versions replacing current basic pages~~ ✅ Merged with PR
 5. (Later, with i18n) Add English translations
 6. (Later, with i18n) Add language detection + toggle
 
 ## Effort
 
-- Legal adaptation: ~1 session (focused, careful work)
+- Legal adaptation: ✅ Completed in 1 session
 - i18n implementation: ~2-3 days (separate task)
