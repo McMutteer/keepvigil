@@ -8,3 +8,4 @@ export * from "./coverage-mapper.js";
 export * from "./llm-client.js";
 export * from "./logger.js";
 export * from "./errors.js";
+export * from "./smart-reader.js";

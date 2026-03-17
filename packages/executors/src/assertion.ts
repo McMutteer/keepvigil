@@ -17,6 +17,7 @@
 import { readFile, access } from "node:fs/promises";
 import path from "node:path";
 import type { ClassifiedItem, ExecutionResult, AssertionExecutionContext } from "@vigil/core/types";
+import { prepareFileContent } from "@vigil/core";
 
 /** Max file content size sent to LLM (bytes) */
 const MAX_FILE_BYTES = 20_000;
@@ -242,13 +243,9 @@ export async function executeAssertionItem(
     };
   }
 
-  // Truncate large files
-  if (Buffer.byteLength(content, "utf-8") > MAX_FILE_BYTES) {
-    // Byte-safe truncation: encode, slice bytes, decode back
-    const truncated = Buffer.from(content, "utf-8").subarray(0, MAX_FILE_BYTES).toString("utf-8");
-    // Remove potential partial multi-byte char at the end
-    content = truncated.replace(/[\uFFFD]$/, "") + "\n\n...(truncated)";
-  }
+  // Smart content preparation: for large files, extract keyword-relevant
+  // context instead of blindly truncating to first 20KB
+  content = prepareFileContent(content, item.item.text, item.item.hints.codeBlocks, MAX_FILE_BYTES);
 
   // Ask LLM to verify the assertion
   const systemPrompt =
