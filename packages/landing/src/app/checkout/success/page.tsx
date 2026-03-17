@@ -46,7 +46,7 @@ const nextSteps = [
   },
   {
     step: 3,
-    text: "See the full confidence score with all 8 signals",
+    text: "See the full confidence score with all 9 signals",
     href: "/docs/scoring",
     linkText: "Scoring guide",
   },

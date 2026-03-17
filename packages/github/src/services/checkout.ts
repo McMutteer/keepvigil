@@ -50,7 +50,7 @@ export async function handleCheckout(req: IncomingMessage, res: ServerResponse, 
       body: JSON.stringify({
         mode: "subscription",
         lineItems: [{ price: priceId, quantity: 1 }],
-        successUrl: "https://keepvigil.dev/checkout/success",
+        successUrl: `https://keepvigil.dev/checkout/success?plan=${encodeURIComponent(plan)}`,
         cancelUrl: "https://keepvigil.dev/#pricing",
         metadata: { installationId, accountLogin, plan },
       }),

@@ -345,6 +345,7 @@ function ChevronIcon({ open }: { open: boolean }) {
       height="16"
       viewBox="0 0 16 16"
       fill="none"
+      aria-hidden="true"
       className={`shrink-0 transition-transform duration-200 ${
         open ? "rotate-180" : ""
       }`}

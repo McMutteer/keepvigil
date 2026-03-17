@@ -150,19 +150,23 @@ async function main(): Promise<void> {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10_000);
 
-        const response = await fetch(`${config.stripeGatewayUrl}/billing-portal/sessions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": config.stripeGatewayApiKey,
-          },
-          body: JSON.stringify({
-            customerId,
-            returnUrl: "https://keepvigil.dev",
-          }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
+        let response: Response;
+        try {
+          response = await fetch(`${config.stripeGatewayUrl}/billing-portal/sessions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": config.stripeGatewayApiKey,
+            },
+            body: JSON.stringify({
+              customerId,
+              returnUrl: "https://keepvigil.dev",
+            }),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
 
         if (!response.ok) {
           log.error({ status: response.status }, "Stripe Gateway billing-portal returned non-OK status");
