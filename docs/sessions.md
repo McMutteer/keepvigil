@@ -217,3 +217,27 @@ related: []
 **Resultado:** keepvigil.dev live con 13 secciones de landing + 18 docs + 3 legal pages + SEO. Plus: `docs/go-to-market.md` y `docs/master-plan-gtm.md` como handoff para billing.
 
 **Aprendido:** (1) WebFetch en agentes background puede ser denegado — escribir landscape research de memoria funciona igual de bien. (2) El 95/100 de PR #47 con datos reales es 10x más convincente que un mockup de 82/100 inventado. (3) Turbopack + next/font/local en monorepos no funciona en Next 15.5 — usar webpack. (4) Traefik path priority es la forma limpia de servir landing + API desde el mismo dominio. (5) El go-to-market doc es el artefacto más importante de la sesión — sin él, otro agente empezaría de cero.
+
+---
+
+---
+id: 2026-03-17-siegekit-analysis-to-v3-signals
+type: feat
+project: vigil
+branch: main
+pr: 45, 47, 48, 49
+date: 2026-03-17
+tags: [signals, plan-augmentor, contract-checker, smart-reader, siegekit-analysis, test-plan-quality, onboarding]
+summary: "Analyzed siegekit PRs, discovered test plan quality gap, built 4 new features (augmentor, contracts, smart reader, onboarding), went from 70 to 95 score."
+related: [2026-03-17-post-v2-real-world-polish]
+---
+
+### De 70 a 95 — La Sesion Que Reescribio Las Reglas
+
+**Hilo:** Post-v2 polish ya estaba deployed. Esta sesion empezo revisando PRs de siegekit para ver como funcionaba Vigil en el mundo real — y termino con 4 PRs mergeados, 2 signals nuevos, un parser fix, un smart reader, y la primera evaluacion arriba de 80 en la historia del proyecto.
+
+**Lo que paso:** Empezamos inocentemente: "revisa los PRs de siegekit". El analisis profundo de PRs #8 y #9 revelo que Vigil sacaba 70/100 en todo pero no encontraba bugs reales — los test plans eran 90% existence checks. Reescribimos el test plan del PR #45 con categorias (existence/logic/contracts/edge cases) y paso de 9/12 a 15/15. Eso nos llevo a implementar el Plan Augmentor (genera items que el plan original no tiene), el Contract Checker (detecta mismatches API/frontend automaticamente), y la reforma del Coverage Mapper (plan-covered files). Pero en produccion (siegekit PR #12), los signals se contradecian entre si — Contract Checker decia compatible, assertion executor decia fail. Implementamos contract-over-assertion trust (PR #47), el score subio a 95. Luego descubrimos que el augmentor daba false positives por falta de contexto del proyecto — le dimos CLAUDE.md (PR #48). Vigil se auto-evaluo y fallo 2 items porque `buildOnboardingTips` estaba al final de un archivo de 600 lineas que se truncaba a 20KB. Implementamos smart file reader con keyword-directed context extraction (PR #49). Finalmente actualizamos los docs del landing con los 8 signals y pesos correctos.
+
+**Resultado:** 4 PRs mergeados (#45, #47, #48, #49). 836 tests (subieron de 777). 8 signals en produccion. Score record: 95/100. Docs del landing actualizados. Guia de test plans publicada. Idea documentada en mother.
+
+**Aprendido:** La calidad del test plan determina todo. Un test plan con 6 items de existencia saca 100% y no encuentra nada. El mismo PR con 15 items categorizados saca 100% Y encuentra bugs reales. El Plan Augmentor es la red de seguridad — pero la guia de categorias (existence ≤30%, logic 30-40%, contracts 20-30%, edge cases 10-20%) es lo que transforma el producto. Tambien: cuando multiples signals verifican lo mismo, necesitan trust hierarchies (CI > contract > assertion) para no contradecirse.
