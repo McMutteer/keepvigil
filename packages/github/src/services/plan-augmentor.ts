@@ -15,7 +15,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { ClassifiedItem, LLMClient, Signal, SignalDetail } from "@vigil/core";
-import { createSignal, createLogger } from "@vigil/core";
+import { createSignal, createLogger, prepareFileContent } from "@vigil/core";
 
 const log = createLogger("plan-augmentor");
 
@@ -236,11 +236,8 @@ async function verifyItem(
     return { passed: false, reasoning: `File not found: ${item.file}`, fileFound: false };
   }
 
-  // Truncate large files
-  if (Buffer.byteLength(content, "utf-8") > MAX_FILE_BYTES) {
-    content = Buffer.from(content, "utf-8").subarray(0, MAX_FILE_BYTES).toString("utf-8")
-      .replace(/[\uFFFD]$/, "") + "\n\n...(truncated)";
-  }
+  // Smart content preparation: keyword-directed context extraction for large files
+  content = prepareFileContent(content, item.assertion, [], MAX_FILE_BYTES);
 
   const systemPrompt = "You verify assertions about source code. Given a file and an assertion, determine if it's true. Return ONLY valid JSON: { \"verified\": true/false, \"reasoning\": \"brief explanation\" }";
   const userPrompt = `File: \`${item.file}\`\n\nContent:\n\`\`\`\n${content}\n\`\`\`\n\nAssertion: ${item.assertion}`;
