@@ -175,18 +175,17 @@ describe("executeAssertionItem", () => {
     expect((result.evidence as Record<string, unknown>).verified).toBe(true);
   });
 
-  it("infra-skips when LLM returns completely unparseable response", async () => {
+  it("fails when LLM returns completely unparseable response", async () => {
     mockReadFile.mockResolvedValue("const x = 1;");
     vi.mocked(mockLLM.chat).mockResolvedValue("---");
 
     const item = makeClassified("`src/index.ts` exports default", ["src/index.ts"]);
     const result = await executeAssertionItem(item, baseContext);
 
-    // Unparseable = infrastructure issue, not code failure
-    expect(result.passed).toBe(true);
+    // Unparseable = fail safe — cannot verify the assertion
+    expect(result.passed).toBe(false);
     expect(result.evidence).toMatchObject({
-      skipped: true,
-      infrastructureSkip: true,
+      verified: false,
       file: "src/index.ts",
     });
   });

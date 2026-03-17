@@ -284,14 +284,13 @@ export async function executeAssertionItem(
   if (!parsed) {
     return {
       itemId,
-      passed: true,
+      passed: false,
       duration: Date.now() - startMs,
       evidence: {
-        skipped: true,
-        infrastructureSkip: true,
         file: filePath,
         exists: true,
-        reason: "Could not parse LLM response",
+        verified: false,
+        reasoning: "Could not parse LLM verification response",
       },
     };
   }

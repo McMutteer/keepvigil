@@ -113,8 +113,8 @@ export async function makeRequest(
     // Skip reading binary responses to avoid corruption
     const isBinary = /^(image|audio|video|application\/octet-stream|application\/pdf|application\/zip)/i.test(contentType);
     if (isBinary) {
-      // Drain the response stream to release resources
-      await response.body?.cancel();
+      // Drain the response stream to release the connection
+      await response.arrayBuffer();
       body = `<binary content, ${contentLength ?? "unknown"} bytes>`;
     } else {
       const text = await response.text();
