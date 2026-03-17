@@ -8,7 +8,7 @@ export function Hero() {
           {/* Text column */}
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.05em] text-accent mb-4">
-              For developers who use AI agents
+              Every AI-generated PR gets a score. Every test plan gets verified.
             </p>
             <h1 className="text-[32px] sm:text-[44px] lg:text-[56px] font-semibold leading-[1.1] text-text-primary mb-6">
               Confidence scores for AI&#8209;generated&nbsp;PRs
@@ -49,7 +49,7 @@ export function Hero() {
               href="https://github.com/McMutteer/siegekit/pull/5"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block mt-4 text-sm text-accent hover:text-accent-hover transition-colors"
+              className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-accent hover:text-accent-hover transition-colors border-b border-accent/40 hover:border-accent pb-0.5"
             >
               See a real confidence score on GitHub →
             </a>

@@ -17,6 +17,10 @@ export function Problem() {
             there&apos;s no easy way to verify. The gap between what your agent
             promised and what actually got tested grows with every PR.
           </p>
+          <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[600px] mx-auto mt-4">
+            A leaked credential. A broken API contract. A test that was never
+            run. These are the risks of merging on trust.
+          </p>
         </div>
       </ScrollReveal>
     </section>

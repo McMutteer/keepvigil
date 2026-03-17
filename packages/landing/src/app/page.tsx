@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/navbar";
 import { Hero } from "@/components/sections/hero";
 import { StatsBar } from "@/components/sections/stats-bar";
+import { SocialProof } from "@/components/sections/social-proof";
 import { Problem } from "@/components/sections/problem";
 import { HowItWorksLanding } from "@/components/sections/how-it-works-landing";
 import { Signals } from "@/components/sections/signals";
@@ -25,6 +26,7 @@ export default function Home() {
       <main id="main-content">
         <Hero />
         <StatsBar />
+        <SocialProof />
         <Problem />
         <HowItWorksLanding />
         <Signals />
