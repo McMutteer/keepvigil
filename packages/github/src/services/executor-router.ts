@@ -10,6 +10,7 @@ import {
   executeShellItem,
   executeApiItem,
   executeBrowserItem,
+  executeAssertionItem,
 } from "@vigil/executors";
 
 const log = createLogger("executor-router");
@@ -109,6 +110,17 @@ const EXECUTOR_REGISTRY = new Map<ExecutorType, ExecutorFn>([
         llm: ctx.llm,
         timeoutMs,
         viewports: ctx.vigiConfig?.viewports,
+      });
+    },
+  ],
+  [
+    "assertion",
+    (item, ctx) => {
+      if (!ctx.repoPath) return Promise.resolve(noRepoResult(item.item.id));
+      return executeAssertionItem(item, {
+        repoPath: ctx.repoPath,
+        llm: ctx.llm,
+        timeoutMs: 30_000,
       });
     },
   ],

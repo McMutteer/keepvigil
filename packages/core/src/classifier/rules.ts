@@ -27,6 +27,18 @@ const SHELL_COMMAND_PREFIXES = [
 const CURL_PATTERN = /^curl\s/;
 
 /**
+ * Pattern to detect file paths with known extensions in code blocks.
+ * Matches paths like "src/auth.ts", "packages/api/Dockerfile", "config.yml".
+ */
+const FILE_PATH_PATTERN = /^[a-zA-Z0-9._/-]+\.(ts|tsx|js|jsx|py|go|rs|java|yml|yaml|json|toml|sql|sh|prisma|graphql|css|scss|html|dockerfile)$/i;
+
+/**
+ * Pattern to detect paths without extension but with directory separators.
+ * Matches paths like "packages/api/Dockerfile", "src/lib/Makefile".
+ */
+const FILE_REF_PATTERN = /^[a-zA-Z0-9._/-]*\/[a-zA-Z0-9._-]+$/;
+
+/**
  * Pattern to detect HTTP verb + path in item text.
  * Matches: GET /api/foo, POST /users, etc.
  * Requires a slash followed by a non-space path segment.
@@ -92,6 +104,18 @@ export function applyRules(item: TestPlanItem): ClassifiedItem | null {
             reasoning: `Code block matches shell command pattern: ${prefix}`,
           };
         }
+      }
+
+      // Rule 3b: File path assertions
+      // Code blocks containing file paths (not commands) are assertions about file contents
+      if (FILE_PATH_PATTERN.test(trimmed) || FILE_REF_PATTERN.test(trimmed)) {
+        return {
+          item,
+          confidence: "HIGH",
+          executorType: "assertion",
+          category: "assertion",
+          reasoning: "File path reference — will verify assertion against file contents",
+        };
       }
     }
   }

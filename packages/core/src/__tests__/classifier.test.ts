@@ -175,6 +175,49 @@ describe("applyRules", () => {
     expect(result!.executorType).toBe("api");
   });
 
+  // --- File path assertions ---
+
+  it("classifies code block with file path as HIGH/assertion/assertion", () => {
+    const item = makeItem("`packages/api/Dockerfile` uses non-root USER directive", {
+      codeBlocks: ["packages/api/Dockerfile"],
+    });
+    const result = applyRules(item);
+    expect(result).not.toBeNull();
+    expect(result!.confidence).toBe("HIGH");
+    expect(result!.executorType).toBe("assertion");
+    expect(result!.category).toBe("assertion");
+  });
+
+  it("classifies code block with .ts file path as HIGH/assertion", () => {
+    const item = makeItem("`src/auth.ts` guards against missing token", {
+      codeBlocks: ["src/auth.ts"],
+    });
+    const result = applyRules(item);
+    expect(result).not.toBeNull();
+    expect(result!.confidence).toBe("HIGH");
+    expect(result!.executorType).toBe("assertion");
+    expect(result!.category).toBe("assertion");
+  });
+
+  it("classifies file path without assertion language as assertion", () => {
+    const item = makeItem("Check `config.yml`", {
+      codeBlocks: ["config.yml"],
+    });
+    const result = applyRules(item);
+    expect(result).not.toBeNull();
+    expect(result!.executorType).toBe("assertion");
+  });
+
+  it("does NOT classify npm test as assertion (shell command takes priority)", () => {
+    const item = makeItem("Run `npm test`", {
+      codeBlocks: ["npm test"],
+    });
+    const result = applyRules(item);
+    expect(result).not.toBeNull();
+    expect(result!.executorType).toBe("shell");
+    expect(result!.executorType).not.toBe("assertion");
+  });
+
   // --- Deferred to LLM ---
 
   it("returns null for UI flow items", () => {
@@ -387,8 +430,8 @@ describe("classifyItems", () => {
 // ============================================================
 
 describe("prompts", () => {
-  it("has 8 few-shot examples", () => {
-    expect(FEW_SHOT_EXAMPLES).toHaveLength(8);
+  it("has 10 few-shot examples", () => {
+    expect(FEW_SHOT_EXAMPLES).toHaveLength(10);
   });
 
   it("buildUserPrompt includes all items", () => {

@@ -100,6 +100,12 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   }
   parts.push("");
 
+  // Action items — highlight failures and warnings
+  const actionItems = buildActionItems(confidenceScore, items);
+  if (actionItems) {
+    parts.push(actionItems, "");
+  }
+
   // Test plan results in a collapsible details block
   const v1Content = buildV1DetailsContent(items, summary);
   parts.push(
@@ -125,6 +131,46 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   body = truncateToBytes(body, MAX_COMMENT_BYTES, TRUNCATION_SUFFIX);
 
   return body;
+}
+
+/** Build an action items section highlighting failures and warnings. */
+function buildActionItems(confidenceScore: ConfidenceScore, items: ReportItem[]): string {
+  const MAX_ITEMS = 5;
+  const actionLines: Array<{ icon: string; text: string }> = [];
+
+  // Collect failed test plan items
+  for (const item of items) {
+    if (item.verdict === "failed" || item.verdict === "error") {
+      const text = item.classified.item.text.length > 80
+        ? item.classified.item.text.slice(0, 77) + "..."
+        : item.classified.item.text;
+      actionLines.push({ icon: "\u274C", text });
+    }
+  }
+
+  // Collect signal warnings/failures
+  for (const signal of confidenceScore.signals) {
+    for (const detail of signal.details) {
+      if (detail.status === "fail") {
+        const raw = detail.message || detail.label || "Unknown issue";
+        const msg = raw.length > 80 ? raw.slice(0, 77) + "..." : raw;
+        actionLines.push({ icon: "\u26A0\uFE0F", text: msg });
+      }
+    }
+  }
+
+  if (actionLines.length === 0) return "";
+
+  // Sort: failures first, then warnings
+  actionLines.sort((a, b) => {
+    if (a.icon === "\u274C" && b.icon !== "\u274C") return -1;
+    if (a.icon !== "\u274C" && b.icon === "\u274C") return 1;
+    return 0;
+  });
+
+  const limited = actionLines.slice(0, MAX_ITEMS);
+  const lines = limited.map(a => `- ${a.icon} ${a.text}`).join("\n");
+  return `### Action Items\n\n${lines}`;
 }
 
 /** Build the inner content for the test plan details block (reuses v1 building blocks). */
@@ -238,6 +284,8 @@ export function formatEvidence(item: ReportItem): string {
       return formatApiEvidence(ev);
     case "browser":
       return formatBrowserEvidence(ev);
+    case "assertion":
+      return formatAssertionEvidence(ev);
     default:
       return formatGenericEvidence(ev);
   }
@@ -334,6 +382,38 @@ function formatMetadataEvidence(ev: Record<string, unknown>): string {
     parts.push(`**JSON-LD invalid:** ${errors?.join(", ") ?? "unknown error"}`);
   }
   return parts.join("\n\n") || "Metadata check completed.";
+}
+
+function formatAssertionEvidence(ev: Record<string, unknown>): string {
+  const parts: string[] = [];
+  const file = typeof ev.file === "string" ? ev.file : undefined;
+  if (file) {
+    parts.push(`**File:** \`${file}\``);
+  }
+  const exists = ev.exists as boolean | undefined;
+  if (exists === false) {
+    const reason = typeof ev.reason === "string" ? ev.reason : "File not found";
+    parts.push(`**Status:** File not found`);
+    parts.push(`**Reason:** ${reason}`);
+    return parts.join("\n\n") || "No evidence captured.";
+  }
+  const verified = ev.verified as boolean | undefined;
+  if (verified !== undefined) {
+    parts.push(`**Verified:** ${verified ? "\u2705 Yes" : "\u274C No"}`);
+  }
+  const reasoning = typeof ev.reasoning === "string" ? ev.reasoning : undefined;
+  if (reasoning) {
+    parts.push(`> ${reasoning}`);
+  }
+  const relevantLines = typeof ev.relevantLines === "string" ? ev.relevantLines : undefined;
+  if (relevantLines) {
+    parts.push(`**Relevant lines:**\n\`\`\`\n${truncate(relevantLines, 500)}\n\`\`\``);
+  }
+  const error = typeof ev.error === "string" ? ev.error : undefined;
+  if (error) {
+    parts.push(`**Error:** ${error}`);
+  }
+  return parts.join("\n\n") || "No evidence captured.";
 }
 
 function formatGenericEvidence(ev: Record<string, unknown>): string {
