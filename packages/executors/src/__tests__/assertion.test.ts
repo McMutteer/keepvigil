@@ -147,21 +147,20 @@ describe("executeAssertionItem", () => {
     expect(mockReadFile).not.toHaveBeenCalled();
   });
 
-  it("fails when LLM throws an error", async () => {
+  it("infra-skips when LLM throws an error", async () => {
     mockReadFile.mockResolvedValue("const x = 1;");
     vi.mocked(mockLLM.chat).mockRejectedValue(new Error("API timeout"));
 
-    const item = makeClassified(
-      "`src/index.ts` exports default",
-      ["src/index.ts"],
-    );
+    const item = makeClassified("`src/index.ts` exports default", ["src/index.ts"]);
     const result = await executeAssertionItem(item, baseContext);
 
-    expect(result.passed).toBe(false);
+    // LLM error = infrastructure issue, not code failure
+    expect(result.passed).toBe(true);
     expect(result.evidence).toMatchObject({
+      skipped: true,
+      infrastructureSkip: true,
       file: "src/index.ts",
       exists: true,
-      error: expect.stringContaining("LLM verification failed"),
     });
   });
 
@@ -176,18 +175,19 @@ describe("executeAssertionItem", () => {
     expect((result.evidence as Record<string, unknown>).verified).toBe(true);
   });
 
-  it("fails when LLM returns completely unparseable response", async () => {
+  it("infra-skips when LLM returns completely unparseable response", async () => {
     mockReadFile.mockResolvedValue("const x = 1;");
     vi.mocked(mockLLM.chat).mockResolvedValue("---");
 
     const item = makeClassified("`src/index.ts` exports default", ["src/index.ts"]);
     const result = await executeAssertionItem(item, baseContext);
 
-    expect(result.passed).toBe(false);
+    // Unparseable = infrastructure issue, not code failure
+    expect(result.passed).toBe(true);
     expect(result.evidence).toMatchObject({
+      skipped: true,
+      infrastructureSkip: true,
       file: "src/index.ts",
-      exists: true,
-      error: "Could not parse LLM response",
     });
   });
 

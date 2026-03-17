@@ -68,11 +68,22 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   const emoji = recommendationEmoji[confidenceScore.recommendation] ?? "";
   const recLabel = confidenceScore.recommendation === "safe" ? "Safe to merge" : confidenceScore.recommendation === "review" ? "Review recommended" : "Merge with caution";
 
+  // Score explanation — one-line breakdown of what drove the score
+  const signalSummaries = confidenceScore.signals
+    .filter((s) => s.weight > 0)
+    .map((s) => {
+      const icon = s.passed ? "\u2705" : (s.score >= 50 ? "\u26A0\uFE0F" : "\u274C");
+      return `${s.name} ${icon}`;
+    })
+    .join(" \u2022 ");
+
   const parts: string[] = [
     COMMENT_MARKER,
     isRetry ? `## Vigil Confidence Score: ${confidenceScore.score}/100 _(retry)_` : `## Vigil Confidence Score: ${confidenceScore.score}/100`,
     "",
     `**Recommendation:** ${recLabel} ${emoji}`,
+    "",
+    `> ${signalSummaries}`,
     "",
   ];
 
@@ -104,6 +115,21 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   const actionItems = buildActionItems(confidenceScore, items);
   if (actionItems) {
     parts.push(actionItems, "");
+  }
+
+  // Assertion evidence summary — show how many files were verified
+  const assertionItems = items.filter((i) => i.classified.executorType === "assertion");
+  if (assertionItems.length > 0) {
+    const verified = assertionItems.filter((i) => i.verdict === "passed").length;
+    const fileNames = assertionItems
+      .filter((i) => i.verdict === "passed")
+      .map((i) => i.classified.item.hints.codeBlocks[0] || "")
+      .filter(Boolean)
+      .map((f) => `\`${f.split("/").pop()}\``)
+      .slice(0, 8);
+    if (verified > 0) {
+      parts.push(`\uD83D\uDCC1 **${verified} file${verified > 1 ? "s" : ""} verified:** ${fileNames.join(", ")}${verified > 8 ? "..." : ""}`, "");
+    }
   }
 
   // Test plan results in a collapsible details block
@@ -161,16 +187,22 @@ function buildActionItems(confidenceScore: ConfidenceScore, items: ReportItem[])
 
   if (actionLines.length === 0) return "";
 
-  // Sort: failures first, then warnings
-  actionLines.sort((a, b) => {
-    if (a.icon === "\u274C" && b.icon !== "\u274C") return -1;
-    if (a.icon !== "\u274C" && b.icon === "\u274C") return 1;
-    return 0;
-  });
+  const mustFix = actionLines.filter((a) => a.icon === "\u274C").slice(0, 3);
+  const consider = actionLines.filter((a) => a.icon !== "\u274C").slice(0, MAX_ITEMS - mustFix.length);
 
-  const limited = actionLines.slice(0, MAX_ITEMS);
-  const lines = limited.map(a => `- ${a.icon} ${a.text}`).join("\n");
-  return `### Action Items\n\n${lines}`;
+  const sections: string[] = [];
+
+  if (mustFix.length > 0) {
+    sections.push("**Must Fix**");
+    sections.push(mustFix.map((a) => `- ${a.icon} ${a.text}`).join("\n"));
+  }
+
+  if (consider.length > 0) {
+    sections.push("**Consider**");
+    sections.push(consider.map((a) => `- ${a.icon} ${a.text}`).join("\n"));
+  }
+
+  return `### Action Items\n\n${sections.join("\n\n")}`;
 }
 
 /** Build the inner content for the test plan details block (reuses v1 building blocks). */

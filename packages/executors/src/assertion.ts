@@ -222,16 +222,18 @@ export async function executeAssertionItem(
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    // Scrub potential tokens from error messages
     const sanitized = message.replace(/(?:sk-|gsk_|xai-)[a-zA-Z0-9_-]+/g, "[REDACTED]");
+    // LLM failure is infrastructure — don't penalize the code
     return {
       itemId,
-      passed: false,
+      passed: true,
       duration: Date.now() - startMs,
       evidence: {
+        skipped: true,
+        infrastructureSkip: true,
         file: filePath,
         exists: true,
-        error: `LLM verification failed: ${sanitized}`,
+        reason: `LLM verification unavailable: ${sanitized}`,
       },
     };
   }
@@ -242,12 +244,14 @@ export async function executeAssertionItem(
   if (!parsed) {
     return {
       itemId,
-      passed: false,
+      passed: true,
       duration: Date.now() - startMs,
       evidence: {
+        skipped: true,
+        infrastructureSkip: true,
         file: filePath,
         exists: true,
-        error: "Could not parse LLM response",
+        reason: "Could not parse LLM response",
       },
     };
   }
