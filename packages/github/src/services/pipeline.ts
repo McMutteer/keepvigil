@@ -99,8 +99,8 @@ async function stageCloneRepo(
   job: Pick<VerifyTestPlanJob, "owner" | "repo" | "headSha">,
   octokit: ProbotOctokit,
 ): Promise<string | null> {
-  const hasShellItems = classifiedItems.some((i) => i.executorType === "shell");
-  if (!hasShellItems) return null;
+  const needsRepo = classifiedItems.some((i) => i.executorType === "shell" || i.executorType === "assertion");
+  if (!needsRepo) return null;
 
   let githubToken: string | undefined;
   try {
