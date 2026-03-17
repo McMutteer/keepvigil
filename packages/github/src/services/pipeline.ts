@@ -51,6 +51,9 @@ export async function runPipeline(
  * platform Groq key. This is the single place where the LLM client is
  * instantiated for a pipeline run.
  */
+/** Default platform model — configurable via GROQ_MODEL env var */
+const PLATFORM_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+
 function createPipelineLLM(vigiConfig: VigilConfig | undefined, groqApiKey: string): LLMClient {
   const llmConfig = vigiConfig?.llm;
   if (llmConfig?.provider && llmConfig.model) {
@@ -64,10 +67,10 @@ function createPipelineLLM(vigiConfig: VigilConfig | undefined, groqApiKey: stri
       });
     }
   }
-  // Fallback: platform Groq key
+  // Fallback: platform Groq key with configurable model
   return createLLMClient({
     provider: "groq",
-    model: "openai/gpt-oss-120b",
+    model: PLATFORM_MODEL,
     apiKey: groqApiKey,
   });
 }

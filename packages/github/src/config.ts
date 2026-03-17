@@ -7,6 +7,7 @@ const AppConfigSchema = z.object({
   redisUrl:            z.string().url("REDIS_URL must be a valid URL"),
   databaseUrl:         z.string().url("DATABASE_URL must be a valid URL"),
   groqApiKey:          z.string().default(""),
+  groqModel:           z.string().default("openai/gpt-oss-120b"),
   port:                z.coerce.number().int().min(1).max(65535).default(3200),
   nodeEnv:             z.string().default("development"),
 });
@@ -22,6 +23,7 @@ export function loadConfig(): AppConfig {
     redisUrl:            process.env.REDIS_URL,
     databaseUrl:         process.env.DATABASE_URL,
     groqApiKey:          process.env.GROQ_API_KEY,
+    groqModel:           process.env.GROQ_MODEL,
     port:                process.env.PORT,
     nodeEnv:             process.env.NODE_ENV,
   });
