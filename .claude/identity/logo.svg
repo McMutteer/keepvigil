@@ -1,10 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" role="img" aria-label="Vigil">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 100" role="img" aria-label="Vigil">
   <title>Vigil</title>
-  <g id="icon" fill="none" stroke="#0f1729" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 8 16 L 28 48 L 48 16" stroke-width="3.5"/>
+  <defs>
+    <linearGradient id="depth" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f1729"/>
+      <stop offset="100%" stop-color="#1a2744"/>
+    </linearGradient>
+    <mask id="check-cutout">
+      <rect width="260" height="100" fill="white"/>
+      <path d="M 35 52 L 45 62 L 65 38" fill="none" stroke="black" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g id="icon">
+    <g id="shield">
+      <path d="M 50 88 L 12 32 L 12 20 C 12 14, 18 10, 24 12 L 50 28" fill="url(#depth)" opacity="0.85"/>
+      <path d="M 50 88 L 88 32 L 88 20 C 88 14, 82 10, 76 12 L 50 28" fill="url(#depth)"/>
+    </g>
+    <g id="core" mask="url(#check-cutout)">
+      <path d="M 50 80 L 24 34 L 24 24 L 50 36 L 76 24 L 76 34 Z" fill="#162040"/>
+    </g>
+    <circle cx="50" cy="88" r="4" fill="#e8a820"/>
+    <circle cx="50" cy="88" r="8" fill="#e8a820" opacity="0.15"/>
+    <g id="peaks" fill="none" stroke="#e8a820" stroke-width="1.5" stroke-linecap="round">
+      <path d="M 12 20 L 12 14"/>
+      <path d="M 88 20 L 88 14"/>
+    </g>
   </g>
-  <circle cx="28" cy="48" r="3.5" fill="#e8a820"/>
   <g id="wordmark">
-    <text x="64" y="44" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="400" fill="#0f1729" letter-spacing="2">vigil</text>
+    <text x="108" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="400" fill="#0f1729" letter-spacing="3">vigil</text>
   </g>
 </svg>
