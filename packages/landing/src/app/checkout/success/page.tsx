@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Welcome to Vigil Pro! | Vigil",
   description:
     "Your account has been upgraded to Vigil Pro. All confidence signals are now active.",
+  robots: { index: false },
 };
 
 const unlockedFeatures = [
