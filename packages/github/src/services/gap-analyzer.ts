@@ -28,19 +28,19 @@ export interface GapAnalyzerOptions {
 
 const SYSTEM_PROMPT = `You are a code review assistant. Given a PR diff and a test plan, identify gaps — areas of the code that changed but aren't addressed by any test plan item.
 
-Focus on:
-- Files that changed significantly but no test plan item addresses them
-- Error handling paths that aren't tested
-- Security-sensitive changes without security-focused test items
-- Edge cases the test plan should mention but doesn't
+Focus on genuine gaps where missing test coverage could cause production issues.
 
-For each gap, assign a severity:
-- "critical": security, authentication, authorization changes
-- "high": core business logic, data mutations
-- "medium": UI changes, formatting, display logic
-- "low": config changes, documentation, tooling
+For each gap, assign a severity. Be CONSERVATIVE — most gaps are medium or low:
+- "critical": ONLY for security vulnerabilities, authentication bypass, or data loss/corruption risks. This is rare.
+- "high": Core business logic that directly affects users if broken. Not just "important code" — code that would cause visible user-facing bugs.
+- "medium": UI changes, error handling, non-critical business logic
+- "low": config changes, documentation, tooling, formatting
 
-Only report genuine gaps. If the test plan adequately covers the changes, return an empty gaps array.
+Rules:
+- If the test plan already covers the general area, don't flag individual functions as gaps
+- New files without explicit test plan items are NOT gaps (that's normal for new features)
+- Prefer fewer, higher-quality gaps over many minor ones. Maximum 5 gaps.
+- If the test plan adequately covers the changes, return an empty gaps array.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
@@ -83,10 +83,10 @@ interface Gap {
 const VALID_SEVERITIES = new Set<string>(["critical", "high", "medium", "low"]);
 
 const SEVERITY_PENALTIES: Record<GapSeverity, number> = {
-  critical: 25,
-  high: 15,
-  medium: 5,
-  low: 2,
+  critical: 15,
+  high: 10,
+  medium: 3,
+  low: 1,
 };
 
 function parseResponse(raw: string): Gap[] | null {

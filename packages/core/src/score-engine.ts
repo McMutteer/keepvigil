@@ -60,8 +60,10 @@ export function computeScore(signals: Signal[]): ConfidenceScore {
   const weightedSum = weighted.reduce((sum, s) => sum + s.score * s.weight, 0);
   let score = Math.round(weightedSum / totalWeight);
 
-  const hasFailure = signals.some((s) => !s.passed);
-  if (hasFailure && score > FAILURE_CAP) {
+  // Failure cap only applies for non-LLM signals (deterministic failures).
+  // LLM-based signals are speculative — they inform but don't hard-cap.
+  const hasDeterministicFailure = signals.some((s) => !s.passed && !s.requiresLLM);
+  if (hasDeterministicFailure && score > FAILURE_CAP) {
     score = FAILURE_CAP;
   }
 
