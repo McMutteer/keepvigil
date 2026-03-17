@@ -6,17 +6,17 @@ Tracking how Vigil evaluates its own PRs. Each entry captures the score, signal 
 
 | PR | Date | Score | Test Plan Items | Key Issue |
 |----|------|-------|-----------------|-----------|
+| #59 | 2026-03-17 | **42/100** | 0/3 (1 skip) | Rate limited (free tier) → fixed to Pro. Re-run: 42 with Pro signals (sandbox failures) |
 | #58 | 2026-03-17 | **70/100** | 1/2 (1 skip) | `pnpm --filter` not in allowlist, Coverage 0 (no landing tests) |
 | #57 | 2026-03-17 | **69/100** | 0/3 (1 skip) | Shell commands fail in sandbox, vague items |
 | #56 | 2026-03-17 | **42/100** | 1/4 (1 skip) | Shell sandbox + CI Bridge 0 + vague items |
-| #47 | 2026-03-17 | **94/100** | 12/12 passed | Best score — full paths + logic assertions |
-| #49 | 2026-03-17 | **91/100** | 12/12 passed | Smart reader deployed, well-written plan |
 | #53 | 2026-03-17 | **70/100** | 11/12 passed | Cross-file assertion failed, augmentor weak |
-| #50 | 2026-03-17 | **70/100** | 1/5 passed | API endpoint treated as file path, vague items |
 | #51 | 2026-03-17 | **70/100** | 2/9 passed | 7 items used bare filenames — all "File not found" |
+| #50 | 2026-03-17 | **70/100** | 1/5 passed | API endpoint treated as file path, vague items |
+| #49 | 2026-03-17 | **91/100** | 12/12 passed | Smart reader deployed, well-written plan |
 | #48 | 2026-03-17 | **70/100** | 9/11 passed | 20KB truncation hid function at line 590 |
+| #47 | 2026-03-17 | **94/100** | 12/12 passed | Best score — full paths + logic assertions |
 | #45 | 2026-03-17 | **54/100** | 15/15 passed | CI failing + Diff Analyzer scored 0 |
-| #56 | 2026-03-17 | **42/100** | 1/4 passed | Shell commands fail in sandbox (no deps) |
 
 ---
 
@@ -124,6 +124,18 @@ The augmentor generates 3-5 items that the test plan didn't include. Many fail b
 `buildOnboardingTips` defined at line ~590 of a 600-line file was invisible to the LLM due to 20KB blind truncation.
 
 **Status:** Fixed in PR #49 with the smart file reader (keyword-directed context extraction).
+
+---
+
+### P9: Subscription insert blocked by NOT NULL constraint
+
+**Seen in:** Manual Pro activation during audit session
+
+When inserting a subscription for internal testing (`McMutteer`), the `INSERT` failed because `stripe_customer_id` has a `NOT NULL` constraint. Internal/testing subscriptions don't have real Stripe IDs.
+
+**Fix applied:** Used placeholder values (`cus_internal_testing`, `sub_internal_testing`). Works but is fragile.
+
+**Fix needed:** Make `stripe_customer_id` and `stripe_subscription_id` nullable in the schema, OR add a separate `source` column (`stripe` | `internal` | `trial`) to distinguish real vs manual subscriptions.
 
 ---
 
