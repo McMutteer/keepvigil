@@ -24,10 +24,10 @@ export const SHELL_METACHARACTERS = DANGEROUS_METACHARACTERS;
 
 /** Patterns that match safe, known build/test commands. */
 const ALLOWED_PATTERNS: RegExp[] = [
-  /^npm\s+(run|test|build|install|ci)\b/,
-  /^pnpm\s+(run|test|build|install|dlx)\b/,
-  /^yarn\s+(run|test|build|install)\b/,
-  /^bun\s+(run|test|build|install)\b/,
+  /^npm\s+(run|test|build|install|ci|lint)\b/,
+  /^pnpm\s+(run|test|build|install|dlx|lint|typecheck)\b/,
+  /^yarn\s+(run|test|build|install|lint)\b/,
+  /^bun\s+(run|test|build|install|lint)\b/,
   // npx: restricted to known-safe dev tools only.
   // Arbitrary npx packages can execute post-install scripts with full access.
   // Flag validation applied separately via DANGEROUS_NPX_FLAGS.
