@@ -29,6 +29,16 @@ Logo files: `.claude/identity/` (source of truth)
 
 Design principles: geometric, stroke-based, active negative space, single warm accent
 
+## Landing Page Project
+
+**Status:** In Design (Phase 5/6 — specs complete, implementation ready)
+**Master Document:** `.claude/plans/design-landing-vigil.md`
+**Conversation:** `.claude/plans/design-conversation-vigil.md`
+**Design System:** `.claude/plans/design-system-vigil.md` (pending)
+**Tech Stack:** Next.js 15 + Tailwind CSS 4
+
+Any agent working on this project should read the master document first.
+
 ## Development Workflow
 
 **MANDATORY: Use `/protocol` before starting ANY implementation work.**
