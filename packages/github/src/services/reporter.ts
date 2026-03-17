@@ -177,11 +177,12 @@ export async function reportResults(context: ReportContext): Promise<void> {
   const items = buildReportItems(context.classifiedItems, context.executionResults);
   const summary = computeSummary(items);
 
-  // When signals are available, compute score-based conclusion; otherwise use v1 logic
+  // When signals are available AND no pipeline error, compute score-based conclusion.
+  // Pipeline errors mean incomplete signal collection — fall back to v1 for safety.
   let confidenceScore: ConfidenceScore | undefined;
   let conclusion: CheckConclusion;
 
-  if (context.signals && context.signals.length > 0) {
+  if (context.signals && context.signals.length > 0 && !context.pipelineError) {
     confidenceScore = computeScore(context.signals);
     conclusion = conclusionFromScore(confidenceScore);
   } else {

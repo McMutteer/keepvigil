@@ -127,13 +127,19 @@ export function buildCheckRunSummary(summary: ReportSummary, conclusion: CheckCo
     "",
   );
 
-  const explanations: Record<CheckConclusion, string> = {
-    success: "All high-confidence items passed verification.",
-    failure: "One or more high-confidence items failed.",
-    neutral: summary.total - summary.skipped === 0
-      ? "No verifiable items found — all items require human review."
-      : "Non-blocking issues found. High-confidence items passed, but some lower-confidence items need review.",
-  };
+  const explanations: Record<CheckConclusion, string> = confidenceScore
+    ? {
+        success: "Score-based signals indicate this PR is safe to merge.",
+        failure: "Score-based signals recommend caution before merging.",
+        neutral: "Score-based signals recommend human review before merging.",
+      }
+    : {
+        success: "All high-confidence items passed verification.",
+        failure: "One or more high-confidence items failed.",
+        neutral: summary.total - summary.skipped === 0
+          ? "No verifiable items found — all items require human review."
+          : "Non-blocking issues found. High-confidence items passed, but some lower-confidence items need review.",
+      };
 
   lines.push(`**Conclusion:** \`${conclusion}\` — ${explanations[conclusion]}`);
 
