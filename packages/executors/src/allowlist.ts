@@ -58,6 +58,40 @@ export interface ValidationResult {
 }
 
 /**
+ * Check a command against allowlist patterns and custom prefixes.
+ * Shared logic used by both single-command and chain validation.
+ */
+function matchAgainstAllowlist(cmd: string, extraAllowPrefixes: string[]): ValidationResult | null {
+  for (const pattern of ALLOWED_PATTERNS) {
+    if (pattern.test(cmd)) {
+      // Extra validation for npx: reject dangerous flags
+      if (cmd.startsWith("npx ")) {
+        const args = cmd.split(/\s+/).slice(2); // skip "npx <tool>"
+        for (const arg of args) {
+          const cleaned = arg.replace(/^['"]|['"]$/g, "");
+          const flag = cleaned.split("=")[0];
+          if (DANGEROUS_NPX_FLAGS.includes(flag)) {
+            return { allowed: false, reason: `npx flag not allowed: "${flag}"` };
+          }
+        }
+      }
+      return { allowed: true, reason: "Matches allowlist pattern" };
+    }
+  }
+
+  // Check custom prefixes from .vigil.yml.
+  // Require a word boundary after the prefix: the command must equal the prefix
+  // exactly, or be followed by whitespace. This prevents "echo" from matching "echoevil".
+  for (const prefix of extraAllowPrefixes) {
+    if (cmd === prefix || cmd.startsWith(prefix + " ")) {
+      return { allowed: true, reason: "Matches custom allowlist prefix" };
+    }
+  }
+
+  return null; // No match
+}
+
+/**
  * Validate a shell command against the allowlist.
  *
  * Pure function — no side effects. Returns `allowed: true` if the command
@@ -88,31 +122,8 @@ export function validateCommand(command: string, extraAllowPrefixes: string[] = 
     return { allowed: false, reason: "Command contains shell control characters" };
   }
 
-  for (const pattern of ALLOWED_PATTERNS) {
-    if (pattern.test(trimmed)) {
-      // Extra validation for npx: reject dangerous flags
-      if (trimmed.startsWith("npx ")) {
-        const args = trimmed.split(/\s+/).slice(2); // skip "npx <tool>"
-        for (const arg of args) {
-          const cleaned = arg.replace(/^['"]|['"]$/g, "");
-          const flag = cleaned.split("=")[0];
-          if (DANGEROUS_NPX_FLAGS.includes(flag)) {
-            return { allowed: false, reason: `npx flag not allowed: "${flag}"` };
-          }
-        }
-      }
-      return { allowed: true, reason: `Matches allowlist pattern` };
-    }
-  }
-
-  // Check custom prefixes from .vigil.yml (after metacharacter check above).
-  // Require a word boundary after the prefix: the command must equal the prefix
-  // exactly, or be followed by whitespace. This prevents "echo" from matching "echoevil".
-  for (const prefix of extraAllowPrefixes) {
-    if (trimmed === prefix || trimmed.startsWith(prefix + " ")) {
-      return { allowed: true, reason: `Matches custom allowlist prefix` };
-    }
-  }
+  const result = matchAgainstAllowlist(trimmed, extraAllowPrefixes);
+  if (result) return result;
 
   const preview = trimmed.length > 40 ? `${trimmed.substring(0, 40)}...` : trimmed;
   return { allowed: false, reason: `Command not in allowlist: "${preview}"` };
@@ -145,46 +156,14 @@ function validateChain(command: string, extraAllowPrefixes: string[]): Validatio
       continue;
     }
 
-    // Other segments: validate against the allowlist (single-command path,
-    // which checks DANGEROUS_METACHARACTERS + allowlist patterns).
-    // We already checked DANGEROUS_METACHARACTERS for the whole string above,
-    // so just check allowlist patterns + custom prefixes.
-    const segmentResult = validateSingleCommand(segment, extraAllowPrefixes);
-    if (!segmentResult.allowed) {
-      return segmentResult;
+    // Other segments: validate against the allowlist
+    const result = matchAgainstAllowlist(segment, extraAllowPrefixes);
+    if (!result) {
+      const preview = segment.length > 40 ? `${segment.substring(0, 40)}...` : segment;
+      return { allowed: false, reason: `Command not in allowlist: "${preview}"` };
     }
+    if (!result.allowed) return result;
   }
 
   return { allowed: true, reason: "All segments in && chain pass allowlist" };
-}
-
-/**
- * Validate a single command segment (no metacharacter check — caller must
- * guarantee the input is clean).
- */
-function validateSingleCommand(cmd: string, extraAllowPrefixes: string[]): ValidationResult {
-  for (const pattern of ALLOWED_PATTERNS) {
-    if (pattern.test(cmd)) {
-      if (cmd.startsWith("npx ")) {
-        const args = cmd.split(/\s+/).slice(2);
-        for (const arg of args) {
-          const cleaned = arg.replace(/^['"]|['"]$/g, "");
-          const flag = cleaned.split("=")[0];
-          if (DANGEROUS_NPX_FLAGS.includes(flag)) {
-            return { allowed: false, reason: `npx flag not allowed: "${flag}"` };
-          }
-        }
-      }
-      return { allowed: true, reason: "Matches allowlist pattern" };
-    }
-  }
-
-  for (const prefix of extraAllowPrefixes) {
-    if (cmd === prefix || cmd.startsWith(prefix + " ")) {
-      return { allowed: true, reason: "Matches custom allowlist prefix" };
-    }
-  }
-
-  const preview = cmd.length > 40 ? `${cmd.substring(0, 40)}...` : cmd;
-  return { allowed: false, reason: `Command not in allowlist: "${preview}"` };
 }
