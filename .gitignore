@@ -27,3 +27,14 @@ Thumbs.db
 
 # Test coverage
 coverage/
+
+# Internal docs (archived locally, not for public repo)
+docs/sessions.md
+docs/go-to-market.md
+docs/master-plan-*.md
+docs/strategy-*.md
+docs/vision-*.md
+docs/*-audit-*.md
+docs/first-*-showcase.md
+docs/plans/
+.claude/plans/
