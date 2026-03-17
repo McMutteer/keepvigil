@@ -162,18 +162,24 @@ async function executeItem(
 function noRepoResult(itemId: string): ExecutionResult {
   return {
     itemId,
-    passed: false,
+    passed: true,
     duration: 0,
-    evidence: { reason: "Repository could not be cloned for shell execution" },
+    evidence: {
+      skipped: true,
+      infrastructureSkip: true,
+      reason: "Repository could not be cloned for shell execution",
+    },
   };
 }
 
 function noPreviewResult(itemId: string): ExecutionResult {
   return {
     itemId,
-    passed: false,
+    passed: true,
     duration: 0,
     evidence: {
+      skipped: true,
+      infrastructureSkip: true,
       reason:
         "No preview deployment detected. Deploy to Vercel or Netlify to enable API and browser tests.",
     },

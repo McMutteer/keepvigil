@@ -7,7 +7,7 @@
 import { randomUUID } from "node:crypto";
 import type { Probot, ProbotOctokit } from "probot";
 import type { ClassifiedItem, ExecutionResult, LLMClient, ParsedTestPlan, Signal, VerifyTestPlanJob, VigilConfig } from "@vigil/core";
-import { parseTestPlan, classifyItems, createLLMClient, createSignal, scanCredentials, extractChangedFiles, mapCoverage, createLogger, runWithCorrelationId } from "@vigil/core";
+import { parseTestPlan, classifyItems, createLLMClient, createSignal, scanCredentials, extractChangedFilesWithStatus, mapCoverage, createLogger, runWithCorrelationId } from "@vigil/core";
 import { reportResults } from "./reporter.js";
 import { cloneRepo, cleanupRepo } from "./repo-clone.js";
 import { detectPreviewUrl } from "./preview-url.js";
@@ -206,7 +206,7 @@ async function _runPipeline(
 
     // Stage 6.7: Coverage Mapper (maps changed files to test files)
     if (diff) {
-      const changedFiles = extractChangedFiles(diff);
+      const changedFiles = extractChangedFilesWithStatus(diff);
       const repoFiles = await fetchRepoFileList({ octokit, owner, repo, headSha });
       const coverageSignal = mapCoverage(changedFiles, repoFiles);
       signals.push(coverageSignal);

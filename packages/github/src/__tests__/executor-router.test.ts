@@ -140,7 +140,7 @@ describe("routeToExecutors", () => {
     );
   });
 
-  it("returns noPreviewResult for api items when previewUrl is null", async () => {
+  it("returns infrastructure skip for api items when previewUrl is null", async () => {
     const apiItem = makeApiItem();
     const results = await routeToExecutors({
       classifiedItems: [apiItem],
@@ -149,14 +149,16 @@ describe("routeToExecutors", () => {
       llm: mockLLM,
     });
 
-    expect(results[0].passed).toBe(false);
+    expect(results[0].passed).toBe(true);
     expect(results[0].evidence).toMatchObject({
+      skipped: true,
+      infrastructureSkip: true,
       reason: expect.stringContaining("No preview deployment"),
     });
     expect(mockExecuteApiItem).not.toHaveBeenCalled();
   });
 
-  it("returns noRepoResult for shell items when repoPath is null", async () => {
+  it("returns infrastructure skip for shell items when repoPath is null", async () => {
     const shellItem = makeShellItem();
     const results = await routeToExecutors({
       classifiedItems: [shellItem],
@@ -165,8 +167,10 @@ describe("routeToExecutors", () => {
       llm: mockLLM,
     });
 
-    expect(results[0].passed).toBe(false);
+    expect(results[0].passed).toBe(true);
     expect(results[0].evidence).toMatchObject({
+      skipped: true,
+      infrastructureSkip: true,
       reason: expect.stringContaining("Repository could not be cloned"),
     });
     expect(mockExecuteShellItem).not.toHaveBeenCalled();

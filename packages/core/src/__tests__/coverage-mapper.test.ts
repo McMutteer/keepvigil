@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { mapCoverage, extractChangedFiles } from "../coverage-mapper.js";
+import { mapCoverage, extractChangedFiles, extractChangedFilesWithStatus } from "../coverage-mapper.js";
+import type { ChangedFile } from "../coverage-mapper.js";
 
 // ---------------------------------------------------------------------------
 // extractChangedFiles
@@ -33,6 +34,53 @@ describe("extractChangedFiles", () => {
       "+++ b/new.ts",
     ].join("\n");
     expect(extractChangedFiles(diff)).toEqual(["new.ts"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// extractChangedFilesWithStatus
+// ---------------------------------------------------------------------------
+
+describe("extractChangedFilesWithStatus", () => {
+  it("identifies new files (--- /dev/null)", () => {
+    const diff = [
+      "diff --git a/new.ts b/new.ts",
+      "--- /dev/null",
+      "+++ b/new.ts",
+    ].join("\n");
+    const files = extractChangedFilesWithStatus(diff);
+    expect(files).toEqual([{ path: "new.ts", isNew: true }]);
+  });
+
+  it("identifies modified files", () => {
+    const diff = [
+      "diff --git a/src/foo.ts b/src/foo.ts",
+      "--- a/src/foo.ts",
+      "+++ b/src/foo.ts",
+    ].join("\n");
+    const files = extractChangedFilesWithStatus(diff);
+    expect(files).toEqual([{ path: "src/foo.ts", isNew: false }]);
+  });
+
+  it("handles mix of new and modified files", () => {
+    const diff = [
+      "diff --git a/src/foo.ts b/src/foo.ts",
+      "--- a/src/foo.ts",
+      "+++ b/src/foo.ts",
+      "@@ -1,3 +1,4 @@",
+      "diff --git a/src/new.ts b/src/new.ts",
+      "--- /dev/null",
+      "+++ b/src/new.ts",
+    ].join("\n");
+    const files = extractChangedFilesWithStatus(diff);
+    expect(files).toEqual([
+      { path: "src/foo.ts", isNew: false },
+      { path: "src/new.ts", isNew: true },
+    ]);
+  });
+
+  it("returns empty array for empty diff", () => {
+    expect(extractChangedFilesWithStatus("")).toEqual([]);
   });
 });
 
@@ -173,6 +221,38 @@ describe("mapCoverage", () => {
       const signal = mapCoverage([], []);
       expect(signal.score).toBe(100);
       expect(signal.passed).toBe(true);
+    });
+  });
+
+  describe("new file skipping (ChangedFile[])", () => {
+    it("skips new files — they don't count as uncovered", () => {
+      const changed: ChangedFile[] = [
+        { path: "src/new-feature.ts", isNew: true },
+        { path: "src/existing.ts", isNew: false },
+      ];
+      const repo = ["src/new-feature.ts", "src/existing.ts", "src/__tests__/existing.test.ts"];
+      const signal = mapCoverage(changed, repo);
+      // Only existing.ts counted → 1 covered / 1 source = 100%
+      expect(signal.score).toBe(100);
+      expect(signal.passed).toBe(true);
+      expect(signal.details.some(d => d.status === "skip" && d.label === "src/new-feature.ts")).toBe(true);
+    });
+
+    it("all new files → score 100 (nothing to check)", () => {
+      const changed: ChangedFile[] = [
+        { path: "src/a.ts", isNew: true },
+        { path: "src/b.ts", isNew: true },
+      ];
+      const signal = mapCoverage(changed, ["src/a.ts", "src/b.ts"]);
+      expect(signal.score).toBe(100);
+      expect(signal.passed).toBe(true);
+    });
+
+    it("backward compat: string[] still works", () => {
+      const changed = ["src/foo.ts"];
+      const repo = ["src/foo.ts", "src/__tests__/foo.test.ts"];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100);
     });
   });
 

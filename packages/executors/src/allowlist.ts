@@ -6,13 +6,21 @@
  */
 
 /**
- * Shell metacharacters that could be used to chain or inject commands.
- * Checked before allowlist patterns — any match immediately rejects the command.
+ * Dangerous shell metacharacters that immediately reject a command.
+ * Does NOT include `&` — we allow `&&` chains with per-segment validation.
  *
- * Covers: semicolons, ampersands, pipes, backticks, $() substitution,
+ * Covers: semicolons, pipes, backticks, $() substitution,
  * redirects, and newlines.
  */
-export const SHELL_METACHARACTERS = /[;&|`$<>\n\r(){}]/;
+const DANGEROUS_METACHARACTERS = /[;|`$<>\n\r(){}]/;
+
+/**
+ * Legacy export — used by vigil-config.ts to reject metacharacters in
+ * custom allowlist prefixes. Points to DANGEROUS_METACHARACTERS (same set
+ * minus `&`, which is safe in that context too since prefixes are single
+ * commands, not chains).
+ */
+export const SHELL_METACHARACTERS = DANGEROUS_METACHARACTERS;
 
 /** Patterns that match safe, known build/test commands. */
 const ALLOWED_PATTERNS: RegExp[] = [
@@ -50,6 +58,40 @@ export interface ValidationResult {
 }
 
 /**
+ * Check a command against allowlist patterns and custom prefixes.
+ * Shared logic used by both single-command and chain validation.
+ */
+function matchAgainstAllowlist(cmd: string, extraAllowPrefixes: string[]): ValidationResult | null {
+  for (const pattern of ALLOWED_PATTERNS) {
+    if (pattern.test(cmd)) {
+      // Extra validation for npx: reject dangerous flags
+      if (cmd.startsWith("npx ")) {
+        const args = cmd.split(/\s+/).slice(2); // skip "npx <tool>"
+        for (const arg of args) {
+          const cleaned = arg.replace(/^['"]|['"]$/g, "");
+          const flag = cleaned.split("=")[0];
+          if (DANGEROUS_NPX_FLAGS.includes(flag)) {
+            return { allowed: false, reason: `npx flag not allowed: "${flag}"` };
+          }
+        }
+      }
+      return { allowed: true, reason: "Matches allowlist pattern" };
+    }
+  }
+
+  // Check custom prefixes from .vigil.yml.
+  // Require a word boundary after the prefix: the command must equal the prefix
+  // exactly, or be followed by whitespace. This prevents "echo" from matching "echoevil".
+  for (const prefix of extraAllowPrefixes) {
+    if (cmd === prefix || cmd.startsWith(prefix + " ")) {
+      return { allowed: true, reason: "Matches custom allowlist prefix" };
+    }
+  }
+
+  return null; // No match
+}
+
+/**
  * Validate a shell command against the allowlist.
  *
  * Pure function — no side effects. Returns `allowed: true` if the command
@@ -65,37 +107,63 @@ export function validateCommand(command: string, extraAllowPrefixes: string[] = 
     return { allowed: false, reason: "Empty command" };
   }
 
-  // Metacharacter check always applies — even for custom allow-prefixes
-  if (SHELL_METACHARACTERS.test(trimmed)) {
+  // Handle `&&` chains: split into segments and validate each independently
+  if (trimmed.includes("&&")) {
+    // First check for truly dangerous metacharacters (everything except `&`)
+    if (DANGEROUS_METACHARACTERS.test(trimmed)) {
+      return { allowed: false, reason: "Command contains shell control characters" };
+    }
+    return validateChain(trimmed, extraAllowPrefixes);
+  }
+
+  // Single command: check for dangerous metacharacters (& without && is also blocked here
+  // since standalone `&` means background execution)
+  if (DANGEROUS_METACHARACTERS.test(trimmed) || trimmed.includes("&")) {
     return { allowed: false, reason: "Command contains shell control characters" };
   }
 
-  for (const pattern of ALLOWED_PATTERNS) {
-    if (pattern.test(trimmed)) {
-      // Extra validation for npx: reject dangerous flags
-      if (trimmed.startsWith("npx ")) {
-        const args = trimmed.split(/\s+/).slice(2); // skip "npx <tool>"
-        for (const arg of args) {
-          const cleaned = arg.replace(/^['"]|['"]$/g, "");
-          const flag = cleaned.split("=")[0];
-          if (DANGEROUS_NPX_FLAGS.includes(flag)) {
-            return { allowed: false, reason: `npx flag not allowed: "${flag}"` };
-          }
-        }
-      }
-      return { allowed: true, reason: `Matches allowlist pattern` };
-    }
-  }
-
-  // Check custom prefixes from .vigil.yml (after metacharacter check above).
-  // Require a word boundary after the prefix: the command must equal the prefix
-  // exactly, or be followed by whitespace. This prevents "echo" from matching "echoevil".
-  for (const prefix of extraAllowPrefixes) {
-    if (trimmed === prefix || trimmed.startsWith(prefix + " ")) {
-      return { allowed: true, reason: `Matches custom allowlist prefix` };
-    }
-  }
+  const result = matchAgainstAllowlist(trimmed, extraAllowPrefixes);
+  if (result) return result;
 
   const preview = trimmed.length > 40 ? `${trimmed.substring(0, 40)}...` : trimmed;
   return { allowed: false, reason: `Command not in allowlist: "${preview}"` };
+}
+
+// ---------------------------------------------------------------------------
+// && chain validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate a `&&`-chained command by splitting into segments.
+ * `cd <path>` segments are always allowed (just a directory change) but
+ * the path must not contain `..` (path traversal).
+ * All other segments must pass the normal allowlist check.
+ */
+function validateChain(command: string, extraAllowPrefixes: string[]): ValidationResult {
+  const segments = command.split("&&").map(s => s.trim());
+
+  for (const segment of segments) {
+    if (!segment) {
+      return { allowed: false, reason: "Empty segment in && chain" };
+    }
+
+    // `cd <path>` is safe as long as there's no path traversal
+    if (/^cd\s+/.test(segment)) {
+      const cdPath = segment.replace(/^cd\s+/, "").trim();
+      if (cdPath.includes("..")) {
+        return { allowed: false, reason: `Path traversal not allowed in cd: "${segment}"` };
+      }
+      continue;
+    }
+
+    // Other segments: validate against the allowlist
+    const result = matchAgainstAllowlist(segment, extraAllowPrefixes);
+    if (!result) {
+      const preview = segment.length > 40 ? `${segment.substring(0, 40)}...` : segment;
+      return { allowed: false, reason: `Command not in allowlist: "${preview}"` };
+    }
+    if (!result.allowed) return result;
+  }
+
+  return { allowed: true, reason: "All segments in && chain pass allowlist" };
 }

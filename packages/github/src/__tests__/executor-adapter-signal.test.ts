@@ -104,6 +104,22 @@ describe("buildExecutorSignal", () => {
     expect(signal.details).toHaveLength(1);
   });
 
+  it("infrastructure skip items excluded from score", () => {
+    const items = [
+      makeClassified("tp-0", "npm run build"),
+      makeClassified("tp-1", "npm test"),
+    ];
+    const results = [
+      makeResult("tp-0", true),
+      makeResult("tp-1", true, { skipped: true, infrastructureSkip: true, reason: "No repo" }),
+    ];
+
+    const signal = buildExecutorSignal(items, results);
+    // Only tp-0 counted (tp-1 is infra-skipped, excluded via skipped flag)
+    expect(signal.details).toHaveLength(1);
+    expect(signal.score).toBe(100);
+  });
+
   it("empty items → score 100, passed true", () => {
     const signal = buildExecutorSignal([], []);
     expect(signal.score).toBe(100);

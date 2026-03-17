@@ -39,7 +39,7 @@ export async function updateCheckRun(params: UpdateCheckRunParams): Promise<void
 
 /** Determine the Check Run conclusion based on item verdicts. */
 export function determineConclusion(items: ReportItem[]): CheckConclusion {
-  const executed = items.filter(i => i.classified.confidence !== "SKIP");
+  const executed = items.filter(i => i.classified.confidence !== "SKIP" && i.verdict !== "infra-skipped");
 
   if (executed.length === 0) {
     return "neutral";
@@ -215,6 +215,7 @@ function statusIcon(item: ReportItem): string {
     }
     case "error": return ":x: Error";
     case "skipped": return ":construction: Human";
+    case "infra-skipped": return ":next_track_button: Skipped";
   }
 }
 
