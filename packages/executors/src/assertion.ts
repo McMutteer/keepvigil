@@ -127,6 +127,47 @@ function parseAssertionResponse(responseText: string): AssertionResult | null {
  * Reads the referenced file from the cloned repo and asks the LLM
  * whether the assertion in the test plan item is true.
  */
+// ---------------------------------------------------------------------------
+// Smart file search — infer file path from item text when no code block
+// ---------------------------------------------------------------------------
+
+/** Known file patterns to search for in item text */
+const KNOWN_FILE_KEYWORDS: Array<{ keyword: RegExp; candidates: string[] }> = [
+  { keyword: /\bprisma\s*schema\b/i, candidates: ["prisma/schema.prisma", "schema.prisma"] },
+  { keyword: /\bdockerfile\b/i, candidates: ["Dockerfile", "packages/api/Dockerfile", "packages/worker/Dockerfile"] },
+  { keyword: /\bpackage\.json\b/i, candidates: ["package.json"] },
+  { keyword: /\btsconfig\b/i, candidates: ["tsconfig.json", "tsconfig.build.json"] },
+  { keyword: /\b\.env\b/i, candidates: [".env.example", ".env"] },
+  { keyword: /\bdocker.compose\b/i, candidates: ["docker-compose.yml", "docker-compose.yaml", "compose.yml"] },
+  { keyword: /\bmakefile\b/i, candidates: ["Makefile"] },
+  { keyword: /\bcargo\.toml\b/i, candidates: ["Cargo.toml"] },
+];
+
+/**
+ * Try to infer a file path from the item text when no explicit code block exists.
+ * Checks known file keywords and verifies the file exists in the repo.
+ */
+function inferFilePath(text: string, repoPath: string): string | null {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- dynamic require for sync check
+  const fs = require("node:fs");
+
+  for (const { keyword, candidates } of KNOWN_FILE_KEYWORDS) {
+    if (keyword.test(text)) {
+      for (const candidate of candidates) {
+        const fullPath = path.join(repoPath, candidate);
+        try {
+          fs.accessSync(fullPath);
+          return candidate;
+        } catch {
+          // File doesn't exist, try next candidate
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 export async function executeAssertionItem(
   item: ClassifiedItem,
   context: AssertionExecutionContext,
@@ -135,9 +176,16 @@ export async function executeAssertionItem(
   const startMs = Date.now();
   const timeoutMs = context.timeoutMs ?? 30_000;
 
-  // Extract file path from first code block
+  // Extract file path from code blocks or infer from item text
   const codeBlocks = item.item.hints.codeBlocks;
-  if (codeBlocks.length === 0) {
+  let filePath: string | null = codeBlocks.length > 0 ? codeBlocks[0].trim() : null;
+
+  // Smart file search: if no code block, try to find a file reference in the text
+  if (!filePath) {
+    filePath = inferFilePath(item.item.text, context.repoPath);
+  }
+
+  if (!filePath) {
     return {
       itemId,
       passed: true,
@@ -149,8 +197,6 @@ export async function executeAssertionItem(
       },
     };
   }
-
-  const filePath = codeBlocks[0].trim();
 
   // Sanitize: reject path traversal
   if (filePath.includes("..")) {

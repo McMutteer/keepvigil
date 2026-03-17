@@ -1266,7 +1266,7 @@ describe("buildCommentBody — score-based format", () => {
     const score = makeConfidenceScore({ score: 65, recommendation: "review" });
     const body = buildCommentBody(items, summary, undefined, undefined, undefined, undefined, undefined, score);
 
-    expect(body).toContain("Review recommended");
+    expect(body).toContain("Review needed");
     expect(body).toContain("\u26A0\uFE0F");
   });
 
@@ -1274,7 +1274,9 @@ describe("buildCommentBody — score-based format", () => {
     const score = makeConfidenceScore({ score: 30, recommendation: "caution" });
     const body = buildCommentBody(items, summary, undefined, undefined, undefined, undefined, undefined, score);
 
-    expect(body).toContain("Merge with caution");
+    // Contextual recommendation shows what failed
+    expect(body).toContain("30/100");
+    expect(body).toContain("\uD83D\uDD34");
   });
 
   it("preserves v1 format when confidenceScore is undefined", () => {

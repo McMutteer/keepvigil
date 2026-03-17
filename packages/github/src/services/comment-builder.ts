@@ -61,12 +61,37 @@ function buildV1CommentBody(items: ReportItem[], summary: ReportSummary, pipelin
   return body;
 }
 
+/** Build a contextual recommendation that explains WHY, not just what. */
+function buildContextualRecommendation(score: ConfidenceScore, summary: ReportSummary): string {
+  if (score.recommendation === "safe") {
+    const verified = summary.passed + summary.failed;
+    return verified > 0
+      ? `Safe to merge — ${summary.passed}/${verified} checks passed`
+      : "Safe to merge";
+  }
+
+  // For review/caution — explain what's wrong
+  const failedSignals = score.signals.filter((s) => !s.passed && s.weight > 0);
+  if (failedSignals.length > 0) {
+    const reasons = failedSignals.map((s) => s.name).join(", ");
+    return score.recommendation === "caution"
+      ? `Merge with caution — ${reasons} flagged issues`
+      : `Review needed — ${reasons}`;
+  }
+
+  if (summary.failed > 0) {
+    return `Review needed — ${summary.failed} item${summary.failed > 1 ? "s" : ""} failed`;
+  }
+
+  return score.recommendation === "caution" ? "Merge with caution" : "Review recommended";
+}
+
 /** Score-based comment format — shows confidence score, signal table, and test plan results in a details block. */
 function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[]): string {
   const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
   const recommendationEmoji: Record<string, string> = { safe: "\u2705", review: "\u26A0\uFE0F", caution: "\uD83D\uDD34" };
   const emoji = recommendationEmoji[confidenceScore.recommendation] ?? "";
-  const recLabel = confidenceScore.recommendation === "safe" ? "Safe to merge" : confidenceScore.recommendation === "review" ? "Review recommended" : "Merge with caution";
+  const recLabel = buildContextualRecommendation(confidenceScore, summary);
 
   // Score explanation — one-line breakdown of what drove the score
   const signalSummaries = confidenceScore.signals
