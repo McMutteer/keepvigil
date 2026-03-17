@@ -48,7 +48,7 @@ export default function AboutPage() {
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Vigil is open source under the MIT License. The entire codebase &mdash;
-        777+ tests, 7 signals, the score engine &mdash; is public on GitHub.
+        836+ tests, 8 signals, the score engine &mdash; is public on GitHub.
         You can self-host, audit, contribute, or fork it.
       </p>
 

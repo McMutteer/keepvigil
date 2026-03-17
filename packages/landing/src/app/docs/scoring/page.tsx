@@ -44,7 +44,7 @@ export default function ScoringPage() {
         Worked Example
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Consider a PR where all seven signals are active. Here is how the final
+        Consider a PR where all eight signals are active. Here is how the final
         score is calculated:
       </p>
       <CodeBlock

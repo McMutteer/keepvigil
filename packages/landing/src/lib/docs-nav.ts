@@ -23,6 +23,16 @@ export const docsNav: NavItem[] = [
         href: "/docs/signals/assertion-verifier",
       },
       {
+        title: "Plan Augmentor",
+        href: "/docs/signals/plan-augmentor",
+        badge: "Pro",
+      },
+      {
+        title: "Contract Checker",
+        href: "/docs/signals/contract-checker",
+        badge: "Pro",
+      },
+      {
         title: "Diff vs Claims",
         href: "/docs/signals/diff-analysis",
         badge: "Pro",

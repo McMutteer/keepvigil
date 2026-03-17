@@ -45,7 +45,7 @@ Parse test plan (extract checkboxes from PR body)
 Classify items (rule-based → LLM fallback)
     │
     ▼
-Collect signals (7 independent checks)
+Collect signals (8 independent checks)
     │
     ▼
 Calculate confidence score (0-100 weighted average)
@@ -163,7 +163,7 @@ Post results (PR comment + GitHub Check Run)`}
         Step 3: Collect Signals
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Seven independent signals run in parallel. Each signal examines a
+        Eight independent signals run in parallel. Each signal examines a
         different aspect of the PR and produces a score from 0 to 100, a
         pass/fail status, and detailed evidence explaining its findings.
       </p>

@@ -6,7 +6,7 @@ import { getPrevNext } from "@/lib/docs-nav";
 export const metadata: Metadata = {
   title: "Signals Overview | Vigil Docs",
   description:
-    "Seven independent signals combined into one confidence score for your PR.",
+    "Eight independent signals combined into one confidence score for your PR.",
 };
 
 export default function SignalsPage() {
@@ -18,7 +18,7 @@ export default function SignalsPage() {
         Signals
       </h1>
       <p className="text-text-secondary mb-8">
-        Seven independent signals. One confidence score.
+        Eight independent signals. One confidence score.
       </p>
 
       <p className="text-text-secondary leading-relaxed mb-4">
@@ -58,7 +58,7 @@ export default function SignalsPage() {
                   CI Bridge
                 </Link>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">30</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">25</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Free</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
                 Maps test plan items to GitHub Actions results
@@ -70,7 +70,7 @@ export default function SignalsPage() {
                   Credential Scan
                 </Link>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">25</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">20</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Free</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
                 Detects hardcoded secrets in the diff
@@ -82,10 +82,34 @@ export default function SignalsPage() {
                   Test Execution
                 </Link>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">20</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Free</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
                 Runs test plan items in sandbox, browser, or assertion mode
+              </td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <Link href="/docs/signals/plan-augmentor" className="text-accent hover:underline">
+                  Plan Augmentor
+                </Link>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Pro</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Auto-generates and verifies items the test plan missed
+              </td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <Link href="/docs/signals/contract-checker" className="text-accent hover:underline">
+                  Contract Checker
+                </Link>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Pro</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Verifies API/frontend type contracts match across files
               </td>
             </tr>
             <tr>
@@ -94,10 +118,10 @@ export default function SignalsPage() {
                   Coverage Mapper
                 </Link>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Free</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                Checks changed files have corresponding test files
+                Checks changed files have test files or test plan references
               </td>
             </tr>
             <tr>
@@ -106,7 +130,7 @@ export default function SignalsPage() {
                   Diff vs Claims
                 </Link>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Pro</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
                 LLM compares actual changes vs test plan promises
@@ -226,6 +250,18 @@ export default function SignalsPage() {
             Assertion Verifier
           </Link>{" "}
           — File-level claim verification
+        </li>
+        <li>
+          <Link href="/docs/signals/plan-augmentor" className="text-accent hover:underline">
+            Plan Augmentor
+          </Link>{" "}
+          — Auto-generates missing test items (Pro)
+        </li>
+        <li>
+          <Link href="/docs/signals/contract-checker" className="text-accent hover:underline">
+            Contract Checker
+          </Link>{" "}
+          — API/frontend compatibility verification (Pro)
         </li>
         <li>
           <Link href="/docs/signals/diff-analysis" className="text-accent hover:underline">

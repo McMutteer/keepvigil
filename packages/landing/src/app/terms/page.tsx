@@ -36,7 +36,7 @@ export default function TermsPage() {
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Vigil is a GitHub App that analyzes pull requests and provides a
-        confidence score based on 7 independent signals. The service is provided
+        confidence score based on 8 independent signals. The service is provided
         &quot;as is&quot; without warranty of any kind, express or implied.
       </p>
 
