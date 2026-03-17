@@ -289,3 +289,27 @@ related: [2026-03-17-siegekit-analysis-to-v3-signals]
 **Resultado:** Plan completo en `docs/plans/legal-and-i18n.md` con mapping de secciones, decisiones tomadas, y orden de implementacion. No se toco codigo — todo investigacion y planeacion.
 
 **Aprendido:** Para adaptar legales entre productos de la misma empresa, la estructura legal (jurisdiccion, arbitraje, indemnizacion, ARCO) es portable al 100%. Lo que cambia es la descripcion del servicio, los datos que se procesan, y el modelo de cobro. No reinventar — adaptar.
+
+---
+
+---
+id: 2026-03-17-legal-implementation-and-coderabbit-benchmark
+type: feat
+project: vigil
+branch: main
+pr: 52
+date: 2026-03-17
+tags: [legal, terms, privacy, coderabbit-benchmark, no-model-training, indemnification, branch-cleanup]
+summary: "Implemented production-grade legal docs (20+16 sections), benchmarked against CodeRabbit's legal framework, adopted 3 improvements, cleaned 27 stale branches."
+related: [2026-03-17-legal-research-and-plan]
+---
+
+### La Armadura Completa
+
+**Hilo:** La sesion anterior mapeo las secciones y creo el plan. Esta sesion las escribio, las mejoro contra un competidor real, y limpio el repo.
+
+**Lo que paso:** Escribi los 20 sections de terms y 16 de privacy en TSX directo — ~1200 lineas de contenido legal en espanol adaptado de MIIA para Vigil. Todo compilo al primer intento excepto un `Sub` component sin usar. Luego vino lo interesante: el usuario pidio analizar los legales de CodeRabbit antes de mergear. Descargamos sus Terms, Privacy y DPA. El hallazgo mas valioso fue la clausula "no model training" — CodeRabbit la tiene explicita con OpenAI/Anthropic, nosotros la implicabamos pero nunca la deciamos directo. Tambien: indemnificacion bidireccional (ellos indemnizan al usuario por IP de terceros) y garantia de 30 dias. Implementamos las 3. CodeRabbit reviso el PR y encontro 5 issues legitimos — el mas inteligente: nuestra clausula de "no entrenamiento" era overbroad porque decia "proveedores de LLM" pero BYOLLM envia codigo a un proveedor que NO controlamos. Fix: especificar "Groq (por defecto)" y separar BYOLLM. Tambien detecto que el privacy decia "tribunales" mientras los terms decian "arbitraje" — inconsistencia real. Cerrramos con una limpieza de 27 ramas stale (19 remotas ya borradas por GitHub + 8 que quedaban).
+
+**Resultado:** PR #52 mergeado. 20-section terms + 16-section privacy en produccion. 3 mejoras de CodeRabbit benchmark. 5 fixes de CodeRabbit review. Repo limpio: solo main, cero branches stale. MEMORY.md reducido de 259 a 78 lineas.
+
+**Aprendido:** Benchmarkear contra competidores antes de publicar legales es oro — CodeRabbit nos dio la clausula de no-model-training que nosotros nunca hubieramos pensado agregar. Tambien: cuando dices "proveedores de LLM no entrenan con tu codigo", necesitas distinguir entre TU proveedor por defecto (que controlas) y el BYOLLM del usuario (que no controlas). CodeRabbit es buen reviewer de legales — detecto la inconsistencia tribunales/arbitraje que hubiera sido un problema real.
