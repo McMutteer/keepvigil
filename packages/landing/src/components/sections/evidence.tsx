@@ -61,7 +61,7 @@ const SIGNAL_ROWS = [
 
 export function Evidence() {
   return (
-    <section className="py-24 sm:py-32">
+    <section className="py-16 sm:py-20">
       <div className="mx-auto max-w-[900px] px-6">
         <ScrollReveal>
           <div className="text-center mb-4">

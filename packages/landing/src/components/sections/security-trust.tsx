@@ -23,7 +23,7 @@ const TRUST_CARDS = [
 
 export function SecurityTrust() {
   return (
-    <section className="py-24 sm:py-32">
+    <section className="py-16 sm:py-20">
       <div className="mx-auto max-w-[1200px] px-6">
         <ScrollReveal>
           <div className="text-center mb-12 sm:mb-16">
