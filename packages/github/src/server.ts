@@ -16,6 +16,7 @@ import { setCommentDb } from "./webhooks/issue-comment.js";
 import { createWorker } from "./worker.js";
 import { handleMetrics } from "./metrics.js";
 import { handleLogin, handleCallback, handleSession, handleLogout } from "./services/auth.js";
+import { handleDashboardApi } from "./services/dashboard-api.js";
 
 const log = createLogger("server");
 const HEALTH_TIMEOUT_MS = 5_000;
@@ -274,6 +275,18 @@ async function main(): Promise<void> {
 
     if (req.url === "/api/auth/logout" && req.method === "POST") {
       handleLogout(req, res);
+      return;
+    }
+
+    // Dashboard API routes
+    if (req.url?.startsWith("/api/dashboard/") && req.method === "GET") {
+      handleDashboardApi(req, res, config, db).catch((err) => {
+        log.error({ err }, "Unhandled error in dashboard API");
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Internal error" }));
+        }
+      });
       return;
     }
 
