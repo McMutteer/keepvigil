@@ -58,7 +58,7 @@ export function CtaFooter() {
                   </a>
                 </li>
                 <li>
-                  <a href="/#pricing" className="text-text-muted hover:text-text-secondary transition-colors">
+                  <a href="/pricing" className="text-text-muted hover:text-text-secondary transition-colors">
                     Pricing
                   </a>
                 </li>
