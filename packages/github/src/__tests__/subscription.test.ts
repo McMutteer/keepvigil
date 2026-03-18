@@ -67,43 +67,43 @@ describe("isPro", () => {
 describe("checkPlan", () => {
   it("returns 'free' when no subscription exists", async () => {
     const { db } = createMockDb([]);
-    const plan = await checkPlan(db, 12345);
+    const plan = await checkPlan(db, "12345");
     expect(plan).toBe("free");
   });
 
   it("returns 'free' when subscription status is not active", async () => {
     const { db } = createMockDb([{ installationId: 1, plan: "pro", status: "canceled" }]);
-    const plan = await checkPlan(db, 1);
+    const plan = await checkPlan(db, "1");
     expect(plan).toBe("free");
   });
 
   it("returns 'pro' when subscription is active with pro plan", async () => {
     const { db } = createMockDb([{ installationId: 1, plan: "pro", status: "active" }]);
-    const plan = await checkPlan(db, 1);
+    const plan = await checkPlan(db, "1");
     expect(plan).toBe("pro");
   });
 
   it("returns 'team' when subscription is active with team plan", async () => {
     const { db } = createMockDb([{ installationId: 1, plan: "team", status: "active" }]);
-    const plan = await checkPlan(db, 1);
+    const plan = await checkPlan(db, "1");
     expect(plan).toBe("team");
   });
 
   it("returns 'free' when plan column has an invalid value", async () => {
     const { db } = createMockDb([{ installationId: 1, plan: "enterprise", status: "active" }]);
-    const plan = await checkPlan(db, 1);
+    const plan = await checkPlan(db, "1");
     expect(plan).toBe("free");
   });
 
   it("returns 'free' when plan is null", async () => {
     const { db } = createMockDb([{ installationId: 1, plan: null, status: "active" }]);
-    const plan = await checkPlan(db, 1);
+    const plan = await checkPlan(db, "1");
     expect(plan).toBe("free");
   });
 
   it("returns 'free' when plan is undefined", async () => {
     const { db } = createMockDb([{ installationId: 1, plan: undefined, status: "active" }]);
-    const plan = await checkPlan(db, 1);
+    const plan = await checkPlan(db, "1");
     expect(plan).toBe("free");
   });
 });
@@ -117,7 +117,7 @@ describe("upsertSubscription", () => {
     const { db, mocks } = createMockDb();
 
     await upsertSubscription(db, {
-      installationId: 42,
+      installationId: "42",
       accountLogin: "McMutteer",
       stripeCustomerId: "cus_123",
       stripeSubscriptionId: "sub_456",
@@ -129,7 +129,7 @@ describe("upsertSubscription", () => {
     expect(mocks.insert).toHaveBeenCalledTimes(1);
     expect(mocks.values).toHaveBeenCalledWith(
       expect.objectContaining({
-        installationId: 42,
+        installationId: "42",
         accountLogin: "McMutteer",
         stripeCustomerId: "cus_123",
         stripeSubscriptionId: "sub_456",
@@ -144,7 +144,7 @@ describe("upsertSubscription", () => {
     const { db, mocks } = createMockDb();
 
     await upsertSubscription(db, {
-      installationId: 42,
+      installationId: "42",
       accountLogin: "McMutteer",
       stripeCustomerId: "cus_123",
       plan: "pro",
@@ -163,7 +163,7 @@ describe("upsertSubscription", () => {
     const { db, mocks } = createMockDb();
 
     await upsertSubscription(db, {
-      installationId: 42,
+      installationId: "42",
       accountLogin: "McMutteer",
       stripeCustomerId: "cus_123",
       stripeSubscriptionId: "sub_789",

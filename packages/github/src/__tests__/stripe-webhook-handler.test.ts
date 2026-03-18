@@ -221,7 +221,7 @@ describe("stripe webhook handler (comprehensive)", () => {
       expect(res.status).toBe(200);
       expect(mockUpsert).toHaveBeenCalledOnce();
       expect(mockUpsert).toHaveBeenCalledWith(mockDb, {
-        installationId: 42,
+        installationId: "42",
         accountLogin: "TestOrg",
         stripeCustomerId: "cus_ABC",
         stripeSubscriptionId: "sub_XYZ",
@@ -327,7 +327,7 @@ describe("stripe webhook handler (comprehensive)", () => {
       expect(mockUpsert).not.toHaveBeenCalled();
     });
 
-    it("parses installationId as integer", async () => {
+    it("passes installationId as string", async () => {
       const { req } = signedRequest({
         type: "checkout.session.completed",
         data: {
@@ -340,7 +340,7 @@ describe("stripe webhook handler (comprehensive)", () => {
       await handleStripeWebhook(req, res);
 
       expect(mockUpsert).toHaveBeenCalledWith(mockDb, expect.objectContaining({
-        installationId: 114114042,
+        installationId: "114114042",
       }));
     });
   });
@@ -370,7 +370,7 @@ describe("stripe webhook handler (comprehensive)", () => {
 
       expect(res.status).toBe(200);
       expect(mockUpsert).toHaveBeenCalledWith(mockDb, {
-        installationId: 55,
+        installationId: "55",
         accountLogin: "OrgName",
         stripeCustomerId: "cus_U",
         stripeSubscriptionId: "sub_updated",
@@ -507,7 +507,7 @@ describe("stripe webhook handler (comprehensive)", () => {
 
       expect(res.status).toBe(200);
       expect(mockUpsert).toHaveBeenCalledWith(mockDb, {
-        installationId: 100,
+        installationId: "100",
         accountLogin: "DeletedOrg",
         stripeCustomerId: "cus_DEL",
         plan: "free",
@@ -591,7 +591,7 @@ describe("stripe webhook handler (comprehensive)", () => {
 
       expect(res.status).toBe(200);
       expect(mockUpsert).toHaveBeenCalledWith(mockDb, {
-        installationId: 200,
+        installationId: "200",
         accountLogin: "FailOrg",
         stripeCustomerId: "cus_FAIL",
         stripeSubscriptionId: "sub_FAIL",
