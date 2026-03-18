@@ -7,6 +7,7 @@ import { HowItWorksLanding } from "@/components/sections/how-it-works-landing";
 import { Signals } from "@/components/sections/signals";
 import { Evidence } from "@/components/sections/evidence";
 import { SecurityTrust } from "@/components/sections/security-trust";
+import { Faq } from "@/components/sections/faq";
 import { CtaFooter } from "@/components/sections/cta-footer";
 
 export default function Home() {
@@ -28,6 +29,7 @@ export default function Home() {
         <Signals />
         <Evidence />
         <SecurityTrust />
+        <Faq />
       </main>
       <CtaFooter />
     </>

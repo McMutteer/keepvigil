@@ -1,84 +1,153 @@
+"use client";
+
+import { useState } from "react";
 import { ScrollReveal } from "../scroll-reveal";
 
-const CLAIMS = [
-  {
-    icon: "✅",
-    text: '"Add rate limiting to API endpoints"',
-    detail: "confirmed, rate-limiter.ts created",
-    color: "text-success",
-  },
-  {
-    icon: "✅",
-    text: '"Add tests for rate limiter"',
-    detail: "confirmed, rate-limiter.test.ts has 12 tests",
-    color: "text-success",
-  },
-  {
-    icon: "⚠️",
-    text: '"No breaking changes"',
-    detail: "GET /api/users response now includes rateLimit field",
-    color: "text-warning",
-  },
-];
-
-const UNDOCUMENTED = [
-  {
-    icon: "⚠️",
-    text: "New dependency: ioredis",
-    detail: "not mentioned in PR description",
-    color: "text-warning",
-  },
-  {
-    icon: "⚠️",
-    text: "Environment variable added: REDIS_URL",
-    detail: "not documented",
-    color: "text-warning",
-  },
-];
-
-const IMPACT = [
-  {
-    icon: "✅",
-    text: "Credentials scan clean",
-    detail: "",
-    color: "text-success",
-  },
-  {
-    icon: "⚠️",
-    text: "Coverage gap",
-    detail: "src/middleware/auth.ts modified but no test file covers it",
-    color: "text-warning",
-  },
-  {
-    icon: "✅",
-    text: "No breaking API changes detected",
-    detail: "",
-    color: "text-success",
-  },
-];
-
-function ResultRow({
-  icon,
-  text,
-  detail,
-  color,
-}: {
+interface ResultItem {
   icon: string;
   text: string;
   detail: string;
   color: string;
-}) {
+}
+
+const TABS = [
+  {
+    id: "review",
+    label: "Review needed",
+    score: 82,
+    recommendation: "Review recommended",
+    recClass: "bg-warning/10 text-warning border-warning/20",
+    claims: [
+      {
+        icon: "\u2705",
+        text: '"Add rate limiting to API endpoints"',
+        detail: "confirmed, rate-limiter.ts created",
+        color: "text-success",
+      },
+      {
+        icon: "\u2705",
+        text: '"Add tests for rate limiter"',
+        detail: "confirmed, rate-limiter.test.ts has 12 tests",
+        color: "text-success",
+      },
+      {
+        icon: "\u26A0\uFE0F",
+        text: '"No breaking changes"',
+        detail: "GET /api/users response now includes rateLimit field",
+        color: "text-warning",
+      },
+    ],
+    undocumented: [
+      {
+        icon: "\u26A0\uFE0F",
+        text: "New dependency: ioredis",
+        detail: "not mentioned in PR description",
+        color: "text-warning",
+      },
+      {
+        icon: "\u26A0\uFE0F",
+        text: "Environment variable added: REDIS_URL",
+        detail: "not documented",
+        color: "text-warning",
+      },
+    ],
+    impact: [
+      {
+        icon: "\u2705",
+        text: "Credentials scan clean",
+        detail: "",
+        color: "text-success",
+      },
+      {
+        icon: "\u26A0\uFE0F",
+        text: "Coverage gap",
+        detail: "src/middleware/auth.ts modified but no test file covers it",
+        color: "text-warning",
+      },
+      {
+        icon: "\u2705",
+        text: "No breaking API changes detected",
+        detail: "",
+        color: "text-success",
+      },
+    ],
+  },
+  {
+    id: "caution",
+    label: "Credential leak",
+    score: 38,
+    recommendation: "Do not merge",
+    recClass: "bg-failure/10 text-failure border-failure/20",
+    claims: [
+      {
+        icon: "\u2705",
+        text: '"Add Redis caching layer"',
+        detail: "confirmed, cache.ts created",
+        color: "text-success",
+      },
+      {
+        icon: "\u274C",
+        text: '"No secrets in code"',
+        detail: "REDIS_PASSWORD found hardcoded in config.ts:14",
+        color: "text-failure",
+      },
+      {
+        icon: "\u274C",
+        text: '"All endpoints tested"',
+        detail: "3 new routes have no corresponding test files",
+        color: "text-failure",
+      },
+    ],
+    undocumented: [
+      {
+        icon: "\uD83D\uDED1",
+        text: "Hardcoded credential: REDIS_PASSWORD",
+        detail: "secret exposed in config.ts — credential scan failed",
+        color: "text-failure",
+      },
+      {
+        icon: "\u26A0\uFE0F",
+        text: "Database schema migration added",
+        detail: "not mentioned in PR description",
+        color: "text-warning",
+      },
+    ],
+    impact: [
+      {
+        icon: "\u274C",
+        text: "Credential scan: FAILED",
+        detail: "1 hardcoded secret detected",
+        color: "text-failure",
+      },
+      {
+        icon: "\u274C",
+        text: "Coverage mapper: 0%",
+        detail: "3 modified files, 0 test files found",
+        color: "text-failure",
+      },
+      {
+        icon: "\u26A0\uFE0F",
+        text: "Contract mismatch",
+        detail: "API response shape changed but frontend types not updated",
+        color: "text-warning",
+      },
+    ],
+  },
+] as const;
+
+function ResultRow({ icon, text, detail, color }: ResultItem) {
   return (
     <p className={`text-[13px] ${color}`}>
       {icon} {text}
-      {detail && (
-        <span className="text-text-muted"> — {detail}</span>
-      )}
+      {detail && <span className="text-text-muted"> — {detail}</span>}
     </p>
   );
 }
 
 export function Evidence() {
+  const [activeTab, setActiveTab] = useState(0);
+  const tab = TABS[activeTab];
+
   return (
     <section className="py-16 sm:py-20">
       <div className="mx-auto max-w-[900px] px-6">
@@ -98,6 +167,24 @@ export function Evidence() {
         </ScrollReveal>
 
         <ScrollReveal delay={200}>
+          {/* Tab toggle */}
+          <div className="flex justify-center gap-1 mb-6">
+            {TABS.map((t, i) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(i)}
+                className={`px-4 py-2 rounded-full text-xs font-medium transition-colors ${
+                  activeTab === i
+                    ? "bg-accent text-[#080d1a]"
+                    : "text-text-muted hover:text-text-secondary bg-bg-surface"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
           <div className="bg-bg-surface border-subtle rounded-[16px] p-5 sm:p-8 max-w-[800px] mx-auto">
             {/* Comment header */}
             <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/[0.06]">
@@ -111,11 +198,18 @@ export function Evidence() {
             </div>
 
             {/* Score header */}
-            <div className="mb-6">
+            <div className="mb-4">
               <p className="text-lg sm:text-xl font-semibold text-text-primary">
                 🛡️ Vigil — PR Verification:{" "}
-                <span className="text-accent">82/100</span>
+                <span className={tab.score >= 50 ? "text-accent" : "text-failure"}>
+                  {tab.score}/100
+                </span>
               </p>
+              <span
+                className={`inline-flex items-center mt-2 px-2.5 py-1 rounded-full text-[11px] font-medium border ${tab.recClass}`}
+              >
+                {tab.recommendation}
+              </span>
             </div>
 
             {/* Claims section */}
@@ -124,7 +218,7 @@ export function Evidence() {
                 Claims
               </p>
               <div className="space-y-1.5 pl-1">
-                {CLAIMS.map((row) => (
+                {tab.claims.map((row) => (
                   <ResultRow key={row.text} {...row} />
                 ))}
               </div>
@@ -136,7 +230,7 @@ export function Evidence() {
                 Undocumented Changes
               </p>
               <div className="space-y-1.5 pl-1">
-                {UNDOCUMENTED.map((row) => (
+                {tab.undocumented.map((row) => (
                   <ResultRow key={row.text} {...row} />
                 ))}
               </div>
@@ -148,7 +242,7 @@ export function Evidence() {
                 Impact
               </p>
               <div className="space-y-1.5 pl-1">
-                {IMPACT.map((row) => (
+                {tab.impact.map((row) => (
                   <ResultRow key={row.text} {...row} />
                 ))}
               </div>
@@ -157,24 +251,29 @@ export function Evidence() {
             {/* Score footer */}
             <div className="pt-4 border-t border-white/[0.06]">
               <p className="text-sm font-mono text-text-secondary">
-                Score: <span className="text-accent font-semibold">82/100</span>{" "}
-                — Review recommended
+                Score:{" "}
+                <span
+                  className={`font-semibold ${tab.score >= 50 ? "text-accent" : "text-failure"}`}
+                >
+                  {tab.score}/100
+                </span>{" "}
+                — {tab.recommendation}
               </p>
             </div>
           </div>
         </ScrollReveal>
 
         <ScrollReveal delay={400}>
-          <p className="text-center text-sm mt-8">
+          <div className="text-center mt-8">
             <a
               href="https://github.com/McMutteer/keepvigil/pull/47"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent hover:text-accent-hover transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[6px] text-sm font-medium text-accent border border-accent/30 hover:bg-accent/10 transition-colors"
             >
               See a real result on GitHub →
             </a>
-          </p>
+          </div>
         </ScrollReveal>
       </div>
     </section>
