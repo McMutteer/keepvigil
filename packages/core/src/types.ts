@@ -248,7 +248,12 @@ export type SignalId =
   | "diff-analyzer"
   | "gap-analyzer"
   | "plan-augmentor"
-  | "contract-checker";
+  | "contract-checker"
+  | "claims-verifier"
+  | "undocumented-changes";
+
+/** Pipeline mode — determines which weight profile to use */
+export type PipelineMode = "v1+v2" | "v2-only";
 
 /** One detail line within a signal — explains a specific finding */
 export interface SignalDetail {

@@ -253,7 +253,7 @@ describe("augmentPlan", () => {
         llm: makeLLM(["unused"]),
         repoPath: "/tmp/repo",
       });
-      expect(signal.weight).toBe(15);
+      expect(signal.weight).toBe(10);
     });
   });
 });

@@ -5,19 +5,43 @@
  * Used by the pipeline (Section 9) after all signals are collected.
  */
 
-import type { ConfidenceScore, Signal, SignalDetail, SignalId, ScoreRecommendation } from "./types.js";
+import type { ConfidenceScore, PipelineMode, Signal, SignalDetail, SignalId, ScoreRecommendation } from "./types.js";
 
-/** Default weights for each signal type */
+/**
+ * Default weights — v1+v2 mode (PR has a test plan).
+ * Kept as the primary export for backward compatibility.
+ */
 export const SIGNAL_WEIGHTS: Record<SignalId, number> = {
-  "ci-bridge": 25,
-  "credential-scan": 20,
-  "executor": 15,
-  "plan-augmentor": 15,
-  "contract-checker": 10,
+  "ci-bridge": 20,
+  "credential-scan": 15,
+  "executor": 10,
+  "plan-augmentor": 10,
+  "contract-checker": 5,
   "diff-analyzer": 5,
   "coverage-mapper": 5,
   "gap-analyzer": 5,
+  "claims-verifier": 15,
+  "undocumented-changes": 10,
 };
+
+/** v2-only weights — PR has no test plan, only v2 signals run */
+export const SIGNAL_WEIGHTS_V2: Record<SignalId, number> = {
+  "ci-bridge": 0,
+  "credential-scan": 20,
+  "executor": 0,
+  "plan-augmentor": 0,
+  "contract-checker": 10,
+  "diff-analyzer": 5,
+  "coverage-mapper": 10,
+  "gap-analyzer": 0,
+  "claims-verifier": 30,
+  "undocumented-changes": 25,
+};
+
+/** Get the weight profile for a given pipeline mode */
+export function getWeights(mode: PipelineMode): Record<SignalId, number> {
+  return mode === "v2-only" ? SIGNAL_WEIGHTS_V2 : SIGNAL_WEIGHTS;
+}
 
 /** Score thresholds for deriving the recommendation */
 export const RECOMMENDATION_THRESHOLDS = {
