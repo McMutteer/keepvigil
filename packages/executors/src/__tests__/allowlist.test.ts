@@ -160,8 +160,6 @@ describe("allowlist — empty segments in chains", () => {
   it("blocks: && npm test (empty first segment)", () => {
     const result = validateCommand("&& npm test");
     expect(result.allowed).toBe(false);
-    // Either "Empty segment" or metacharacter rejection is fine
-    expect(result.allowed).toBe(false);
   });
 
   it("blocks: npm test && (trailing empty segment)", () => {

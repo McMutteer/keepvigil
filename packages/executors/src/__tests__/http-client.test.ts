@@ -66,7 +66,7 @@ describe("validateBaseUrl", () => {
       expect(() => validateBaseUrl("http://example.com/../etc")).toThrow("path traversal");
     });
 
-    it("rejects URL with encoded traversal sequences", () => {
+    it("rejects URL with dotdot pattern in path", () => {
       expect(() => validateBaseUrl("http://example.com/..hidden")).toThrow("path traversal");
     });
   });
@@ -167,11 +167,11 @@ describe("validateBaseUrl", () => {
       expect(() => validateBaseUrl("http://8.8.8.8")).not.toThrow();
     });
 
-    it("rejects 172.15.x.x is NOT private (below range)", () => {
+    it("allows 172.15.x.x (below private range)", () => {
       expect(() => validateBaseUrl("http://172.15.0.1")).not.toThrow();
     });
 
-    it("rejects 172.32.x.x is NOT private (above range)", () => {
+    it("allows 172.32.x.x (above private range)", () => {
       expect(() => validateBaseUrl("http://172.32.0.1")).not.toThrow();
     });
 

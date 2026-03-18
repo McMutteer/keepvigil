@@ -153,7 +153,7 @@ describe("buildExecutorSignal", () => {
     it("matches when contractVerifiedFiles has ./ prefix and evidence does not", () => {
       const items = [makeClassified("tp-0", "check file", "DETERMINISTIC", "assertion")];
       const results = [makeResult("tp-0", false, { file: "src/utils.ts" })];
-      const contractFiles = new Set(["src/utils.ts"]);
+      const contractFiles = new Set(["./src/utils.ts"]);
 
       const signal = buildExecutorSignal(items, results, undefined, contractFiles);
       expect(signal.passed).toBe(true);

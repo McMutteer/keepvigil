@@ -122,16 +122,14 @@ export async function checkMetadata(
         jsonLd: [],
         missingOgTags: EXPECTED_OG_TAGS,
         jsonLdValid: false,
-        jsonLdErrors: [`HTML exceeds ${MAX_HTML_LENGTH} byte limit (${rawHtml.length} bytes)`],
+        jsonLdErrors: [`HTML exceeds ${MAX_HTML_LENGTH} character limit (${rawHtml.length} characters)`],
         htmlTitle: null,
       };
     }
-    const html = rawHtml;
-
-    const ogTags = extractOgTags(html);
+    const ogTags = extractOgTags(rawHtml);
     const missingOgTags = EXPECTED_OG_TAGS.filter((tag) => !ogTags[tag]);
-    const { parsed: jsonLd, errors: jsonLdErrors } = extractJsonLd(html);
-    const htmlTitle = extractTitle(html);
+    const { parsed: jsonLd, errors: jsonLdErrors } = extractJsonLd(rawHtml);
+    const htmlTitle = extractTitle(rawHtml);
 
     return {
       ogTags,
