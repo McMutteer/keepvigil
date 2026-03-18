@@ -3,21 +3,28 @@
 ## Project Identity
 
 **Name:** Vigil
-**Tagline:** "Your test plans, actually tested."
+**Tagline:** "Verifies that your PR does what it says it does."
 **Domain:** keepvigil.dev
 **Repo:** McMutteer/keepvigil
 
 ### Who We Are
-We are the silent verifier. When an AI agent writes a test plan in a PR — twelve checkboxes, each a promise of quality — we're the one who actually runs them. We close the loop between "what should be tested" and "what gets tested." We don't brag, we don't interrupt, we don't ask permission. We run, we report, we disappear.
+We are the silent verifier. When a developer opens a PR — any PR — we read the title and description, verify every claim against the actual diff, and surface changes the author didn't mention. We close the loop between "what a PR says" and "what the code does." We don't brag, we don't interrupt, we don't ask permission. We verify, we report, we disappear.
 
 ### Who We Serve
-A developer who uses AI coding agents daily. They generate PRs with beautiful test plans they know they should execute but never do. Not out of laziness — out of friction. They want to merge with confidence, not with guilt. They want those checkboxes to mean something.
+Any developer who opens pull requests. AI agents, teammates, yourself — it doesn't matter who wrote the code. If the PR says "adds auth middleware," we check. If it doesn't mention a new Redis dependency, we flag it. Zero config, zero friction. Install and forget.
 
 ### How We Feel
 Silent. Reliable. Nocturnal. Precise. Trustworthy.
 
 ### What We Are Not
-We are not "Playwright with a wrapper." We are not another CI check that nobody reads. We are not a QA platform that requires onboarding, training, or test authoring. We require zero workflow change — the test plan already exists. We just make it real.
+We are not a code reviewer (that's CodeRabbit). We are not CI (that's GitHub Actions). We are not a coverage tool (that's Codecov). We verify that what your PR claims matches what the code actually does. No one else does this.
+
+## Architecture
+
+- **Dual-mode pipeline:** `v1+v2` (PR has test plan) runs all 10 signals. `v2-only` (no test plan) runs 6 signals.
+- **Three verification layers:** Claims Verification (free), Undocumented Changes (free), Impact Analysis (pro)
+- **10 signals:** claims-verifier, undocumented-changes, ci-bridge, credential-scan, executor, plan-augmentor, contract-checker, diff-analyzer, coverage-mapper, gap-analyzer
+- **Score:** 0-100 weighted average, failure cap at 70 for deterministic failures
 
 ## Visual Identity
 
@@ -27,48 +34,27 @@ Sigil complete. Brand guide: `.claude/identity/brand.md`
 
 Logo files: `.claude/identity/` (source of truth)
 
-Design principles: geometric, stroke-based, active negative space, single warm accent
-
-## Landing Page Project
-
-**Status:** In Design (Phase 5/6 — specs complete, implementation ready)
-**Master Document:** `.claude/plans/design-landing-vigil.md`
-**Conversation:** `.claude/plans/design-conversation-vigil.md`
-**Design System:** `.claude/plans/design-system-vigil.md` (pending)
-**Tech Stack:** Next.js 15 + Tailwind CSS 4
-
-Any agent working on this project should read the master document first.
-
 ## Development Workflow
 
 **MANDATORY: Use `/protocol` before starting ANY implementation work.**
 
-Every master plan section follows this flow:
 1. `git checkout main && git pull origin main`
-2. `git checkout -b feat/section-N-description`
+2. `git checkout -b feat/short-description`
 3. Code with incremental commits: `feat(scope): description`
 4. Quality gates: `pnpm build && pnpm test && pnpm lint && pnpm typecheck`
-5. `git push -u origin feat/section-N-description`
+5. `git push -u origin feat/short-description`
 6. `gh pr create` with standard format
 7. Wait for CodeRabbit review, address feedback
 8. Agents ARE authorized to merge PRs to main in this repo
 
-**Branch naming:** `feat/section-N-short-name` (e.g., `feat/section-2-github-app`)
+**Branch naming:** `feat/short-description`
 **Commit style:** Conventional Commits — `feat(parser): extract checkbox items from markdown`
 **Language:** Conversations in Spanish, code/commits/PRs in English
 
 ## Toolbox
 
-This project has access to a global skills ecosystem. Skills are Claude Code slash commands that provide specialized capabilities.
+Skills repo: `McMutteer/claude-skills` (synced to `~/.claude/skills/`)
 
-**Skills repo:** `McMutteer/claude-skills` (synced to `~/.claude/skills/`)
-
-Use `/skill-name` to invoke. Key skills:
-- `/protocol` — **INVOKE FIRST** before any implementation task
-- `/infisical` — Secrets and environment variable management
-- `/master-plan` — Plan large features as autonomous sections
-- `/exposition` — Generate a communication skill for this service
-- `/dokploy` — Deployment, server management, Docker
-- `/stripe-gateway` — Billing and payments integration
+Key skills: `/protocol`, `/infisical`, `/master-plan`, `/dokploy`, `/stripe-gateway`, `/bitacora`
 
 To discover all available skills: `ls ~/.claude/skills/`

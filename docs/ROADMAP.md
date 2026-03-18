@@ -33,52 +33,55 @@ All P0/P1 bugs fixed, structured logging, metrics, 836+ tests, CI pipeline, grac
 - [x] Repo made public
 - [x] GitHub Marketplace listing submitted (pending review)
 
+### v4 — PR Verification (PRs #62-#74)
+**The v2 pivot.** Vigil now verifies ANY PR — no test plan required.
+- Claims Verification signal — extracts claims from PR title/body, verifies against diff
+- Undocumented Change Detection signal — surfaces changes not mentioned in the PR
+- Dual-mode pipeline (v1+v2 with test plan, v2-only without)
+- 10-signal architecture with rebalanced weights
+- v2-specific onboarding tips for repos without test plans
+- Full landing page rewrite (hero, signals→layers, evidence, pricing, about)
+- All 24 docs pages updated for v2 messaging
+- Production polish (claim truncation, coverage mapper weight, signal names)
+- 1321 tests across 49 files
+
 ---
 
 ## Next Up
 
-### S10 — Announce (blocked: waiting for Marketplace approval)
-- [ ] Twitter/X thread — hook + demo + CTA
-- [ ] Reddit post — r/programming, r/devtools, r/github
-- [ ] Hacker News — "Show HN: Vigil — Confidence scores for AI-generated PRs"
-- [ ] Dev.to article — explain the problem, show real results
-- **Timing:** After Marketplace listing is approved and live
+### Phase 2 — Inline Review Comments
+- [ ] Enhance `SignalDetail` with optional `file` and `line` fields
+- [ ] Build diff-position mapper (`{file, line}` → GitHub review comment position)
+- [ ] Update signal producers to include file/line where available
+- [ ] Post inline review comments via `octokit.rest.pulls.createReview()`
+- [ ] Pro gating: inline comments are a Pro feature
 
-### Landing & Documentation Improvements
-- [ ] Better hero section — more compelling, show real PR comment
-- [ ] Add real testimonials/case studies when available
-- [ ] Improve mobile responsiveness
-- [ ] Add changelog/releases page
-- [ ] Docs: add more signal examples with real PR data
+### Phase 3 — Conversational
+- [ ] Parse `@vigil` commands in issue comments (explain, ignore, recheck, verify)
+- [ ] Memory per repo — DB table for ignore patterns, custom rules
+- [ ] `@vigil ignore [finding]` suppresses findings for a repo
+- [ ] `@vigil recheck` re-runs verification on current PR head
 
-### i18n — Bilingual (EN/ES)
-- [ ] Path-based routing (`/en/`, `/es/`)
-- [ ] Dictionary system for all UI text
-- [ ] Translate all 31 pages
-- [ ] Language toggle in navbar
-- [ ] SEO: hreflang tags
-- **Priority:** Nice-to-have, not blocking launch
+### Announce (blocked: waiting for Marketplace approval)
+- [ ] Twitter/X thread — show real siegekit PR #24 as demo
+- [ ] Reddit post — r/programming, r/devtools
+- [ ] Hacker News — "Show HN: Vigil — Verifies that your PR does what it says it does"
 
-### Product Improvements (v3.1)
-- [ ] **Augmentor score semantics** — low score means "found issues" (good), not "failed". Consider findings count instead of pass/fail ratio.
-- [ ] **Comment narrative** — separate "Your test plan: 17/17 passed" from "Vigil found 4 additional concerns"
-- [ ] **Test plan quality signal** — warn if >80% existence checks, suggest logic/contract items
-- [ ] **Rate limit handling for Groq** — graceful fallback when API rate limited
-- [ ] Integration tests — E2E with real PR (mock GitHub or test repo)
+---
 
-### Future
-- [ ] Usage dashboard for Pro/Team users
+## Future
+
+- [ ] Usage dashboard for Pro/Team users (Phase 4)
 - [ ] Team features (shared dashboard, SSO, custom scoring rules)
-- [ ] Annual Stripe prices (Pro $190/yr, Team $490/yr)
+- [ ] Auto-approve support (score > threshold → auto-approve PR)
 - [ ] GitLab / Bitbucket support (evaluate demand)
-- [ ] Auto-merge support (score > threshold → auto-approve)
-- [ ] Onboarding email sequence (after install)
+- [ ] i18n EN/ES (nice-to-have)
 
 ---
 
 ## Notes
 
-- **Real-world testing:** siegekit PRs #8-#14, keepvigil PRs #45-#53
+- **Real-world testing:** siegekit PRs #8-#14 (v1), #24 (v2 first production test)
 - **Best score:** 95/100 on keepvigil PR #47
-- v1 complete, v2 complete, v3 complete, GTM infrastructure complete
+- v1-v3 complete, v4 (PR verification) complete, GTM infrastructure complete
 - Marketplace review pending — GitHub will notify via email
