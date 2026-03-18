@@ -168,6 +168,7 @@ async function _runPipeline(
 ): Promise<void> {
   const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig, configWarnings, retryItemIds } = job;
   const prTitle = job.prTitle ?? "";
+  const jobId = `${installationId}-${owner}-${repo}-${pullNumber}`;
 
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
@@ -184,10 +185,11 @@ async function _runPipeline(
     log.warn({ installationId, message: rateCheck.message }, "Rate limited");
     const octokit = await probot.auth(Number(installationId));
     await reportResults({
-      octokit, owner, repo, pullNumber, checkRunId,
+      octokit, owner, repo, pullNumber, headSha, checkRunId,
       classifiedItems: [], executionResults: [], signals: [],
       pipelineError: rateCheck.message ?? "Rate limit exceeded",
       vigiConfig, configWarnings,
+      db: pipelineDb ?? undefined, installationId, jobId, tier,
     });
     return;
   }
@@ -364,6 +366,10 @@ async function _runPipeline(
         pipelineMode: mode,
         diff,
         proEnabled,
+        db: pipelineDb ?? undefined,
+        installationId,
+        jobId,
+        tier,
       });
     } catch (reportErr) {
       log.error({ err: reportErr }, "Failed to report results");

@@ -25,13 +25,17 @@ export const executions = pgTable("executions", {
   headSha: text("head_sha").notNull(),
   status: varchar("status", { length: 50 }).notNull().default("pending"),
   // status: "pending" | "running" | "completed" | "failed"
+  score: integer("score"),
+  pipelineMode: varchar("pipeline_mode", { length: 20 }),
+  // pipelineMode: "v1+v2" | "v2-only"
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   resultsSummary: json("results_summary"),
-  // { passed: number, failed: number, skipped: number, needsReview: number, total: number }
+  // { score, recommendation, signals[], summary{}, pipelineMode, tier }
   error: text("error"),
 }, (table) => [
   index("executions_job_id_idx").on(table.jobId),
+  index("executions_installation_id_idx").on(table.installationId),
   index("executions_owner_repo_pull_idx").on(table.owner, table.repo, table.pullNumber),
 ]);
 

@@ -1480,3 +1480,147 @@ describe("reportResults — score-based paths", () => {
     expect(checkCall.output.title).not.toContain("Confidence:");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Execution persistence
+// ---------------------------------------------------------------------------
+
+describe("reportResults — execution persistence", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function makeMockOctokit() {
+    return {
+      rest: {
+        checks: { update: vi.fn().mockResolvedValue({}) },
+        issues: {
+          listComments: { endpoint: { merge: vi.fn().mockReturnValue({}) } },
+          createComment: vi.fn().mockResolvedValue({}),
+          updateComment: vi.fn().mockResolvedValue({}),
+        },
+      },
+      paginate: vi.fn().mockResolvedValue([]),
+    } as unknown as ProbotOctokit;
+  }
+
+  function makeMockDb() {
+    const valuesFn = vi.fn().mockResolvedValue(undefined);
+    return {
+      insert: vi.fn().mockReturnValue({ values: valuesFn }),
+      _valuesFn: valuesFn,
+    };
+  }
+
+  it("persists execution when db, installationId, and jobId are provided", async () => {
+    const octokit = makeMockOctokit();
+    const mockDb = makeMockDb();
+
+    const signals: Signal[] = [
+      createSignal({ id: "claims-verifier", name: "Claims Verifier", score: 85, passed: true, details: [] }),
+    ];
+
+    await reportResults({
+      octokit,
+      owner: "org",
+      repo: "repo",
+      pullNumber: 7,
+      headSha: "abc123",
+      checkRunId: 42,
+      classifiedItems: [],
+      executionResults: [],
+      signals,
+      pipelineMode: "v2-only",
+      db: mockDb as any,
+      installationId: "12345",
+      jobId: "12345-org-repo-7",
+      tier: "free",
+    });
+
+    // Let the fire-and-forget promise settle
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(mockDb.insert).toHaveBeenCalledOnce();
+    const insertedValues = mockDb._valuesFn.mock.calls[0][0];
+    expect(insertedValues.owner).toBe("org");
+    expect(insertedValues.repo).toBe("repo");
+    expect(insertedValues.pullNumber).toBe(7);
+    expect(insertedValues.status).toBe("completed");
+    expect(insertedValues.pipelineMode).toBe("v2-only");
+    expect(insertedValues.jobId).toBe("12345-org-repo-7");
+    expect(insertedValues.installationId).toBe("12345");
+  });
+
+  it("does not persist when db is not provided", async () => {
+    const octokit = makeMockOctokit();
+    const mockDb = makeMockDb();
+
+    await reportResults({
+      octokit,
+      owner: "org",
+      repo: "repo",
+      pullNumber: 7,
+      headSha: "abc123",
+      checkRunId: 42,
+      classifiedItems: [],
+      executionResults: [],
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+    expect(mockDb.insert).not.toHaveBeenCalled();
+  });
+
+  it("persists with status failed when pipelineError is set", async () => {
+    const octokit = makeMockOctokit();
+    const mockDb = makeMockDb();
+
+    await reportResults({
+      octokit,
+      owner: "org",
+      repo: "repo",
+      pullNumber: 7,
+      headSha: "abc123",
+      checkRunId: 42,
+      classifiedItems: [],
+      executionResults: [],
+      pipelineError: "Something broke",
+      db: mockDb as any,
+      installationId: "12345",
+      jobId: "12345-org-repo-7",
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    const insertedValues = mockDb._valuesFn.mock.calls[0][0];
+    expect(insertedValues.status).toBe("failed");
+    expect(insertedValues.error).toBe("Something broke");
+  });
+
+  it("does not block reporting when persistence fails", async () => {
+    const octokit = makeMockOctokit();
+    const mockDb = {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockRejectedValue(new Error("DB down")),
+      }),
+    };
+
+    // Should not throw — persistence is fire-and-forget
+    await reportResults({
+      octokit,
+      owner: "org",
+      repo: "repo",
+      pullNumber: 7,
+      headSha: "abc123",
+      checkRunId: 42,
+      classifiedItems: [],
+      executionResults: [],
+      signals: [],
+      db: mockDb as any,
+      installationId: "12345",
+      jobId: "12345-org-repo-7",
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+    expect(mockDb.insert).toHaveBeenCalledOnce();
+  });
+});

@@ -1,6 +1,8 @@
 import type { ProbotOctokit } from "probot";
 import type { ClassifiedItem, ExecutionResult, VigilConfig, Signal, ConfidenceScore, PipelineMode } from "@vigil/core";
 import { createLogger, computeScore } from "@vigil/core";
+import type { Database } from "@vigil/core/db";
+import { schema } from "@vigil/core/db";
 import { updateCheckRun, determineConclusion, conclusionFromScore } from "./check-run-updater.js";
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
 import { notifyWebhooks } from "./webhook-notifier.js";
@@ -62,6 +64,14 @@ export interface ReportContext {
   diff?: string | null;
   /** Whether the user is on Pro tier — inline comments are Pro-only */
   proEnabled?: boolean;
+  /** Database for persisting execution results */
+  db?: Database;
+  /** Installation ID for execution persistence */
+  installationId?: string;
+  /** BullMQ job ID for execution persistence */
+  jobId?: string;
+  /** Subscription tier — included in persisted results */
+  tier?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -295,4 +305,67 @@ export async function reportResults(context: ReportContext): Promise<void> {
       });
     }
   }
+
+  // Quinary — persist execution to database (fire-and-forget)
+  if (context.db && context.installationId && context.jobId) {
+    void persistExecution(context, confidenceScore, summary, conclusion).catch((err) => {
+      log.error({ err }, "Failed to persist execution");
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Execution persistence
+// ---------------------------------------------------------------------------
+
+async function persistExecution(
+  context: ReportContext,
+  confidenceScore: ConfidenceScore | undefined,
+  summary: ReportSummary,
+  conclusion: CheckConclusion,
+): Promise<void> {
+  const db = context.db!;
+  const score = confidenceScore?.score ?? null;
+  const signalsSummary = confidenceScore?.signals?.map((s) => ({
+    id: s.id,
+    name: s.name,
+    score: s.score,
+    weight: s.weight,
+    passed: s.passed,
+    detailCount: s.details.length,
+  })) ?? [];
+
+  const resultsSummary = {
+    score: score ?? 0,
+    recommendation: confidenceScore?.recommendation ?? conclusion,
+    signals: signalsSummary,
+    summary: {
+      total: summary.total,
+      passed: summary.passed,
+      failed: summary.failed,
+      skipped: summary.skipped,
+    },
+    pipelineMode: context.pipelineMode ?? "v2-only",
+    tier: context.tier ?? "free",
+  };
+
+  await db.insert(schema.executions).values({
+    jobId: context.jobId!,
+    installationId: context.installationId!,
+    owner: context.owner,
+    repo: context.repo,
+    pullNumber: context.pullNumber,
+    headSha: context.headSha,
+    status: context.pipelineError ? "failed" : "completed",
+    score,
+    pipelineMode: context.pipelineMode ?? null,
+    completedAt: new Date(),
+    resultsSummary,
+    error: context.pipelineError ?? null,
+  });
+
+  log.info(
+    { owner: context.owner, repo: context.repo, pullNumber: context.pullNumber, score },
+    "Execution persisted",
+  );
 }
