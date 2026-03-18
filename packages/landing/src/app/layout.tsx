@@ -31,12 +31,21 @@ export const metadata: Metadata = {
     url: "https://keepvigil.dev",
     siteName: "Vigil",
     type: "website",
+    images: [
+      {
+        url: "/brand/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Vigil — Confidence scores for AI-generated PRs",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Vigil — Confidence scores for AI-generated PRs",
     description:
       "Know which PRs need your eyes. Vigil gives every AI-generated pull request a confidence score from 0-100.",
+    images: ["/brand/og-image.png"],
   },
   alternates: {
     canonical: "https://keepvigil.dev",
