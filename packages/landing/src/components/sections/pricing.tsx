@@ -23,7 +23,7 @@ const PLANS = [
     name: "Pro",
     price: "$19",
     period: "/month",
-    description: "The full confidence score.",
+    description: "Full verification with impact analysis.",
     badge: "Recommended",
     features: [
       "Everything in Free, plus:",

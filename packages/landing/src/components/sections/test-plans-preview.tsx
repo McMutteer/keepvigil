@@ -25,11 +25,11 @@ export function TestPlansPreview() {
         <ScrollReveal>
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-4">
-              Better test plans. Better scores.
+              Better descriptions. Better verification.
             </h2>
             <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[720px] mx-auto">
-              The quality of your confidence score depends on what you ask Vigil
-              to verify.
+              The quality of your verification depends on what you describe in
+              your PR.
             </p>
           </div>
         </ScrollReveal>

@@ -7,7 +7,7 @@ const FAQ_ITEMS = [
   {
     question: "Is Vigil free for open source?",
     answer:
-      "Yes. The Free tier includes 6 signals, unlimited PRs, and unlimited public repos. No credit card required.",
+      "Yes. The Free tier includes Claims Verification, Undocumented Change Detection, credential scanning, and coverage mapping \u2014 unlimited PRs, unlimited repos. No credit card required.",
   },
   {
     question: "Does Vigil work with private repos?",
@@ -17,7 +17,7 @@ const FAQ_ITEMS = [
   {
     question: "What data does Vigil access?",
     answer:
-      "Vigil reads the PR description (test plan), the diff, and optionally clones the repo for file assertions. No code is stored after analysis completes.",
+      "Vigil reads the PR title, description, and diff. Optionally clones the repo for deeper file analysis. No code is stored after analysis completes.",
   },
   {
     question: "Do I need to configure anything?",

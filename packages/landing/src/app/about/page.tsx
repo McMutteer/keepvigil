@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About Vigil",
-  description: "The silent verifier for AI-generated pull requests.",
+  description: "Vigil verifies that pull requests do what they claim. The silent verifier for any PR.",
 };
 
 export default function AboutPage() {
@@ -13,23 +13,22 @@ export default function AboutPage() {
       </h1>
 
       <p className="text-text-secondary leading-relaxed mb-4">
-        AI agents write most of the code now. Claude Code, Cursor, Copilot
-        &mdash; they generate pull requests with beautiful test plans, each
-        checkbox a promise of quality. But nobody verifies those promises.
-        Developers merge on blind trust. Vigil exists to close that gap.
+        AI agents and developers write PRs with confident descriptions. But
+        nobody checks if the description matches the code. Vigil does. We read
+        the PR description, extract every claim, verify each one against the
+        actual diff, and surface changes the author didn&apos;t mention.
       </p>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         What we do
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Vigil gives every pull request a confidence score &mdash; a number from
-        0 to 100 that tells you how safe it is to merge. We collect 9
-        independent signals: CI results, credential scans, test execution,
-        coverage mapping, file assertion verification, plan augmentation,
-        contract checking, diff analysis, and gap detection. The score appears
-        directly on the PR &mdash; no dashboard, no separate tool, no context
-        switching.
+        Vigil gives every pull request a verification report &mdash; claims
+        checked against the diff, undocumented changes surfaced, and impact
+        analyzed. Three layers of verification: Claims Verification confirms the
+        PR does what it says. Undocumented Change Detection finds what the
+        description missed. Impact Analysis catches breaking changes, coverage
+        gaps, and contract violations. Results appear directly on the PR.
       </p>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
@@ -38,10 +37,10 @@ export default function AboutPage() {
       <p className="text-text-secondary leading-relaxed mb-4">
         We don&apos;t review code (that&apos;s CodeRabbit). We don&apos;t run CI
         (that&apos;s GitHub Actions). We don&apos;t measure coverage
-        (that&apos;s Codecov). We verify that the AI agent&apos;s promises match
-        reality. When your agent says &quot;the Dockerfile uses a non-root USER
-        directive,&quot; we read the Dockerfile and check. No one else does
-        this.
+        (that&apos;s Codecov). We verify that what your PR claims matches what
+        the code actually does. When your PR says &quot;adds rate
+        limiting&quot; &mdash; we check the diff. When it doesn&apos;t mention a
+        new Redis dependency &mdash; we flag it.
       </p>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">

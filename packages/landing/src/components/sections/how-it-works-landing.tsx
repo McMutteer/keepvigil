@@ -11,13 +11,13 @@ const STEPS = [
     number: 2,
     title: "Push a PR",
     description:
-      "Your AI agent generates a PR with a test plan. Vigil intercepts automatically via webhook.",
+      "Open a pull request. Any PR — from AI agents, teammates, or yourself. No test plan needed.",
   },
   {
     number: 3,
     title: "Get your score",
     description:
-      "Vigil runs 9 signals, calculates a confidence score, and posts results directly on the PR.",
+      "Vigil verifies claims, surfaces undocumented changes, and analyzes impact. Results appear directly on the PR.",
   },
 ];
 
