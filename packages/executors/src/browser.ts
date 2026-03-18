@@ -287,7 +287,7 @@ async function executeUiFlowItem(
     } catch (err) {
       lastError = err;
       if (browser) {
-        try { await closeBrowser(browser); } catch { /* ignore cleanup error */ }
+        try { await closeBrowser(browser); } catch { /* browser cleanup best-effort */ }
       }
       if (attempt < maxRetries && isRetryable(err)) {
         continue;
