@@ -4,10 +4,10 @@ import { PricingPageClient } from "./pricing-client";
 export const metadata: Metadata = {
   title: "Pricing | Vigil",
   description:
-    "Choose the right Vigil plan for your team. Start free with 6 signals, upgrade to Pro for full confidence scoring, or scale with Team for org-wide control.",
+    "Choose the right Vigil plan. Start free with claims verification and undocumented change detection. Upgrade to Pro for full impact analysis.",
   openGraph: {
     title: "Pricing | Vigil",
-    description: "Start free with 6 signals. Upgrade to Pro ($19/mo) for full confidence scoring.",
+    description: "Choose the right Vigil plan. Start free with claims verification and undocumented change detection. Upgrade to Pro for full impact analysis.",
     url: "https://keepvigil.dev/pricing",
     siteName: "Vigil",
     type: "website",
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Pricing | Vigil",
-    description: "Start free with 6 signals. Upgrade to Pro ($19/mo) for full confidence scoring.",
+    description: "Choose the right Vigil plan. Start free with claims verification and undocumented change detection. Upgrade to Pro for full impact analysis.",
   },
 };
 

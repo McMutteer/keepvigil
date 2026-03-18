@@ -17,17 +17,17 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Vigil — Confidence scores for AI-generated PRs",
+  title: "Vigil — Verifies that your PR does what it says it does",
   description:
-    "Know which PRs need your eyes. Vigil gives every AI-generated pull request a confidence score from 0-100.",
+    "Install the GitHub App. Open a PR. Get verification. Vigil checks that your code changes match your PR description — claims verified, undocumented changes surfaced, impact analyzed.",
   metadataBase: new URL("https://keepvigil.dev"),
   icons: {
     icon: "/brand/favicon.svg",
   },
   openGraph: {
-    title: "Vigil — Confidence scores for AI-generated PRs",
+    title: "Vigil — Verifies that your PR does what it says it does",
     description:
-      "Know which PRs need your eyes. Vigil gives every AI-generated pull request a confidence score from 0-100.",
+      "Install the GitHub App. Open a PR. Get verification. Vigil checks that your code changes match your PR description — claims verified, undocumented changes surfaced, impact analyzed.",
     url: "https://keepvigil.dev",
     siteName: "Vigil",
     type: "website",
@@ -36,15 +36,15 @@ export const metadata: Metadata = {
         url: "/brand/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Vigil — Confidence scores for AI-generated PRs",
+        alt: "Vigil — Verifies that your PR does what it says it does",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vigil — Confidence scores for AI-generated PRs",
+    title: "Vigil — Verifies that your PR does what it says it does",
     description:
-      "Know which PRs need your eyes. Vigil gives every AI-generated pull request a confidence score from 0-100.",
+      "Install the GitHub App. Open a PR. Get verification. Vigil checks that your code changes match your PR description — claims verified, undocumented changes surfaced, impact analyzed.",
     images: ["/brand/og-image.png"],
   },
   alternates: {
@@ -68,7 +68,7 @@ export default function RootLayout({
               "@type": "SoftwareApplication",
               name: "Vigil",
               description:
-                "Confidence scores for AI-generated pull requests. Vigil gives every PR a score from 0-100.",
+                "PR verification for GitHub. Vigil checks that code changes match PR descriptions — claims verified, undocumented changes surfaced, impact analyzed.",
               applicationCategory: "DeveloperApplication",
               operatingSystem: "Web",
               url: "https://keepvigil.dev",
@@ -78,21 +78,21 @@ export default function RootLayout({
                   price: "0",
                   priceCurrency: "USD",
                   name: "Free",
-                  description: "6 signals, unlimited PRs, unlimited repos",
+                  description: "Claims verification, undocumented change detection, credential scanning",
                 },
                 {
                   "@type": "Offer",
                   price: "19",
                   priceCurrency: "USD",
                   name: "Pro",
-                  description: "All 9 signals with BYOLLM",
+                  description: "Full verification with impact analysis and inline comments",
                 },
                 {
                   "@type": "Offer",
                   price: "49",
                   priceCurrency: "USD",
                   name: "Team",
-                  description: "All 9 signals, team dashboard, SSO",
+                  description: "Full verification, team dashboard, SSO",
                 },
               ],
               author: {

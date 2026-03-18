@@ -1,8 +1,8 @@
 import { ScrollReveal } from "../scroll-reveal";
 
 const STATS = [
-  { value: "9", label: "Independent Signals" },
-  { value: "72%", label: "Of AI test plans go unverified" },
+  { value: "3", label: "Verification Layers" },
+  { value: "38%", label: "Of PRs have undocumented changes" },
   { value: "30s", label: "Setup Time" },
   { value: "0", label: "Config Required" },
 ];

@@ -8,15 +8,16 @@ export function Hero() {
           {/* Text column */}
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.05em] text-accent mb-4">
-              Every AI-generated PR gets a score. Every test plan gets verified.
+              Every PR gets verified. Every claim gets checked.
             </p>
             <h1 className="text-[32px] sm:text-[44px] lg:text-[56px] font-semibold leading-[1.1] text-text-primary mb-6">
-              Confidence scores for AI&#8209;generated&nbsp;PRs
+              Verifies that your PR does what it says&nbsp;it&nbsp;does
             </h1>
             <p className="text-[17px] lg:text-xl leading-relaxed text-text-secondary max-w-[540px] mb-8">
-              Know which PRs need your eyes. Vigil gives every pull request a
-              score from 0&nbsp;to&nbsp;100 — so you merge with evidence, not
-              blind trust.
+              Install the GitHub App. Open a PR. Vigil reads your title and
+              description, verifies each claim against the actual diff, and
+              surfaces changes you didn&apos;t mention — so reviewers know
+              exactly what&apos;s real.
             </p>
             <div className="flex flex-wrap gap-3">
               <a
@@ -51,7 +52,7 @@ export function Hero() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-accent hover:text-accent-hover transition-colors border-b border-accent/40 hover:border-accent pb-0.5"
             >
-              See a real confidence score on GitHub →
+              See how Vigil verifies a real PR →
             </a>
           </div>
 

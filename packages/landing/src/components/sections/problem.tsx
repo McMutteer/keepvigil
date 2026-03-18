@@ -6,20 +6,17 @@ export function Problem() {
       <ScrollReveal>
         <div className="mx-auto max-w-[720px] px-6 text-center">
           <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-6">
-            Your AI agent writes beautiful test plans.
+            Your PR says one thing.
             <br />
-            You never run them.
+            The code says another.
           </h2>
           <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[600px] mx-auto">
-            Claude Code, Cursor, Copilot — they generate PRs with twelve-point
-            test plans, each checkbox a promise of quality. You skim them. You
-            approve. You merge. Not because you&apos;re careless — because
-            there&apos;s no easy way to verify. The gap between what your agent
-            promised and what actually got tested grows with every PR.
-          </p>
-          <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[600px] mx-auto mt-4">
-            A leaked credential. A broken API contract. A test that was never
-            run. These are the risks of merging on trust.
+            AI agents write PRs with confident descriptions — &ldquo;adds auth
+            middleware,&rdquo; &ldquo;fixes the timeout bug,&rdquo; &ldquo;no
+            breaking changes.&rdquo; But who actually checks? The PR says it
+            adds auth — did it? The PR says no breaking changes — are there
+            any? The gap between what a PR claims and what the code actually
+            does grows with every merge.
           </p>
         </div>
       </ScrollReveal>

@@ -46,7 +46,7 @@ const PLANS: Plan[] = [
     monthly: 19,
     annual: 190,
     period: "/month",
-    description: "The full confidence score.",
+    description: "Full verification with impact analysis.",
     badge: "Recommended",
     features: [
       "Everything in Free, plus:",
@@ -428,8 +428,7 @@ export function PricingPageClient() {
             Start free. Scale when you&apos;re ready.
           </h1>
           <p className="text-center text-text-secondary text-lg max-w-[560px] mx-auto mb-12 sm:mb-16">
-            Every plan includes unlimited repos. Upgrade when you need the full
-            confidence score.
+            Every plan includes unlimited repos and unlimited PRs. Upgrade for deeper analysis.
           </p>
         </ScrollReveal>
 

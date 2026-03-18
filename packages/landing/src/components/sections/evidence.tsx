@@ -1,63 +1,82 @@
 import { ScrollReveal } from "../scroll-reveal";
 
-const SIGNAL_ROWS = [
+const CLAIMS = [
   {
-    name: "Credential Scan",
-    score: "100/100",
-    status: "✅ Passed",
-    detail: "No secrets detected",
+    icon: "✅",
+    text: '"Add rate limiting to API endpoints"',
+    detail: "confirmed, rate-limiter.ts created",
     color: "text-success",
   },
   {
-    name: "CI Bridge",
-    score: "100/100",
-    status: "✅ Passed",
-    detail: "12 items mapped",
+    icon: "✅",
+    text: '"Add tests for rate limiter"',
+    detail: "confirmed, rate-limiter.test.ts has 12 tests",
     color: "text-success",
   },
   {
-    name: "Test Execution",
-    score: "100/100",
-    status: "✅ Passed",
-    detail: "12/12 items passed",
-    color: "text-success",
+    icon: "⚠️",
+    text: '"No breaking changes"',
+    detail: "GET /api/users response now includes rateLimit field",
+    color: "text-warning",
   },
+];
+
+const UNDOCUMENTED = [
   {
-    name: "Coverage Mapper",
-    score: "50/100",
-    status: "⚠️ Partial",
-    detail: "4/8 changed files covered",
+    icon: "⚠️",
+    text: "New dependency: ioredis",
+    detail: "not mentioned in PR description",
     color: "text-warning",
   },
   {
-    name: "Diff vs Claims",
-    score: "47/100",
-    status: "⚠️ Gaps found",
-    detail: "8 passed, 4 warnings",
+    icon: "⚠️",
+    text: "Environment variable added: REDIS_URL",
+    detail: "not documented",
+    color: "text-warning",
+  },
+];
+
+const IMPACT = [
+  {
+    icon: "✅",
+    text: "Credentials scan clean",
+    detail: "",
+    color: "text-success",
+  },
+  {
+    icon: "⚠️",
+    text: "Coverage gap",
+    detail: "src/middleware/auth.ts modified but no test file covers it",
     color: "text-warning",
   },
   {
-    name: "Gap Analysis",
-    score: "96/100",
-    status: "✅ Passed",
-    detail: "No critical gaps",
-    color: "text-success",
-  },
-  {
-    name: "Plan Augmentation",
-    score: "100/100",
-    status: "✅ Passed",
-    detail: "5/5 auto-generated items verified",
-    color: "text-success",
-  },
-  {
-    name: "Contract Check",
-    score: "100/100",
-    status: "✅ Passed",
-    detail: "Cross-file contracts compatible",
+    icon: "✅",
+    text: "No breaking API changes detected",
+    detail: "",
     color: "text-success",
   },
 ];
+
+function ResultRow({
+  icon,
+  text,
+  detail,
+  color,
+}: {
+  icon: string;
+  text: string;
+  detail: string;
+  color: string;
+}) {
+  return (
+    <p className={`text-[13px] ${color}`}>
+      {icon} {text}
+      {detail && (
+        <span className="text-text-muted"> — {detail}</span>
+      )}
+    </p>
+  );
+}
 
 export function Evidence() {
   return (
@@ -66,7 +85,7 @@ export function Evidence() {
         <ScrollReveal>
           <div className="text-center mb-4">
             <p className="text-xs font-medium uppercase tracking-[0.05em] text-accent mb-3">
-              Real result from keepvigil PR #47
+              Example verification result
             </p>
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-4">
               This appears on every PR.
@@ -92,82 +111,55 @@ export function Evidence() {
             </div>
 
             {/* Score header */}
-            <div className="mb-4">
+            <div className="mb-6">
               <p className="text-lg sm:text-xl font-semibold text-text-primary">
-                🛡️ Vigil Confidence Score:{" "}
-                <span className="text-accent">95/100</span> — Safe to merge ✅
-              </p>
-              <p className="text-xs text-text-muted mt-1">
-                12/12 test plan items passed · 5 auto-generated items verified
+                🛡️ Vigil — PR Verification:{" "}
+                <span className="text-accent">82/100</span>
               </p>
             </div>
 
-            {/* Score explanation line */}
-            <div className="text-xs font-mono text-text-muted mb-6 px-3 py-2 bg-code-bg rounded-[8px]">
-              Credential ✅ • CI Bridge ✅ • Execution ✅ • Coverage ⚠️ • Diff
-              ⚠️ • Gap ✅ • Augmentor ✅ • Contract ✅
-            </div>
-
-            {/* Signal table */}
-            <div className="overflow-x-auto mb-6">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.06]">
-                    <th className="text-left py-2 px-2 text-xs font-medium uppercase tracking-[0.05em] text-text-muted">
-                      Signal
-                    </th>
-                    <th className="text-left py-2 px-2 text-xs font-medium uppercase tracking-[0.05em] text-text-muted">
-                      Score
-                    </th>
-                    <th className="text-left py-2 px-2 text-xs font-medium uppercase tracking-[0.05em] text-text-muted">
-                      Status
-                    </th>
-                    <th className="text-left py-2 px-2 text-xs font-medium uppercase tracking-[0.05em] text-text-muted hidden sm:table-cell">
-                      Details
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {SIGNAL_ROWS.map((row) => (
-                    <tr
-                      key={row.name}
-                      className="border-b border-white/[0.04]"
-                    >
-                      <td className="py-2.5 px-2 font-mono text-[13px] text-text-primary">
-                        {row.name}
-                      </td>
-                      <td className="py-2.5 px-2 font-mono text-[13px] text-text-secondary">
-                        {row.score}
-                      </td>
-                      <td className={`py-2.5 px-2 text-[13px] ${row.color}`}>
-                        {row.status}
-                      </td>
-                      <td className="py-2.5 px-2 text-[13px] text-text-muted hidden sm:table-cell">
-                        {row.detail}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Action items */}
-            <div>
+            {/* Claims section */}
+            <div className="mb-5">
               <p className="text-sm font-semibold text-text-primary mb-2">
-                Action Items
+                Claims
               </p>
-              <div className="space-y-1.5">
-                <p className="text-[13px] text-text-secondary">
-                  <span className="font-medium text-warning">Consider:</span>
-                </p>
-                <p className="text-[13px] text-text-secondary pl-4">
-                  ⚠️ 4 changed files have no corresponding test coverage
-                </p>
-                <p className="text-[13px] text-text-secondary pl-4">
-                  ⚠️ Diff analysis found 4 areas not explicitly covered by test
-                  plan
-                </p>
+              <div className="space-y-1.5 pl-1">
+                {CLAIMS.map((row) => (
+                  <ResultRow key={row.text} {...row} />
+                ))}
               </div>
+            </div>
+
+            {/* Undocumented Changes section */}
+            <div className="mb-5">
+              <p className="text-sm font-semibold text-text-primary mb-2">
+                Undocumented Changes
+              </p>
+              <div className="space-y-1.5 pl-1">
+                {UNDOCUMENTED.map((row) => (
+                  <ResultRow key={row.text} {...row} />
+                ))}
+              </div>
+            </div>
+
+            {/* Impact section */}
+            <div className="mb-5">
+              <p className="text-sm font-semibold text-text-primary mb-2">
+                Impact
+              </p>
+              <div className="space-y-1.5 pl-1">
+                {IMPACT.map((row) => (
+                  <ResultRow key={row.text} {...row} />
+                ))}
+              </div>
+            </div>
+
+            {/* Score footer */}
+            <div className="pt-4 border-t border-white/[0.06]">
+              <p className="text-sm font-mono text-text-secondary">
+                Score: <span className="text-accent font-semibold">82/100</span>{" "}
+                — Review recommended
+              </p>
             </div>
           </div>
         </ScrollReveal>
@@ -180,7 +172,7 @@ export function Evidence() {
               rel="noopener noreferrer"
               className="text-accent hover:text-accent-hover transition-colors"
             >
-              See this exact result on GitHub →
+              See a real result on GitHub →
             </a>
           </p>
         </ScrollReveal>
