@@ -28,9 +28,31 @@ export default function HowItWorksPage() {
         The Pipeline
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Every Vigil run follows the same five-step pipeline. The entire process
-        typically completes in under 60 seconds.
+        Vigil v2 runs on <strong className="text-text-primary">every pull request</strong> — no
+        test plan required. When a test plan is present, additional verification
+        layers activate for deeper analysis. The entire process typically
+        completes in under 60 seconds.
       </p>
+      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
+        Dual-mode operation
+      </h3>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Vigil operates in two modes depending on PR content:
+      </p>
+      <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
+        <li>
+          <strong className="text-text-primary">v2-only (any PR)</strong> — Code-level
+          signals run on every PR: claims verification, undocumented change
+          detection, credential scanning, contract checking, coverage mapping,
+          and diff analysis.
+        </li>
+        <li>
+          <strong className="text-text-primary">v1+v2 (PR with test plan)</strong> — All
+          v2 signals plus test-plan-dependent signals: CI bridge, test
+          execution, plan augmentation, and gap analysis. Weights are
+          redistributed across all active layers.
+        </li>
+      </ul>
       <CodeBlock
         filename="pipeline"
         code={`PR opened/updated
@@ -39,28 +61,33 @@ export default function HowItWorksPage() {
 Webhook received
     │
     ▼
-Parse test plan (extract checkboxes from PR body)
+Detect test plan (optional — checkboxes in PR body)
     │
-    ▼
-Classify items (rule-based → LLM fallback)
-    │
-    ▼
-Collect signals (9 independent checks)
-    │
-    ▼
+    ├─── Test plan found ───┐
+    │                       ▼
+    │              Parse + Classify items
+    │              (rule-based → LLM fallback)
+    │                       │
+    ▼                       ▼
+Collect signals         Collect signals
+(v2-only layers)        (v1+v2 layers)
+    │                       │
+    └───────────┬───────────┘
+                ▼
 Calculate confidence score (0-100 weighted average)
-    │
-    ▼
+                │
+                ▼
 Post results (PR comment + GitHub Check Run)`}
       />
 
       {/* Step 1: Parse */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Step 1: Parse
+        Step 1: Parse (when test plan exists)
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Vigil scans the PR description for checkbox items. It looks for
-        headings like{" "}
+        When a test plan is present, Vigil scans the PR description for
+        checkbox items. If no test plan is found, Vigil skips directly to
+        signal collection in v2-only mode. It looks for headings like{" "}
         <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
           ## Test Plan
         </code>
@@ -100,7 +127,7 @@ Post results (PR comment + GitHub Check Run)`}
 
       {/* Step 2: Classify */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Step 2: Classify
+        Step 2: Classify (when test plan exists)
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Classification uses a two-pass system to determine what each test plan
@@ -163,9 +190,10 @@ Post results (PR comment + GitHub Check Run)`}
         Step 3: Collect Signals
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Nine independent signals run in parallel. Each signal examines a
+        Independent verification layers run in parallel. Each layer examines a
         different aspect of the PR and produces a score from 0 to 100, a
-        pass/fail status, and detailed evidence explaining its findings.
+        pass/fail status, and detailed evidence explaining its findings. The
+        active layers and their weights depend on whether a test plan is present.
       </p>
       <div className="overflow-x-auto mb-4">
         <table className="w-full text-sm">
@@ -175,7 +203,10 @@ Post results (PR comment + GitHub Check Run)`}
                 Signal
               </th>
               <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
-                Weight
+                v1+v2
+              </th>
+              <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
+                v2-only
               </th>
               <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
                 What it checks
@@ -184,57 +215,72 @@ Post results (PR comment + GitHub Check Run)`}
           </thead>
           <tbody>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">CI Bridge</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Claims Verifier</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">30%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM verifies PR description claims against the actual diff</td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Undocumented Changes</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">25%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Detects meaningful changes not mentioned in the PR description</td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">CI Bridge</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">20%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">—</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">CI pipeline status (GitHub Actions, etc.)</td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Credential Scan</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">20%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Leaked secrets, API keys, tokens in the diff</td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Test Execution</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">—</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Shell commands, API calls, browser tests</td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Plan Augmentor</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">—</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM generates and verifies items the test plan missed</td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Assertion Verifier</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">15%*</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">File contents match claimed behavior</td>
-            </tr>
-            <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Contract Checker</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10%</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM compares API response shapes vs frontend interfaces</td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Coverage Mapper</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Diff Analyzer</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5%</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Changed files covered by test plan items</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM analyzes diff for structural and semantic issues</td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Diff vs Claims</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Coverage Mapper</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5%</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM compares diff against test plan claims</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Changed files covered by test plan items or existing tests</td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Gap Analysis</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">5%</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">—</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM identifies untested changes in the diff</td>
             </tr>
           </tbody>
         </table>
       </div>
       <p className="text-xs text-text-muted mb-4">
-        * Assertion Verifier and Test Execution share the executor weight — the
-        combined 15% is distributed based on which items are present in the test
-        plan.
+        Signals marked with — are inactive in that mode and receive zero weight.
+        In v2-only mode, test-plan-dependent signals (CI Bridge, Test Execution,
+        Plan Augmentor, Gap Analysis) are skipped entirely.
       </p>
       <p className="text-text-secondary leading-relaxed mb-4">
         See the{" "}
@@ -268,8 +314,8 @@ Post results (PR comment + GitHub Check Run)`}
         </li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
-        A failure cap applies: if any deterministic signal (CI Bridge,
-        Credential Scan, Test Execution, Coverage Mapper) fails critically, the
+        A failure cap applies: if any deterministic signal (Credential Scan,
+        CI Bridge, Test Execution, Coverage Mapper) fails critically, the
         score is capped at 70 regardless of other results. See{" "}
         <Link href="/docs/scoring" className="text-accent hover:underline">
           Confidence Score
