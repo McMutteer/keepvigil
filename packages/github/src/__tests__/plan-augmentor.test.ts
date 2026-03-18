@@ -242,7 +242,7 @@ describe("augmentPlan", () => {
         repoPath: "/tmp/repo",
       });
       expect(signal.id).toBe("plan-augmentor");
-      expect(signal.name).toBe("Plan Augmentation");
+      expect(signal.name).toBe("Plan Augmentor");
       expect(signal.requiresLLM).toBe(true);
     });
 

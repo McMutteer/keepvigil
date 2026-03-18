@@ -198,7 +198,7 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   }
 
   if (isFirstRun) {
-    parts.push("", buildOnboardingTips());
+    parts.push("", _pipelineMode === "v2-only" ? buildV2OnboardingTips() : buildOnboardingTips());
   }
 
   const footer = correlationId
@@ -634,6 +634,33 @@ Vigil works best when your test plan includes **logic and contract checks**, not
 - Add a blank line before the "Generated with" footer
 
 [Full guide →](https://keepvigil.dev/docs/test-plans)
+
+</details>`;
+}
+
+/**
+ * Build onboarding tips for v2-only repos (no test plan).
+ * Focuses on writing better PR descriptions instead of test plans.
+ */
+export function buildV2OnboardingTips(): string {
+  return `<details>
+<summary>\uD83D\uDCA1 Tips for better Vigil verification (first run detected)</summary>
+
+Vigil extracts claims from your **PR title and description**, then verifies each one against the actual diff.
+
+**Write better PR descriptions:**
+- **Be specific:** "Add rate limiting with Redis backend" not just "Add rate limiting"
+- **Mention dependencies:** If you added a package, say so — otherwise Vigil flags it as undocumented
+- **Mention env vars:** New environment variables should be noted in the description
+- **Use conventional commits:** \`feat:\`, \`fix:\`, \`refactor:\` help Vigil understand intent
+
+**What Vigil checks:**
+- **Claims:** Does the code match what the title/description says?
+- **Undocumented changes:** Are there significant changes not mentioned?
+- **Credentials:** Any secrets accidentally committed?
+- **Coverage:** Do modified files have corresponding tests?
+
+[Learn more \u2192](https://keepvigil.dev/docs/getting-started)
 
 </details>`;
 }

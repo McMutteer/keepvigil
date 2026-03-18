@@ -59,6 +59,14 @@ Return ONLY valid JSON (no markdown, no explanation):
 
 If no verifiable claims can be extracted, return: { "claims": [] }`;
 
+/** Truncate at word boundary to avoid cutting mid-word */
+function truncateAtWord(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const truncated = text.slice(0, max);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return (lastSpace > max * 0.6 ? truncated.slice(0, lastSpace) : truncated) + "...";
+}
+
 /** Strip test plan sections from PR body before sending to LLM */
 function stripTestPlan(body: string): string {
   // Remove checkbox sections — they're test items, not claims
@@ -210,7 +218,7 @@ export async function verifyClaims(options: ClaimsVerifierOptions): Promise<Sign
       : "warn";
 
     details.push({
-      label: claim.text.slice(0, 80),
+      label: truncateAtWord(claim.text, 120),
       status: verdictIcon,
       message: claim.evidence || `Claim ${claim.verdict}`,
     });

@@ -156,7 +156,7 @@ describe("checkContracts", () => {
     it("has correct signal id and requiresLLM", async () => {
       const { signal } = await checkContracts({ diff: "", llm: makeLLM("unused") });
       expect(signal.id).toBe("contract-checker");
-      expect(signal.name).toBe("Contract Check");
+      expect(signal.name).toBe("Contract Checker");
       expect(signal.requiresLLM).toBe(true);
     });
 

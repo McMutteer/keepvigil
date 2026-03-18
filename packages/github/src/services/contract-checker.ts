@@ -197,7 +197,7 @@ function neutralResult(message: string): ContractCheckerResult {
   return {
     signal: createSignal({
       id: "contract-checker",
-      name: "Contract Check",
+      name: "Contract Checker",
       score: 100,
       passed: true,
       details: [{ label: "Skipped", status: "skip", message }],
@@ -223,7 +223,7 @@ export async function checkContracts(options: ContractCheckerOptions): Promise<C
     return {
       signal: createSignal({
         id: "contract-checker",
-        name: "Contract Check",
+        name: "Contract Checker",
         score: 100,
         passed: true,
         details: [{ label: "No cross-boundary changes", status: "pass", message: "PR does not touch both API and frontend files" }],
@@ -256,7 +256,7 @@ export async function checkContracts(options: ContractCheckerOptions): Promise<C
     return {
       signal: createSignal({
         id: "contract-checker",
-        name: "Contract Check",
+        name: "Contract Checker",
         score: 100,
         passed: true,
         details: [{ label: "No contracts", status: "pass", message: "No API/frontend contracts found in diff" }],
@@ -306,7 +306,7 @@ export async function checkContracts(options: ContractCheckerOptions): Promise<C
   return {
     signal: createSignal({
       id: "contract-checker",
-      name: "Contract Check",
+      name: "Contract Checker",
       score,
       passed: incompatible === 0,
       details,
