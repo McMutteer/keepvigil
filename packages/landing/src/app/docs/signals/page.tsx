@@ -219,7 +219,7 @@ export default function SignalsPage() {
                 </Link>
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Pro</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Free</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
                 Auto-generates and verifies items the test plan missed
               </td>
@@ -362,7 +362,7 @@ export default function SignalsPage() {
           <Link href="/docs/signals/plan-augmentor" className="text-accent hover:underline">
             Plan Augmentor
           </Link>{" "}
-          — Auto-generates missing test items (Pro, requires test plan)
+          — Auto-generates missing test items (Free, requires test plan)
         </li>
         <li>
           <Link href="/docs/signals/gap-analysis" className="text-accent hover:underline">

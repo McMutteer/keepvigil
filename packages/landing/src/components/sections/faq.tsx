@@ -42,7 +42,7 @@ const FAQ_ITEMS = [
   {
     question: "Is Vigil only for GitHub?",
     answer:
-      "Currently yes. GitLab and Bitbucket support is on the roadmap.",
+      "Currently GitHub only. GitLab and Bitbucket are being considered for the future.",
   },
 ];
 
@@ -76,7 +76,7 @@ export function Faq() {
   }
 
   return (
-    <section className="py-24 sm:py-32">
+    <section className="py-16 sm:py-20">
       <div className="mx-auto max-w-[800px] px-6">
         <ScrollReveal>
           <div className="text-center mb-12 sm:mb-16">

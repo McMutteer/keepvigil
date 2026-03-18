@@ -27,4 +27,6 @@
   <url><loc>https://keepvigil.dev/checkout/success</loc><lastmod>2026-03-17</lastmod><priority>0.3</priority></url>
   <url><loc>https://keepvigil.dev/docs/signals/plan-augmentor</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
   <url><loc>https://keepvigil.dev/docs/signals/contract-checker</loc><lastmod>2026-03-17</lastmod><priority>0.6</priority></url>
+  <url><loc>https://keepvigil.dev/docs/dashboard</loc><lastmod>2026-03-18</lastmod><priority>0.7</priority></url>
+  <url><loc>https://keepvigil.dev/docs/changelog</loc><lastmod>2026-03-18</lastmod><priority>0.5</priority></url>
 </urlset>
