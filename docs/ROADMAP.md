@@ -42,25 +42,46 @@ All P0/P1 bugs fixed, structured logging, metrics, 836+ tests, CI pipeline, grac
 - v2-specific onboarding tips for repos without test plans
 - Full landing page rewrite (hero, signals→layers, evidence, pricing, about)
 - All 24 docs pages updated for v2 messaging
-- Production polish (claim truncation, coverage mapper weight, signal names)
-- 1321 tests across 49 files
+
+### Phase 2 — Inline Review Comments (PRs #76-#77)
+- SignalDetail enhanced with optional `file` and `line` fields
+- Diff-position mapper (`{file, line}` → GitHub review comment position)
+- Inline review comments via GitHub Reviews API (`octokit.rest.pulls.createReview()`)
+- Pro gating: inline comments are a Pro-only feature
+
+### Phase 3 — Conversational (PRs #78-#80)
+- `@vigil` commands in issue comments (explain, ignore, recheck, verify)
+- Repo memory — `repo_rules` DB table for persistent ignore patterns
+- `@vigil ignore [finding]` suppresses matching findings for a repo
+- `@vigil recheck` re-runs verification on current PR head
+
+### Phase 4 — Dashboard (PRs #81-#87)
+- Execution persistence — pipeline writes score, mode, and signal summary to `executions` table
+- GitHub OAuth with JWT sessions (`jose`, HS256, 7-day expiry)
+- Auth middleware with installation access verification
+- Dashboard API — 4 read-only endpoints (executions, stats, repos, detail)
+- Vite + React 19 SPA at `/dashboard/` (same design system as landing)
+- Nginx deployment integration (dual build, SPA fallback)
+- Landing CTA — Dashboard link in navbar + pricing page card
+- 1387 tests across 55 files
 
 ---
 
 ## Next Up
 
-### Phase 2 — Inline Review Comments
-- [ ] Enhance `SignalDetail` with optional `file` and `line` fields
-- [ ] Build diff-position mapper (`{file, line}` → GitHub review comment position)
-- [ ] Update signal producers to include file/line where available
-- [ ] Post inline review comments via `octokit.rest.pulls.createReview()`
-- [ ] Pro gating: inline comments are a Pro feature
+### Deploy Dashboard
+- [ ] Run migration `0007_smart_ultimates.sql` on production
+- [ ] Enable OAuth in GitHub App settings + add callback URL
+- [ ] Set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` on server
+- [ ] Deploy via `ssh root@161.97.97.243 deploy-keepvigil.sh`
+- [ ] Verify `/dashboard` loads, OAuth flow works end-to-end
 
-### Phase 3 — Conversational
-- [ ] Parse `@vigil` commands in issue comments (explain, ignore, recheck, verify)
-- [ ] Memory per repo — DB table for ignore patterns, custom rules
-- [ ] `@vigil ignore [finding]` suppresses findings for a repo
-- [ ] `@vigil recheck` re-runs verification on current PR head
+### Signal Quality — Dogfooding Fixes
+Found by running Vigil on its own dashboard PRs (#81-#87):
+- [ ] Template literal confusion in diffs — LLM misreads backticks as single quotes in JSX/TSX (critical, ~10+ false positives per PR)
+- [ ] Credential scan in test files — reduce weight for `__tests__/` paths, skip generic values
+- [ ] Coverage mapper path matching — handle `__tests__/` directory pattern (not just colocated `.test.ts`)
+- [ ] Coverage mapper config noise — exclude non-code files (.conf, .yml, Dockerfile, .md)
 
 ### Announce (blocked: waiting for Marketplace approval)
 - [ ] Twitter/X thread — show real siegekit PR #24 as demo
@@ -71,11 +92,16 @@ All P0/P1 bugs fixed, structured logging, metrics, 836+ tests, CI pipeline, grac
 
 ## Future
 
-- [ ] Usage dashboard for Pro/Team users (Phase 4)
-- [ ] Team features (shared dashboard, SSO, custom scoring rules)
+### Phase 5 — v1 Deprecation
+- [ ] Deprecate BYOLLM (v1-only, platform LLM is fast enough)
+- [ ] Deprecate shell executor (security surface, low usage)
+- [ ] Simplify pipeline to v2-only
+
+### Platform
 - [ ] Auto-approve support (score > threshold → auto-approve PR)
+- [ ] Team features (shared dashboard, SSO, custom scoring rules)
+- [ ] i18n EN/ES
 - [ ] GitLab / Bitbucket support (evaluate demand)
-- [ ] i18n EN/ES (nice-to-have)
 
 ---
 
@@ -83,5 +109,5 @@ All P0/P1 bugs fixed, structured logging, metrics, 836+ tests, CI pipeline, grac
 
 - **Real-world testing:** siegekit PRs #8-#14 (v1), #24 (v2 first production test)
 - **Best score:** 95/100 on keepvigil PR #47
-- v1-v3 complete, v4 (PR verification) complete, GTM infrastructure complete
+- **Dogfooding:** Vigil reviews its own PRs — bugs found are tracked in "Signal Quality" above
 - Marketplace review pending — GitHub will notify via email
