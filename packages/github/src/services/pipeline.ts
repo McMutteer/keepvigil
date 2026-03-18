@@ -28,6 +28,7 @@ import { checkRateLimit } from "./rate-limiter.js";
 import { verifyClaims } from "./claims-verifier.js";
 import { detectUndocumentedChanges } from "./undocumented-changes.js";
 import { hasTestPlan } from "../utils/has-test-plan.js";
+import { loadRepoRules, applyIgnoreRules } from "./repo-memory.js";
 
 const log = createLogger("pipeline");
 
@@ -328,6 +329,21 @@ async function _runPipeline(
     pipelineError = `Pipeline error: ${safeMsg}`;
     log.error({ error: safeMsg, owner, repo, pullNumber }, "Pipeline error");
   } finally {
+    // Apply repo memory rules before reporting (suppress known findings)
+    if (pipelineDb && signals.length > 0) {
+      try {
+        const rules = await loadRepoRules(pipelineDb, owner, repo);
+        if (rules.length > 0) {
+          const suppressed = applyIgnoreRules(signals, rules);
+          if (suppressed > 0) {
+            log.info({ owner, repo, suppressed, rules: rules.length }, "Repo rules applied");
+          }
+        }
+      } catch (err) {
+        log.warn({ err, owner, repo }, "Failed to apply repo rules — reporting without memory");
+      }
+    }
+
     // Stage final: Always report — partial results are better than silence
     try {
       await reportResults({
