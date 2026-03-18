@@ -3,6 +3,7 @@
  * Uses GitHub App OAuth (not classic OAuth app) for installation-aware tokens.
  */
 
+import { randomBytes } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { SignJWT, jwtVerify } from "jose";
 import { createLogger } from "@vigil/core";
@@ -12,6 +13,8 @@ const log = createLogger("auth");
 
 const COOKIE_NAME = "vigil_session";
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
+const STATE_COOKIE_NAME = "vigil_oauth_state";
+const GITHUB_FETCH_TIMEOUT_MS = 10_000;
 
 export interface SessionPayload {
   userId: number;
@@ -65,18 +68,36 @@ function parseCookies(req: IncomingMessage): Record<string, string> {
   return cookies;
 }
 
-function setSessionCookie(res: ServerResponse, token: string): void {
-  res.setHeader(
-    "Set-Cookie",
-    `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${COOKIE_MAX_AGE}`,
-  );
-}
-
 function clearSessionCookie(res: ServerResponse): void {
   res.setHeader(
     "Set-Cookie",
     `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`,
   );
+}
+
+// ---------------------------------------------------------------------------
+// Config validation
+// ---------------------------------------------------------------------------
+
+/** Check that OAuth is fully configured (all-or-nothing). */
+export function isOAuthConfigured(config: AppConfig): boolean {
+  const fields = [config.githubClientId, config.githubClientSecret, config.sessionSecret];
+  const populated = fields.filter(Boolean).length;
+  return populated === 3;
+}
+
+// ---------------------------------------------------------------------------
+// Fetch with timeout
+// ---------------------------------------------------------------------------
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GITHUB_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -98,21 +119,30 @@ export async function getSession(
 // ---------------------------------------------------------------------------
 
 /** GET /api/auth/login → redirect to GitHub OAuth */
-export function handleLogin(req: IncomingMessage, res: ServerResponse, config: AppConfig): void {
-  if (!config.githubClientId) {
+export function handleLogin(_req: IncomingMessage, res: ServerResponse, config: AppConfig): void {
+  if (!isOAuthConfigured(config)) {
     res.writeHead(503, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "OAuth not configured" }));
     return;
   }
 
+  // Generate CSRF state nonce
+  const state = randomBytes(16).toString("hex");
+
   const redirectUri = "https://keepvigil.dev/api/auth/callback";
-  const url = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(config.githubClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:org`;
+  const url = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(config.githubClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:org&state=${encodeURIComponent(state)}`;
+
+  // Set state cookie (short-lived, 10 min)
+  res.setHeader(
+    "Set-Cookie",
+    `${STATE_COOKIE_NAME}=${state}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=600`,
+  );
 
   res.writeHead(302, { Location: url });
   res.end();
 }
 
-/** GET /api/auth/callback?code=X → exchange token, set cookie, redirect */
+/** GET /api/auth/callback?code=X&state=Y → exchange token, set cookie, redirect */
 export async function handleCallback(
   req: IncomingMessage,
   res: ServerResponse,
@@ -120,6 +150,7 @@ export async function handleCallback(
 ): Promise<void> {
   const url = new URL(req.url!, `http://${req.headers.host}`);
   const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
 
   if (!code) {
     res.writeHead(400, { "Content-Type": "application/json" });
@@ -127,14 +158,27 @@ export async function handleCallback(
     return;
   }
 
-  if (!config.githubClientId || !config.githubClientSecret || !config.sessionSecret) {
+  if (!isOAuthConfigured(config)) {
     res.writeHead(503, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "OAuth not configured" }));
     return;
   }
 
+  // Verify CSRF state
+  const cookies = parseCookies(req);
+  const storedState = cookies[STATE_COOKIE_NAME];
+  if (!state || !storedState || state !== storedState) {
+    log.warn("OAuth state mismatch — possible CSRF attempt");
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Invalid state parameter" }));
+    return;
+  }
+
+  // Clear state cookie
+  const clearStateCookie = `${STATE_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=0`;
+
   // Exchange code for access token
-  const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+  const tokenResponse = await fetchWithTimeout("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -147,10 +191,19 @@ export async function handleCallback(
     }),
   });
 
+  if (!tokenResponse.ok) {
+    log.error({ status: tokenResponse.status }, "GitHub token endpoint returned non-OK");
+    res.setHeader("Set-Cookie", clearStateCookie);
+    res.writeHead(302, { Location: "/dashboard?error=auth_failed" });
+    res.end();
+    return;
+  }
+
   const tokenData = (await tokenResponse.json()) as { access_token?: string; error?: string };
 
   if (!tokenData.access_token) {
     log.error({ error: tokenData.error }, "OAuth token exchange failed");
+    res.setHeader("Set-Cookie", clearStateCookie);
     res.writeHead(302, { Location: "/dashboard?error=auth_failed" });
     res.end();
     return;
@@ -159,16 +212,34 @@ export async function handleCallback(
   const accessToken = tokenData.access_token;
 
   // Fetch user info
-  const userResponse = await fetch("https://api.github.com/user", {
+  const userResponse = await fetchWithTimeout("https://api.github.com/user", {
     headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
   });
+
+  if (!userResponse.ok) {
+    log.error({ status: userResponse.status }, "GitHub user endpoint returned non-OK");
+    res.setHeader("Set-Cookie", clearStateCookie);
+    res.writeHead(302, { Location: "/dashboard?error=auth_failed" });
+    res.end();
+    return;
+  }
+
   const user = (await userResponse.json()) as { id: number; login: string; avatar_url: string };
 
   // Fetch user's installations of this app
-  const installationsResponse = await fetch(
+  const installationsResponse = await fetchWithTimeout(
     "https://api.github.com/user/installations",
     { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" } },
   );
+
+  if (!installationsResponse.ok) {
+    log.error({ status: installationsResponse.status }, "GitHub installations endpoint returned non-OK");
+    res.setHeader("Set-Cookie", clearStateCookie);
+    res.writeHead(302, { Location: "/dashboard?error=auth_failed" });
+    res.end();
+    return;
+  }
+
   const installationsData = (await installationsResponse.json()) as {
     installations: { id: number; app_slug: string }[];
   };
@@ -186,7 +257,12 @@ export async function handleCallback(
   };
 
   const token = await createSessionToken(session, config);
-  setSessionCookie(res, token);
+
+  // Set both session cookie and clear state cookie
+  res.setHeader("Set-Cookie", [
+    `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${COOKIE_MAX_AGE}`,
+    clearStateCookie,
+  ]);
 
   log.info({ login: user.login, installations: installationIds.length }, "OAuth login successful");
 
