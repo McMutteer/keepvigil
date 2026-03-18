@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "repo_rules_owner_repo_pattern_idx" ON "repo_rules" USING btree ("owner","repo","pattern");

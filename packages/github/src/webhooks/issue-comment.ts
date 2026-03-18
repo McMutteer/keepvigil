@@ -271,7 +271,7 @@ async function handleIgnore(
     }
   } else {
     await replyToComment(context, owner, repo, pullNumber,
-      `Noted — I'll remember to ignore "${pattern}" for this repo in future runs.\n\n_Note: Database not available. Use \`.vigil.yml\` to configure skip rules._`);
+      `I can't save rules right now — database not available. Use \`.vigil.yml\` to configure skip rules instead.`);
     log.warn({ owner, repo, pattern }, "Ignore command received but DB not initialized");
   }
 }

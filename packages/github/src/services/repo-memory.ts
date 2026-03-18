@@ -56,8 +56,8 @@ export async function addIgnoreRule(
     ruleType: "ignore",
     pattern,
     createdBy,
-  });
-  log.info({ owner, repo, pattern, createdBy }, "Ignore rule added");
+  }).onConflictDoNothing();
+  log.info({ owner, repo, patternLength: pattern.length, createdBy }, "Ignore rule added");
 }
 
 /**
@@ -76,6 +76,8 @@ export function applyIgnoreRules(signals: Signal[], rules: RepoRule[]): number {
   let suppressed = 0;
 
   for (const signal of signals) {
+    let signalSuppressed = 0;
+
     for (const detail of signal.details) {
       // Only suppress warn/fail findings — don't touch pass/skip
       if (detail.status !== "warn" && detail.status !== "fail") continue;
@@ -88,11 +90,26 @@ export function applyIgnoreRules(signals: Signal[], rules: RepoRule[]): number {
         if (matchesLabel || matchesMessage) {
           detail.status = "skip";
           detail.message = `Suppressed by repo rule: "${rule.pattern}" (by ${rule.createdBy})`;
-          suppressed++;
+          signalSuppressed++;
           break; // One rule match is enough
         }
       }
     }
+
+    // Recompute signal score and passed status after suppression
+    if (signalSuppressed > 0) {
+      const active = signal.details.filter((d) => d.status !== "skip");
+      if (active.length === 0) {
+        signal.score = 100;
+        signal.passed = true;
+      } else {
+        const failures = active.filter((d) => d.status === "fail" || d.status === "warn").length;
+        signal.score = Math.round(((active.length - failures) / active.length) * 100);
+        signal.passed = failures === 0;
+      }
+    }
+
+    suppressed += signalSuppressed;
   }
 
   return suppressed;

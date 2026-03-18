@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean, integer, json, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, boolean, integer, json, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 /** Tracks GitHub App installations */
 export const installations = pgTable("installations", {
@@ -59,6 +59,7 @@ export const repoRules = pgTable("repo_rules", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   index("repo_rules_owner_repo_idx").on(table.owner, table.repo),
+  uniqueIndex("repo_rules_owner_repo_pattern_idx").on(table.owner, table.repo, table.pattern),
 ]);
 
 /** Tracks Stripe subscriptions per GitHub App installation */
