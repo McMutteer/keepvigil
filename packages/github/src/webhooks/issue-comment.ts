@@ -3,8 +3,17 @@ import { createPendingCheckRun } from "../services/check-run.js";
 import { enqueueVerification } from "../services/queue.js";
 import { parseVigilConfig } from "../services/vigil-config.js";
 import { createLLMClient, createLogger } from "@vigil/core";
+import type { Database } from "@vigil/core/db";
+import { addIgnoreRule } from "../services/repo-memory.js";
 
 const log = createLogger("issue-comment");
+
+let commentDb: Database | null = null;
+
+/** Set the database instance for repo memory operations */
+export function setCommentDb(database: Database): void {
+  commentDb = database;
+}
 
 type IssueCommentContext = Context<"issue_comment.created">;
 
@@ -247,11 +256,24 @@ async function handleIgnore(
     return;
   }
 
-  // TODO: Implement repo memory (DB table) in a follow-up PR
-  // For now, acknowledge the request
-  await replyToComment(context, owner, repo, pullNumber,
-    `Noted — I'll remember to ignore "${args.slice(0, 100)}" for this repo in future runs.\n\n_Note: Repo memory is coming soon. For now, use \`.vigil.yml\` to configure skip rules._`);
-  log.info({ owner, repo, pullNumber, pattern: args.slice(0, 100) }, "Ignore command received (memory not yet implemented)");
+  const pattern = args.slice(0, 200);
+  const createdBy = context.payload.sender.login;
+
+  if (commentDb) {
+    try {
+      await addIgnoreRule(commentDb, owner, repo, pattern, createdBy);
+      await replyToComment(context, owner, repo, pullNumber,
+        `Got it — I'll suppress findings matching "${pattern}" for **${owner}/${repo}** in future runs.`);
+    } catch (err) {
+      log.error({ err, owner, repo, pattern }, "Failed to save ignore rule");
+      await replyToComment(context, owner, repo, pullNumber,
+        `I understood the request, but couldn't save the rule right now. Please try again or use \`.vigil.yml\` to configure skip rules.`);
+    }
+  } else {
+    await replyToComment(context, owner, repo, pullNumber,
+      `I can't save rules right now — database not available. Use \`.vigil.yml\` to configure skip rules instead.`);
+    log.warn({ owner, repo, pattern }, "Ignore command received but DB not initialized");
+  }
 }
 
 // ---------------------------------------------------------------------------

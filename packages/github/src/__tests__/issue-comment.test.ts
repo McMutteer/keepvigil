@@ -241,7 +241,7 @@ describe("handleIssueComment", () => {
     await handleIssueComment(context as never);
     expect(createComment).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: expect.stringContaining("remember to ignore"),
+        body: expect.stringContaining("can't save rules right now"),
       }),
     );
   });

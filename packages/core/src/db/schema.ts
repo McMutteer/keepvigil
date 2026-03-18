@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean, integer, json, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, boolean, integer, json, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 /** Tracks GitHub App installations */
 export const installations = pgTable("installations", {
@@ -40,6 +40,27 @@ export const healthChecks = pgTable("health_checks", {
   message: text("message"),
   checkedAt: timestamp("checked_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Per-repo rules — stores ignore patterns, custom rules, and conventions.
+ * Populated via @vigil ignore commands or .vigil.yml config.
+ * Scoped by owner/repo so rules are repo-specific.
+ */
+export const repoRules = pgTable("repo_rules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  owner: varchar("owner", { length: 255 }).notNull(),
+  repo: varchar("repo", { length: 255 }).notNull(),
+  /** Rule type: "ignore" suppresses matching findings, "convention" is informational */
+  ruleType: varchar("rule_type", { length: 50 }).notNull().default("ignore"),
+  /** Pattern to match against finding labels/messages (case-insensitive substring) */
+  pattern: text("pattern").notNull(),
+  /** Who created this rule */
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("repo_rules_owner_repo_idx").on(table.owner, table.repo),
+  uniqueIndex("repo_rules_owner_repo_pattern_idx").on(table.owner, table.repo, table.pattern),
+]);
 
 /** Tracks Stripe subscriptions per GitHub App installation */
 export const subscriptions = pgTable("subscriptions", {

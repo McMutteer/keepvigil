@@ -12,6 +12,7 @@ import { setDatabase } from "./webhooks/installation.js";
 import { handleStripeWebhook, setStripeWebhookDeps } from "./webhooks/stripe.js";
 import { handleCheckout } from "./services/checkout.js";
 import { setPipelineDb } from "./services/pipeline.js";
+import { setCommentDb } from "./webhooks/issue-comment.js";
 import { createWorker } from "./worker.js";
 import { handleMetrics } from "./metrics.js";
 
@@ -60,6 +61,7 @@ async function main(): Promise<void> {
   const { db, pool } = createDb(config.databaseUrl);
   setDatabase(db);
   setPipelineDb(db);
+  setCommentDb(db);
 
   const stripeSecret = config.stripeForwardingSecret;
   if (stripeSecret) {
