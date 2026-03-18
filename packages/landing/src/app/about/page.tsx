@@ -24,11 +24,12 @@ export default function AboutPage() {
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Vigil gives every pull request a confidence score &mdash; a number from
-        0 to 100 that tells you how safe it is to merge. We collect 7
+        0 to 100 that tells you how safe it is to merge. We collect 9
         independent signals: CI results, credential scans, test execution,
-        coverage mapping, file assertion verification, diff analysis, and gap
-        detection. The score appears directly on the PR &mdash; no dashboard, no
-        separate tool, no context switching.
+        coverage mapping, file assertion verification, plan augmentation,
+        contract checking, diff analysis, and gap detection. The score appears
+        directly on the PR &mdash; no dashboard, no separate tool, no context
+        switching.
       </p>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
@@ -48,7 +49,7 @@ export default function AboutPage() {
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Vigil is open source under the MIT License. The entire codebase &mdash;
-        836+ tests, 8 signals, the score engine &mdash; is public on GitHub.
+        990+ tests, 9 signals, the score engine &mdash; is public on GitHub.
         You can self-host, audit, contribute, or fork it.
       </p>
 

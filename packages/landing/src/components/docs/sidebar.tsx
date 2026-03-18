@@ -63,7 +63,7 @@ export function Sidebar() {
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/brand/icon.svg"
-            alt=""
+            alt="Vigil"
             width={24}
             height={24}
             className="w-6 h-6"
