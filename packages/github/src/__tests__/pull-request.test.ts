@@ -16,11 +16,13 @@ import { enqueueVerification } from "../services/queue.js";
 const mockChecksUpdate = vi.fn().mockResolvedValue({});
 
 function makeContext(overrides: {
+  title?: string;
   body?: string | null;
   action?: string;
   installationId?: number | null;
 } = {}) {
   const {
+    title = "feat: add login feature",
     body = "## Test Plan\n- [ ] Verify login\n- [x] Build passes",
     action = "opened",
     installationId = 12345,
@@ -31,18 +33,27 @@ function makeContext(overrides: {
       action,
       pull_request: {
         number: 7,
+        title,
         body,
-        head: { sha: "abc123" },
+        head: {
+          sha: "abc123",
+          repo: { full_name: "owner/my-repo" },
+        },
+        author_association: "OWNER",
       },
       repository: {
         name: "my-repo",
         full_name: "owner/my-repo",
         owner: { login: "owner" },
+        default_branch: "main",
       },
       installation: installationId ? { id: installationId } : null,
     },
     octokit: {
-      rest: { checks: { update: mockChecksUpdate } },
+      rest: {
+        checks: { update: mockChecksUpdate },
+        repos: { getContent: vi.fn().mockRejectedValue(new Error("404")) },
+      },
     } as unknown,
     log: {
       info: vi.fn(),
@@ -68,31 +79,55 @@ describe("handlePullRequest", () => {
       pullNumber: 7,
     });
 
-    expect(enqueueVerification).toHaveBeenCalledWith({
-      installationId: "12345",
-      owner: "owner",
-      repo: "my-repo",
-      pullNumber: 7,
-      headSha: "abc123",
-      checkRunId: 42,
-      prBody: "## Test Plan\n- [ ] Verify login\n- [x] Build passes",
-    });
+    expect(enqueueVerification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        installationId: "12345",
+        owner: "owner",
+        repo: "my-repo",
+        pullNumber: 7,
+        headSha: "abc123",
+        checkRunId: 42,
+        prTitle: "feat: add login feature",
+        prBody: "## Test Plan\n- [ ] Verify login\n- [x] Build passes",
+      }),
+    );
   });
 
-  it("skips when no test plan in PR body", async () => {
+  it("processes PR without test plan (v2 mode)", async () => {
     const context = makeContext({ body: "Just a regular PR description." });
     await handlePullRequest(context);
 
-    expect(createPendingCheckRun).not.toHaveBeenCalled();
-    expect(enqueueVerification).not.toHaveBeenCalled();
+    expect(createPendingCheckRun).toHaveBeenCalled();
+    expect(enqueueVerification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prTitle: "feat: add login feature",
+        prBody: "Just a regular PR description.",
+      }),
+    );
   });
 
-  it("skips when PR body is null", async () => {
+  it("processes PR with null body (v2 mode)", async () => {
     const context = makeContext({ body: null });
     await handlePullRequest(context);
 
-    expect(createPendingCheckRun).not.toHaveBeenCalled();
-    expect(enqueueVerification).not.toHaveBeenCalled();
+    expect(createPendingCheckRun).toHaveBeenCalled();
+    expect(enqueueVerification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prTitle: "feat: add login feature",
+        prBody: "",
+      }),
+    );
+  });
+
+  it("includes prTitle in enqueued job", async () => {
+    const context = makeContext({ title: "fix: resolve timeout in auth middleware" });
+    await handlePullRequest(context);
+
+    expect(enqueueVerification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prTitle: "fix: resolve timeout in auth middleware",
+      }),
+    );
   });
 
   it("skips when no installation on event", async () => {
@@ -145,7 +180,6 @@ describe("handlePullRequest", () => {
 
     expect(context.log.error).toHaveBeenCalled();
     expect(enqueueVerification).not.toHaveBeenCalled();
-    // No check run to cancel since creation itself failed
     expect(mockChecksUpdate).not.toHaveBeenCalled();
   });
 
@@ -156,7 +190,6 @@ describe("handlePullRequest", () => {
 
     await handlePullRequest(context);
 
-    // Should have logged two errors: the original + the cleanup failure
     expect(context.log.error).toHaveBeenCalledTimes(2);
   });
 });

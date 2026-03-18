@@ -67,6 +67,7 @@ function makeJob(overrides: Partial<VerifyTestPlanJob> = {}): VerifyTestPlanJob 
     pullNumber: 42,
     headSha: "abc123",
     checkRunId: 1001,
+    prTitle: "feat: add hello endpoint",
     prBody: "## Test Plan\n- [ ] echo hello\n- [ ] GET / returns 200",
     ...overrides,
   };

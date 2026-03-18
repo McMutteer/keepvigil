@@ -23,6 +23,7 @@ function makeContext(overrides: {
   const getContent = vi.fn().mockRejectedValue(Object.assign(new Error("Not Found"), { status: 404 }));
   const getPull = vi.fn().mockResolvedValue({
     data: {
+      title: "fix: some fix",
       body: prBody,
       head: { sha: headSha, repo: { full_name: "owner/repo" } },
     },
@@ -165,10 +166,10 @@ describe("handleIssueComment", () => {
     expect(enqueueVerification).toHaveBeenCalledOnce();
   });
 
-  it("skips retry when PR has no test plan", async () => {
+  it("processes retry even when PR has no test plan (v2 mode)", async () => {
     const { context } = makeContext({ prBody: "Just a regular PR description" });
     await handleIssueComment(context as never);
-    expect(enqueueVerification).not.toHaveBeenCalled();
+    expect(enqueueVerification).toHaveBeenCalledOnce();
   });
 
   it("creates a new pending check run before enqueuing", async () => {
