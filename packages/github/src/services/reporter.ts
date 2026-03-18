@@ -4,6 +4,7 @@ import { createLogger, computeScore } from "@vigil/core";
 import { updateCheckRun, determineConclusion, conclusionFromScore } from "./check-run-updater.js";
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
 import { notifyWebhooks } from "./webhook-notifier.js";
+import { postReviewComments } from "./review-commenter.js";
 
 const log = createLogger("reporter");
 
@@ -57,6 +58,10 @@ export interface ReportContext {
   signals?: Signal[];
   /** Pipeline mode — v1+v2 (has test plan) or v2-only (no test plan) */
   pipelineMode?: PipelineMode;
+  /** Raw PR diff — used for inline review comments */
+  diff?: string | null;
+  /** Whether the user is on Pro tier — inline comments are Pro-only */
+  proEnabled?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -256,7 +261,22 @@ export async function reportResults(context: ReportContext): Promise<void> {
     log.error({ err }, "Failed to post/update PR comment");
   }
 
-  // Tertiary — webhook notifications (fire-and-forget, never re-trigger the job)
+  // Tertiary — inline review comments (Pro only, fire-and-forget)
+  if (context.proEnabled && context.signals && context.diff && context.headSha) {
+    void postReviewComments({
+      octokit: context.octokit,
+      owner: context.owner,
+      repo: context.repo,
+      pullNumber: context.pullNumber,
+      headSha: context.headSha,
+      diff: context.diff,
+      signals: context.signals,
+    }).catch((err) => {
+      log.error({ err }, "Review comments failed");
+    });
+  }
+
+  // Quaternary — webhook notifications (fire-and-forget, never re-trigger the job)
   const notifConfig = context.vigiConfig?.notifications;
   if (notifConfig?.urls?.length) {
     const shouldNotify = notifConfig.on === "always" || conclusion !== "success";
