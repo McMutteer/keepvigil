@@ -129,6 +129,8 @@ export function scanCredentials(diff: string): Signal {
           label: `${pattern.name} in ${file}:${line}`,
           status: "fail",
           message: `Possible ${pattern.name} detected: ${redactMatch(content, pattern.regex)}`,
+          file,
+          line,
         });
       }
     }

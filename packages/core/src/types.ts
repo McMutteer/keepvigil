@@ -263,6 +263,10 @@ export interface SignalDetail {
   status: "pass" | "fail" | "warn" | "skip";
   /** Human-readable explanation */
   message: string;
+  /** File path in the diff (for inline review comments) */
+  file?: string;
+  /** Line number in the new file (for inline review comments) */
+  line?: number;
 }
 
 /** A single signal contributing to the confidence score */
