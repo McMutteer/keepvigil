@@ -18,6 +18,25 @@ const AppConfigSchema = z.object({
   stripeTeamPriceId:     z.string().default(""),
   port:                z.coerce.number().int().min(1).max(65535).default(3200),
   nodeEnv:             z.string().default("development"),
+}).superRefine((data, ctx) => {
+  // OAuth config must be all-or-nothing
+  const oauthFields = [data.githubClientId, data.githubClientSecret, data.sessionSecret];
+  const populated = oauthFields.filter(Boolean).length;
+  if (populated > 0 && populated < 3) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "OAuth requires all three: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, SESSION_SECRET",
+      path: ["githubClientId"],
+    });
+  }
+  // SESSION_SECRET must be at least 32 characters when set
+  if (data.sessionSecret && data.sessionSecret.length < 32) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "SESSION_SECRET must be at least 32 characters for HS256 security",
+      path: ["sessionSecret"],
+    });
+  }
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;
