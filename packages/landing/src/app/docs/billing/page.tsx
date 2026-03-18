@@ -133,6 +133,50 @@ export default function BillingPage() {
         scores and reports.
       </Callout>
 
+      {/* Rate Limits */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        Rate Limits
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Each plan has rate limits on how many PR verifications Vigil will process.
+        Rate-limited requests receive a neutral check run status — no partial
+        execution occurs.
+      </p>
+      <div className="overflow-x-auto mb-4">
+        <table className="w-full text-sm">
+          <thead>
+            <tr>
+              <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
+                Plan
+              </th>
+              <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
+                Per Hour
+              </th>
+              <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
+                Per Day
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Free</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">50</td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Pro</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">50</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">500</td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Team</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">200</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">2,000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       {/* BYOLLM Billing */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         BYOLLM Billing

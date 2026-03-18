@@ -49,6 +49,7 @@ export const docsNav: NavItem[] = [
   { title: "Notifications", href: "/docs/notifications" },
   { title: "Shell Allowlist", href: "/docs/shell-allowlist" },
   { title: "Security", href: "/docs/security" },
+  { title: "Dashboard", href: "/docs/dashboard", badge: "Pro" },
   { title: "Billing & Plans", href: "/docs/billing" },
   { title: "Changelog", href: "/docs/changelog" },
 ];
