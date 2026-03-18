@@ -47,10 +47,10 @@ function makeReq(overrides: Partial<IncomingMessage> = {}): IncomingMessage {
   } as unknown as IncomingMessage;
 }
 
-function makeRes(): ServerResponse & { _status: number; _headers: Record<string, string>; _body: string } {
+function makeRes(): ServerResponse & { _status: number; _headers: Record<string, string | string[]>; _body: string } {
   const res = {
     _status: 0,
-    _headers: {} as Record<string, string>,
+    _headers: {} as Record<string, string | string[]>,
     _body: "",
     headersSent: false,
     writeHead(status: number, headers?: Record<string, string>) {
@@ -58,7 +58,7 @@ function makeRes(): ServerResponse & { _status: number; _headers: Record<string,
       if (headers) Object.assign(res._headers, headers);
       return res;
     },
-    setHeader(name: string, value: string) {
+    setHeader(name: string, value: string | string[]) {
       res._headers[name] = value;
       return res;
     },
@@ -119,10 +119,22 @@ describe("handleLogin", () => {
     expect(res._status).toBe(302);
     expect(res._headers.Location).toContain("github.com/login/oauth/authorize");
     expect(res._headers.Location).toContain("client_id=Iv1.test");
+    expect(res._headers.Location).toContain("state=");
+    // Sets a state cookie
+    expect(res._headers["Set-Cookie"]).toContain("vigil_oauth_state=");
   });
 
   it("returns 503 when OAuth is not configured", () => {
-    const config = makeConfig({ githubClientId: "" });
+    const config = makeConfig({ githubClientId: "", githubClientSecret: "", sessionSecret: "" });
+    const res = makeRes();
+
+    handleLogin(makeReq(), res, config);
+
+    expect(res._status).toBe(503);
+  });
+
+  it("returns 503 when OAuth is partially configured", () => {
+    const config = makeConfig({ githubClientSecret: "", sessionSecret: "" });
     const res = makeRes();
 
     handleLogin(makeReq(), res, config);
@@ -151,8 +163,8 @@ describe("handleCallback", () => {
   });
 
   it("returns 503 when OAuth is not configured", async () => {
-    const config = makeConfig({ githubClientId: "" });
-    const req = makeReq({ url: "/api/auth/callback?code=test" });
+    const config = makeConfig({ githubClientId: "", githubClientSecret: "", sessionSecret: "" });
+    const req = makeReq({ url: "/api/auth/callback?code=test&state=abc" });
     const res = makeRes();
 
     await handleCallback(req, res, config);
@@ -160,11 +172,26 @@ describe("handleCallback", () => {
     expect(res._status).toBe(503);
   });
 
-  it("exchanges code and sets session cookie on success", async () => {
+  it("returns 400 when state does not match", async () => {
     const config = makeConfig();
     const req = makeReq({
-      url: "/api/auth/callback?code=valid-code",
-      headers: { host: "keepvigil.dev" },
+      url: "/api/auth/callback?code=valid-code&state=wrong",
+      headers: { host: "keepvigil.dev", cookie: "vigil_oauth_state=correct" },
+    });
+    const res = makeRes();
+
+    await handleCallback(req, res, config);
+
+    expect(res._status).toBe(400);
+    expect(res._body).toContain("Invalid state");
+  });
+
+  it("exchanges code and sets session cookie on success", async () => {
+    const config = makeConfig();
+    const stateNonce = "test-state-nonce";
+    const req = makeReq({
+      url: `/api/auth/callback?code=valid-code&state=${stateNonce}`,
+      headers: { host: "keepvigil.dev", cookie: `vigil_oauth_state=${stateNonce}` },
     });
     const res = makeRes();
 
@@ -173,14 +200,17 @@ describe("handleCallback", () => {
     fetchSpy
       // Token exchange
       .mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ access_token: "gho_test123" }),
       } as Response)
       // User info
       .mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ id: 999, login: "testdev", avatar_url: "https://avatar.url" }),
       } as Response)
       // Installations
       .mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({
           installations: [
             { id: 111, app_slug: "keepvigil" },
@@ -193,12 +223,15 @@ describe("handleCallback", () => {
 
     expect(res._status).toBe(302);
     expect(res._headers.Location).toBe("/dashboard");
-    expect(res._headers["Set-Cookie"]).toContain("vigil_session=");
-    expect(res._headers["Set-Cookie"]).toContain("HttpOnly");
+    // Set-Cookie is now an array (session + clear state)
+    const cookies = Array.isArray(res._headers["Set-Cookie"])
+      ? res._headers["Set-Cookie"]
+      : [res._headers["Set-Cookie"]];
+    const sessionCookie = cookies.find((c: string) => c.startsWith("vigil_session="));
+    expect(sessionCookie).toContain("HttpOnly");
 
     // Verify the session token contains correct data
-    const cookie = res._headers["Set-Cookie"];
-    const tokenMatch = cookie.match(/vigil_session=([^;]+)/);
+    const tokenMatch = sessionCookie!.match(/vigil_session=([^;]+)/);
     const session = await verifySessionToken(tokenMatch![1], config);
     expect(session!.login).toBe("testdev");
     expect(session!.installationIds).toEqual([111]); // only keepvigil app
@@ -206,13 +239,15 @@ describe("handleCallback", () => {
 
   it("redirects to dashboard with error on token exchange failure", async () => {
     const config = makeConfig();
+    const stateNonce = "test-state";
     const req = makeReq({
-      url: "/api/auth/callback?code=bad-code",
-      headers: { host: "keepvigil.dev" },
+      url: `/api/auth/callback?code=bad-code&state=${stateNonce}`,
+      headers: { host: "keepvigil.dev", cookie: `vigil_oauth_state=${stateNonce}` },
     });
     const res = makeRes();
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
       json: () => Promise.resolve({ error: "bad_verification_code" }),
     } as Response);
 
