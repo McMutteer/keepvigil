@@ -2,7 +2,7 @@ import { ScrollReveal } from "../scroll-reveal";
 
 const STATS = [
   { value: "3", label: "Verification Layers" },
-  { value: "38%", label: "Of PRs have undocumented changes" },
+  { value: "10", label: "Signals per PR" },
   { value: "30s", label: "Setup Time" },
   { value: "0", label: "Config Required" },
 ];

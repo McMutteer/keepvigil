@@ -3,13 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 
 const SIGNALS = [
+  { icon: "✅", name: "Claims Verifier", detail: "3/3", status: "success" },
+  { icon: "✅", name: "Undocumented Changes", detail: "92", status: "success" },
   { icon: "✅", name: "Credential Scan", detail: "100", status: "success" },
   { icon: "✅", name: "CI Bridge", detail: "100", status: "success" },
   { icon: "✅", name: "Test Execution", detail: "12/12", status: "success" },
   { icon: "⚠️", name: "Coverage Mapper", detail: "50", status: "warning" },
+  { icon: "✅", name: "Plan Augmentor", detail: "5/5", status: "success" },
   { icon: "✅", name: "Diff vs Claims", detail: "Pro", status: "success" },
   { icon: "✅", name: "Gap Analysis", detail: "96", status: "success" },
-  { icon: "✅", name: "Plan Augmentor", detail: "5/5", status: "success" },
   { icon: "✅", name: "Contract Checker", detail: "100", status: "success" },
 ] as const;
 

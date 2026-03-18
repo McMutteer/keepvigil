@@ -25,7 +25,6 @@ export const docsNav: NavItem[] = [
       {
         title: "Plan Augmentor",
         href: "/docs/signals/plan-augmentor",
-        badge: "Pro",
       },
       {
         title: "Contract Checker",

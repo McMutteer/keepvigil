@@ -42,19 +42,19 @@ const LAYERS = [
       "Reads your PR title and description. Extracts every claim — 'adds auth middleware,' 'fixes timeout,' 'no breaking changes.' Verifies each one against the actual diff. Confirmed, unverified, or contradicted.",
     signals: [
       {
-        name: "CI Bridge",
+        name: "Claims Verifier",
         description:
-          "Maps test plan items to your GitHub Actions results. If CI already verified it, Vigil knows.",
-      },
-      {
-        name: "Assertion Verifier",
-        description:
-          'Reads your actual source files and verifies claims like "Dockerfile uses non-root USER."',
+          "LLM extracts and verifies each claim from your PR body against the actual diff. Confirmed, unverified, or contradicted.",
       },
       {
         name: "Plan Augmentor",
         description:
           "Automatically generates 3-5 verification items your test plan missed — logic checks, contracts, edge cases — then verifies each one.",
+      },
+      {
+        name: "CI Bridge",
+        description:
+          "Maps test plan items to your GitHub Actions results. If CI already verified it, Vigil knows.",
       },
     ],
   },
@@ -66,6 +66,11 @@ const LAYERS = [
       "Reads the full diff. Finds significant changes you didn't mention — new dependencies, environment variables, schema changes, API modifications. The things reviewers need to know but the PR description doesn't surface.",
     signals: [
       {
+        name: "Undocumented Changes",
+        description:
+          "LLM scans the full diff for significant changes not mentioned in the PR description. New deps, env vars, schema changes.",
+      },
+      {
         name: "Credential Scan",
         description:
           "Scans the diff for hardcoded secrets, API keys, and passwords. Catches what code review misses.",
@@ -75,11 +80,6 @@ const LAYERS = [
         description:
           "Checks if changed files have corresponding test files. Files referenced by the test plan count as covered.",
       },
-      {
-        name: "Test Execution",
-        description:
-          "Runs shell commands from the test plan in a sandboxed Docker container. Real verification.",
-      },
     ],
   },
   {
@@ -87,7 +87,7 @@ const LAYERS = [
     name: "Impact Analysis",
     tier: "Pro",
     description:
-      "Goes deeper. Breaking API changes, coverage gaps where modified files have no tests, cross-file contract violations where a producer changed but the consumer wasn't updated, credential patterns in the diff.",
+      "Goes deeper. LLM-powered deep analysis — comparing actual changes against test plan promises, finding untested areas, and verifying API/frontend contracts still match.",
     signals: [
       {
         name: "Diff vs Claims",
@@ -195,9 +195,8 @@ export function Signals() {
         {/* Score formula note */}
         <ScrollReveal delay={600}>
           <p className="text-center text-xs text-text-muted mt-8 max-w-[600px] mx-auto">
-            Each layer contributes to the verification score. Claims and
-            Undocumented Changes are free — the core value. Impact Analysis
-            unlocks with Pro.
+            10 signals across three layers contribute to the verification score.
+            7 are free — the core value. 3 unlock with Pro for deeper analysis.
           </p>
         </ScrollReveal>
       </div>

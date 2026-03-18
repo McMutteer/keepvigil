@@ -42,7 +42,7 @@ const FAQ_ITEMS = [
   {
     question: "Is Vigil only for GitHub?",
     answer:
-      "Currently yes. GitLab and Bitbucket support is on the roadmap.",
+      "Currently GitHub only. GitLab and Bitbucket are being considered for the future.",
   },
 ];
 

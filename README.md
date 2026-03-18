@@ -164,7 +164,7 @@ packages/
   landing/      — Next.js 15 landing page (keepvigil.dev)
 ```
 
-1321+ tests across 49 files.
+1387+ tests across 55 files.
 
 ```bash
 pnpm build && pnpm test && pnpm lint && pnpm typecheck
