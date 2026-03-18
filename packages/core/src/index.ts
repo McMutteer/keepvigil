@@ -9,3 +9,4 @@ export * from "./llm-client.js";
 export * from "./logger.js";
 export * from "./errors.js";
 export * from "./smart-reader.js";
+export * from "./diff-position-mapper.js";

@@ -271,6 +271,7 @@ export function mapCoverage(
           label: file,
           status: "fail",
           message: "No test file or test plan reference found",
+          file,
         });
       }
     } else {
@@ -278,6 +279,7 @@ export function mapCoverage(
         label: file,
         status: "fail",
         message: "No corresponding test file found",
+        file,
       });
     }
   }

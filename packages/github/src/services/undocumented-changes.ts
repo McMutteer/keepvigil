@@ -238,6 +238,7 @@ export async function detectUndocumentedChanges(options: UndocumentedChangesOpti
       label: `${finding.category}${fileRef}`.slice(0, 80),
       status: severityIcon,
       message: finding.description,
+      file: finding.file || undefined,
     });
 
     totalPenalty += SEVERITY_PENALTY[finding.severity];
