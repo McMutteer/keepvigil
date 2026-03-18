@@ -467,6 +467,26 @@ export function PricingPageClient() {
         </ScrollReveal>
       </div>
 
+      {/* Dashboard CTA */}
+      <div className="mx-auto max-w-[1200px] px-6 pb-12 sm:pb-16">
+        <ScrollReveal delay={200}>
+          <div className="bg-bg-surface border border-white/[0.06] rounded-[12px] p-8 text-center max-w-[600px] mx-auto">
+            <h3 className="text-lg font-medium text-text-primary mb-2">
+              Already using Vigil?
+            </h3>
+            <p className="text-sm text-text-secondary mb-5">
+              View your PR verification history, scores, and team metrics in the dashboard.
+            </p>
+            <a
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[6px] text-sm font-medium border border-white/[0.06] text-text-primary hover:bg-bg-elevated transition-colors duration-150"
+            >
+              Open Dashboard
+            </a>
+          </div>
+        </ScrollReveal>
+      </div>
+
       {/* FAQ */}
       <div className="mx-auto max-w-[1200px] px-6">
         <PricingFaq />
