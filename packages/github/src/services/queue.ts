@@ -23,6 +23,7 @@ export function initQueue(redisUrl: string): Promise<void> {
         },
       });
     } catch (err) {
+      verifyQueue = null;
       initPromise = null;
       throw err;
     }

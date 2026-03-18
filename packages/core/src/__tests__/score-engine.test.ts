@@ -42,7 +42,10 @@ describe("computeScore", () => {
       expect(result.score).toBe(95);
       expect(result.recommendation).toBe("safe");
       expect(result.signals).toEqual(signals);
-      expect(result.skippedSignals).toEqual([]);
+      // 5 signals not provided → listed as skipped
+      expect(result.skippedSignals).toHaveLength(5);
+      expect(result.skippedSignals).toContain("plan-augmentor");
+      expect(result.skippedSignals).toContain("contract-checker");
     });
 
     it("returns single signal score when only one signal", () => {
@@ -109,7 +112,8 @@ describe("computeScore", () => {
       expect(result.score).toBe(0);
       expect(result.recommendation).toBe("caution");
       expect(result.signals).toEqual([]);
-      expect(result.skippedSignals).toEqual([]);
+      // All 8 signals are skipped when none are provided
+      expect(result.skippedSignals).toHaveLength(8);
     });
 
     it("returns score 0 and caution when all signals have weight 0", () => {
@@ -120,6 +124,22 @@ describe("computeScore", () => {
       const result = computeScore(signals);
       expect(result.score).toBe(0);
       expect(result.recommendation).toBe("caution");
+    });
+
+    it("reports all signal IDs as skipped when none provided", () => {
+      const result = computeScore([]);
+      expect(result.skippedSignals.sort()).toEqual(
+        Object.keys(SIGNAL_WEIGHTS).sort()
+      );
+    });
+
+    it("reports only missing signals as skipped", () => {
+      const allIds = Object.keys(SIGNAL_WEIGHTS);
+      const allSignals = allIds.map((id) =>
+        makeSignal({ id: id as Parameters<typeof makeSignal>[0]["id"], score: 100 })
+      );
+      const result = computeScore(allSignals);
+      expect(result.skippedSignals).toEqual([]);
     });
 
     it("handles all-failing signals", () => {

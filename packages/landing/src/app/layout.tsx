@@ -76,7 +76,14 @@ export default function RootLayout({
                   price: "19",
                   priceCurrency: "USD",
                   name: "Pro",
-                  description: "All 8 signals with BYOLLM",
+                  description: "All 9 signals with BYOLLM",
+                },
+                {
+                  "@type": "Offer",
+                  price: "49",
+                  priceCurrency: "USD",
+                  name: "Team",
+                  description: "All 9 signals, team dashboard, SSO",
                 },
               ],
               author: {

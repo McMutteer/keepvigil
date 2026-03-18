@@ -115,12 +115,21 @@ export async function checkMetadata(
       };
     }
     const rawHtml = await response.text();
-    const html = rawHtml.length > MAX_HTML_LENGTH ? rawHtml.slice(0, MAX_HTML_LENGTH) : rawHtml;
-
-    const ogTags = extractOgTags(html);
+    // Enforce size limit even when Content-Length header is missing or spoofed
+    if (rawHtml.length > MAX_HTML_LENGTH) {
+      return {
+        ogTags: {},
+        jsonLd: [],
+        missingOgTags: EXPECTED_OG_TAGS,
+        jsonLdValid: false,
+        jsonLdErrors: [`HTML exceeds ${MAX_HTML_LENGTH} character limit (${rawHtml.length} characters)`],
+        htmlTitle: null,
+      };
+    }
+    const ogTags = extractOgTags(rawHtml);
     const missingOgTags = EXPECTED_OG_TAGS.filter((tag) => !ogTags[tag]);
-    const { parsed: jsonLd, errors: jsonLdErrors } = extractJsonLd(html);
-    const htmlTitle = extractTitle(html);
+    const { parsed: jsonLd, errors: jsonLdErrors } = extractJsonLd(rawHtml);
+    const htmlTitle = extractTitle(rawHtml);
 
     return {
       ogTags,

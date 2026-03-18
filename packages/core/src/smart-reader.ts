@@ -15,6 +15,14 @@ const DEFAULT_WINDOW_SIZE = 30;
 /** Max total bytes to send to LLM (same as old truncation limit) */
 const MAX_OUTPUT_BYTES = 20_000;
 
+/** Truncate a string to maxBytes of valid UTF-8, removing any broken sequences */
+function truncateUtf8(input: string, maxBytes: number): string {
+  return Buffer.from(input, "utf-8")
+    .subarray(0, maxBytes)
+    .toString("utf-8")
+    .replace(/\uFFFD/g, "");
+}
+
 /**
  * Extract searchable keywords from an assertion item's text and code blocks.
  *
@@ -130,11 +138,7 @@ export function findRelevantLines(
 
   // Respect byte budget
   if (Buffer.byteLength(result, "utf-8") > MAX_OUTPUT_BYTES) {
-    const truncated = Buffer.from(result, "utf-8")
-      .subarray(0, MAX_OUTPUT_BYTES)
-      .toString("utf-8")
-      .replace(/[\uFFFD]$/, "");
-    return truncated + "\n\n...(context truncated)";
+    return truncateUtf8(result, MAX_OUTPUT_BYTES) + "\n\n...(context truncated)";
   }
 
   return result;
@@ -165,9 +169,5 @@ export function prepareFileContent(
   }
 
   // Fallback: blind truncation (original behavior)
-  const truncated = Buffer.from(content, "utf-8")
-    .subarray(0, maxBytes)
-    .toString("utf-8")
-    .replace(/[\uFFFD]$/, "");
-  return truncated + "\n\n...(truncated)";
+  return truncateUtf8(content, maxBytes) + "\n\n...(truncated)";
 }

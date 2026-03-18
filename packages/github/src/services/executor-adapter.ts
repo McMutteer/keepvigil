@@ -27,9 +27,13 @@ import { createSignal } from "@vigil/core";
 function isContractVerified(evidence: Record<string, unknown>, contractVerifiedFiles: Set<string>): boolean {
   const file = typeof evidence.file === "string" ? evidence.file : "";
   if (!file) return false;
-  // Normalize: strip leading ./ for consistent matching
+  // Normalize both sides: strip leading ./ for consistent matching
   const normalized = file.replace(/^\.\//, "");
-  return contractVerifiedFiles.has(normalized) || contractVerifiedFiles.has(file);
+  for (const verifiedFile of contractVerifiedFiles) {
+    const normalizedVerified = verifiedFile.replace(/^\.\//, "");
+    if (normalized === normalizedVerified) return true;
+  }
+  return false;
 }
 
 /**

@@ -9,8 +9,8 @@ const SIGNALS = [
   { icon: "⚠️", name: "Coverage Mapper", detail: "50", status: "warning" },
   { icon: "✅", name: "Diff vs Claims", detail: "Pro", status: "success" },
   { icon: "✅", name: "Gap Analysis", detail: "96", status: "success" },
-  { icon: "✅", name: "Plan Augmentation", detail: "5/5", status: "success" },
-  { icon: "✅", name: "Contract Check", detail: "100", status: "success" },
+  { icon: "✅", name: "Plan Augmentor", detail: "5/5", status: "success" },
+  { icon: "✅", name: "Contract Checker", detail: "100", status: "success" },
 ] as const;
 
 const TARGET_SCORE = 95;
@@ -18,12 +18,11 @@ const TARGET_SCORE = 95;
 function useCountUp(target: number, duration: number) {
   const [count, setCount] = useState(0);
   const [started, setStarted] = useState(false);
-  const prefersReducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   useEffect(() => {
     if (!started) return;
+    const prefersReducedMotion =
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) {
       setCount(target);
       return;
@@ -46,7 +45,7 @@ function useCountUp(target: number, duration: number) {
 
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [started, target, duration, prefersReducedMotion]);
+  }, [started, target, duration]);
 
   return { count, start: () => setStarted(true) };
 }

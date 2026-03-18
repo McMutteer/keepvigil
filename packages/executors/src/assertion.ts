@@ -14,7 +14,7 @@
  * }
  */
 
-import { readFile, access } from "node:fs/promises";
+import { readFile, access, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { ClassifiedItem, ExecutionResult, AssertionExecutionContext } from "@vigil/core/types";
 import { prepareFileContent } from "@vigil/core";
@@ -225,6 +225,26 @@ export async function executeAssertionItem(
   }
 
   const fullPath = path.join(context.repoPath, filePath);
+
+  // Verify resolved path stays within the repo (symlink protection)
+  try {
+    const resolvedPath = await realpath(fullPath);
+    const resolvedRepo = await realpath(context.repoPath);
+    if (!resolvedPath.startsWith(resolvedRepo + path.sep) && resolvedPath !== resolvedRepo) {
+      return {
+        itemId,
+        passed: false,
+        duration: Date.now() - startMs,
+        evidence: {
+          file: filePath,
+          exists: false,
+          error: "Path escapes repository boundary (possible symlink attack)",
+        },
+      };
+    }
+  } catch {
+    // realpath fails if file doesn't exist — fall through to readFile
+  }
 
   // Read the file
   let content: string;
