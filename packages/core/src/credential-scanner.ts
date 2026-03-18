@@ -98,6 +98,17 @@ function redactMatch(content: string, regex: RegExp): string {
   return `${val.slice(0, 4)}...${val.slice(-4)}`;
 }
 
+/** Check if a file path is in a test/fixture directory */
+function isTestPath(filePath: string): boolean {
+  return /__tests__\/|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|\/tests?\/|\/fixtures?\//i.test(filePath);
+}
+
+/** Check if a matched value looks like a generic test fixture (not a real secret) */
+function isGenericTestValue(matchedText: string): boolean {
+  const lower = matchedText.toLowerCase();
+  return /(?:secret|password|passwd|pwd)\s*[:=]\s*["'](?:secret|test|fake|dummy|mock|example|changeme|placeholder|xxx|abc|sample)/i.test(lower);
+}
+
 /**
  * Scan a unified diff for hardcoded secrets.
  *
@@ -122,13 +133,24 @@ export function scanCredentials(diff: string): Signal {
   const details: SignalDetail[] = [];
 
   for (const { file, line, content } of addedLines) {
+    const inTestFile = isTestPath(file);
     for (const pattern of SECRET_PATTERNS) {
       if (pattern.regex.test(content)) {
+        // In test files, skip generic/fixture-like values for password/secret patterns
+        if (inTestFile && pattern.name === "Hardcoded Password") {
+          const match = content.match(pattern.regex);
+          const value = match ? match[0] : "";
+          if (isGenericTestValue(value)) continue;
+        }
+
+        const status = inTestFile ? "warn" : "fail";
         findings.push({ pattern: pattern.name, file, line });
         details.push({
           label: `${pattern.name} in ${file}:${line}`,
-          status: "fail",
-          message: `Possible ${pattern.name} detected: ${redactMatch(content, pattern.regex)}`,
+          status,
+          message: inTestFile
+            ? `Possible ${pattern.name} in test file (review recommended): ${redactMatch(content, pattern.regex)}`
+            : `Possible ${pattern.name} detected: ${redactMatch(content, pattern.regex)}`,
           file,
           line,
         });
@@ -146,11 +168,16 @@ export function scanCredentials(diff: string): Signal {
     });
   }
 
+  // Findings only in test files → score 70 (warning, not failure)
+  // Findings in source files → score 0 (critical)
+  const hasSourceFindings = findings.some((f) => !isTestPath(f.file));
+  const score = hasSourceFindings ? 0 : 70;
+
   return createSignal({
     id: "credential-scan",
     name: "Credential Scan",
-    score: 0,
-    passed: false,
+    score,
+    passed: !hasSourceFindings,
     details,
   });
 }
