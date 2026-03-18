@@ -236,8 +236,12 @@ async function _runPipeline(
       const changedFiles = extractChangedFilesWithStatus(diff);
       const repoFiles = await fetchRepoFileList({ octokit, owner, repo, headSha });
       const coverageSignal = mapCoverage(changedFiles, repoFiles, mode === "v1+v2" ? classifiedItems : undefined);
-      pushSignal(signals, coverageSignal, weights["coverage-mapper"]);
-      log.info({ signalId: coverageSignal.id, score: coverageSignal.score, passed: coverageSignal.passed }, "Coverage mapper complete");
+      // In v2-only mode, if coverage mapper found no test files at all (score 0, all details failed),
+      // reduce its weight to avoid tanking the score for repos without test infrastructure
+      const coverageWeight = mode === "v2-only" && coverageSignal.score === 0 && coverageSignal.details.every((d) => d.status === "fail")
+        ? 2 : weights["coverage-mapper"];
+      pushSignal(signals, coverageSignal, coverageWeight);
+      log.info({ signalId: coverageSignal.id, score: coverageSignal.score, passed: coverageSignal.passed, weight: coverageWeight }, "Coverage mapper complete");
 
       // Contract Checker (Pro only, both modes)
       let contractVerifiedFiles = new Set<string>();

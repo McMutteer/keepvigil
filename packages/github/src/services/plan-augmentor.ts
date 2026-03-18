@@ -264,7 +264,7 @@ async function verifyItem(
 function neutralSignal(message: string): Signal {
   return createSignal({
     id: "plan-augmentor",
-    name: "Plan Augmentation",
+    name: "Plan Augmentor",
     score: 100,
     passed: true,
     details: [{ label: "Skipped", status: "skip", message }],
@@ -392,7 +392,7 @@ export async function augmentPlan(options: PlanAugmentorOptions): Promise<Signal
 
   return createSignal({
     id: "plan-augmentor",
-    name: "Plan Augmentation",
+    name: "Plan Augmentor",
     score,
     passed: !hasHighSeverityFailure,
     details,

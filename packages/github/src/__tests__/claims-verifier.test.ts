@@ -298,7 +298,7 @@ describe("verifyClaims", () => {
   });
 
   describe("input sanitization", () => {
-    it("truncates claim text to 200 chars", async () => {
+    it("truncates claim text at word boundary", async () => {
       const longText = "A".repeat(300);
       const llm = makeLLM(JSON.stringify({
         claims: [
@@ -307,8 +307,9 @@ describe("verifyClaims", () => {
       }));
 
       const signal = await verifyClaims({ prTitle: "x", prBody: "", diff: SAMPLE_DIFF, llm });
-      // The detail label is truncated to 80 chars
-      expect(signal.details[0].label.length).toBeLessThanOrEqual(80);
+      // The detail label is truncated to ~120 chars with "..." suffix
+      expect(signal.details[0].label.length).toBeLessThanOrEqual(124);
+      expect(signal.details[0].label).toContain("...");
     });
 
     it("handles invalid verdict gracefully (skips claim)", async () => {
