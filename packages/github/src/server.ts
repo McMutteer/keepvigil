@@ -15,6 +15,7 @@ import { setPipelineDb } from "./services/pipeline.js";
 import { setCommentDb } from "./webhooks/issue-comment.js";
 import { createWorker } from "./worker.js";
 import { handleMetrics } from "./metrics.js";
+import { handleLogin, handleCallback, handleSession, handleLogout } from "./services/auth.js";
 
 const log = createLogger("server");
 const HEALTH_TIMEOUT_MS = 5_000;
@@ -240,6 +241,39 @@ async function main(): Promise<void> {
           res.end(JSON.stringify({ error: "Internal error" }));
         }
       });
+      return;
+    }
+
+    // Auth routes
+    if (req.url === "/api/auth/login" && req.method === "GET") {
+      handleLogin(req, res, config);
+      return;
+    }
+
+    if (req.url?.startsWith("/api/auth/callback") && req.method === "GET") {
+      handleCallback(req, res, config).catch((err) => {
+        log.error({ err }, "Unhandled error in auth callback");
+        if (!res.headersSent) {
+          res.writeHead(302, { Location: "/dashboard?error=auth_failed" });
+          res.end();
+        }
+      });
+      return;
+    }
+
+    if (req.url === "/api/auth/session" && req.method === "GET") {
+      handleSession(req, res, config).catch((err) => {
+        log.error({ err }, "Unhandled error in auth session");
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Internal error" }));
+        }
+      });
+      return;
+    }
+
+    if (req.url === "/api/auth/logout" && req.method === "POST") {
+      handleLogout(req, res);
       return;
     }
 
