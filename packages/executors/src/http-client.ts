@@ -38,7 +38,7 @@ const PRIVATE_IPV4_PATTERN =
   /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3})$/;
 
 /** IPv6 private (fc00::/7) and link-local (fe80::/10) */
-const PRIVATE_IPV6_PATTERN = /^(\[?)(fc|fd|fe[89ab])/i;
+const PRIVATE_IPV6_PATTERN = /^\[?(fc[0-9a-f]{2}|fd[0-9a-f]{2}|fe[89ab][0-9a-f])/i;
 
 /**
  * Validate that the base URL is a safe HTTP/HTTPS origin.

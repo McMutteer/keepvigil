@@ -32,12 +32,18 @@ const VALID_IMAGE_NAME = /^(?!-)[\w./-]+(:\w[\w.-]*)?(@sha256:[0-9a-f]{64})?$/;
 const VALID_REPO_PATH = /^\/[\w./-]+$/;
 
 function validateImageName(image: string): void {
+  if (image.length > 255) {
+    throw new Error(`Docker image name too long: ${image.length} chars (max 255)`);
+  }
   if (!VALID_IMAGE_NAME.test(image)) {
     throw new Error(`Invalid Docker image name: "${image}"`);
   }
 }
 
 function validateRepoPath(repoPath: string): void {
+  if (repoPath.length > 512) {
+    throw new Error(`Repo path too long: ${repoPath.length} chars (max 512)`);
+  }
   if (!VALID_REPO_PATH.test(repoPath)) {
     throw new Error(
       `Invalid repoPath: "${repoPath}" — must be an absolute path with only alphanumeric, dot, hyphen, underscore, and slash characters`,
