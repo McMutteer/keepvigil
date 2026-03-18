@@ -44,7 +44,7 @@ export const healthChecks = pgTable("health_checks", {
 /** Tracks Stripe subscriptions per GitHub App installation */
 export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  installationId: integer("installation_id").notNull().unique(),
+  installationId: text("installation_id").notNull().unique(),
   accountLogin: varchar("account_login", { length: 255 }).notNull(),
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }).notNull(),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),

@@ -14,7 +14,7 @@ function toPlan(value: string | null | undefined): Plan {
   return "free";
 }
 
-export async function checkPlan(db: Database, installationId: number): Promise<Plan> {
+export async function checkPlan(db: Database, installationId: string): Promise<Plan> {
   const sub = await db.select().from(schema.subscriptions)
     .where(eq(schema.subscriptions.installationId, installationId))
     .limit(1);
@@ -30,7 +30,7 @@ export function isPro(plan: Plan): boolean {
 export async function upsertSubscription(
   db: Database,
   data: {
-    installationId: number;
+    installationId: string;
     accountLogin: string;
     stripeCustomerId: string;
     stripeSubscriptionId?: string | null;

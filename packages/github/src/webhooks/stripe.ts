@@ -61,7 +61,7 @@ export async function handleStripeWebhook(req: IncomingMessage, res: ServerRespo
       case "checkout.session.completed": {
         const session = event.data as Record<string, unknown>;
         const metadata = session.metadata as Record<string, string> | undefined;
-        const installationId = metadata?.installationId ? parseInt(metadata.installationId, 10) : null;
+        const installationId = metadata?.installationId || null;
         const accountLogin = metadata?.accountLogin ?? "unknown";
         const plan = (metadata?.plan as Plan) ?? "pro";
 
@@ -84,7 +84,7 @@ export async function handleStripeWebhook(req: IncomingMessage, res: ServerRespo
       case "customer.subscription.updated": {
         const sub = event.data as Record<string, unknown>;
         const metadata = sub.metadata as Record<string, string> | undefined;
-        const installationId = metadata?.installationId ? parseInt(metadata.installationId, 10) : null;
+        const installationId = metadata?.installationId || null;
 
         if (!installationId) break;
 
@@ -103,7 +103,7 @@ export async function handleStripeWebhook(req: IncomingMessage, res: ServerRespo
       case "customer.subscription.deleted": {
         const sub = event.data as Record<string, unknown>;
         const metadata = sub.metadata as Record<string, string> | undefined;
-        const installationId = metadata?.installationId ? parseInt(metadata.installationId, 10) : null;
+        const installationId = metadata?.installationId || null;
 
         if (!installationId) break;
 
@@ -122,7 +122,7 @@ export async function handleStripeWebhook(req: IncomingMessage, res: ServerRespo
         const subId = invoice.subscription as string | undefined;
         const metadata = invoice.subscription_details as Record<string, unknown> | undefined;
         const installationMeta = metadata?.metadata as Record<string, string> | undefined;
-        const installationId = installationMeta?.installationId ? parseInt(installationMeta.installationId, 10) : null;
+        const installationId = installationMeta?.installationId || null;
 
         if (!installationId) break;
 

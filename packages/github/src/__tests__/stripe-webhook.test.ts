@@ -149,7 +149,7 @@ describe("stripe webhook handler", () => {
 
       expect(res.status).toBe(200);
       expect(mockUpsert).toHaveBeenCalledWith(mockDb, {
-        installationId: 114114042,
+        installationId: "114114042",
         accountLogin: "McMutteer",
         stripeCustomerId: "cus_123",
         stripeSubscriptionId: "sub_456",
@@ -214,7 +214,7 @@ describe("stripe webhook handler", () => {
 
       expect(res.status).toBe(200);
       expect(mockUpsert).toHaveBeenCalledWith(mockDb, expect.objectContaining({
-        installationId: 114114042,
+        installationId: "114114042",
         stripeSubscriptionId: "sub_789",
         plan: "team",
         status: "active",

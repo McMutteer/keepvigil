@@ -213,7 +213,7 @@ async function main(): Promise<void> {
         }
 
         const rows = await db.select().from(schema.subscriptions)
-          .where(eq(schema.subscriptions.installationId, Number(installationId)))
+          .where(eq(schema.subscriptions.installationId, installationId))
           .limit(1);
 
         const sub = rows[0];

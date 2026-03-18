@@ -1,0 +1,1 @@
+ALTER TABLE "subscriptions" ALTER COLUMN "installation_id" SET DATA TYPE text;

@@ -177,7 +177,7 @@ async function _runPipeline(
   if (!pipelineDb) {
     log.warn("pipelineDb not initialized — all users fall back to free tier");
   }
-  const tier = pipelineDb ? await checkPlan(pipelineDb, Number(installationId)) : "free" as const;
+  const tier = pipelineDb ? await checkPlan(pipelineDb, installationId) : "free" as const;
   const proEnabled = isPro(tier);
   log.info({ installationId, tier, proEnabled }, "Subscription plan resolved");
 
