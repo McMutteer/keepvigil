@@ -370,7 +370,7 @@ describe("buildExecutorSignal", () => {
       const signal = buildExecutorSignal([], []);
       expect(signal.id).toBe("executor");
       expect(signal.name).toBe("Test Execution");
-      expect(signal.weight).toBe(15);
+      expect(signal.weight).toBe(10);
       expect(signal.requiresLLM).toBe(false);
     });
 

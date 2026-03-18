@@ -3,10 +3,12 @@ import {
   computeScore,
   createSignal,
   SIGNAL_WEIGHTS,
+  SIGNAL_WEIGHTS_V2,
+  getWeights,
   RECOMMENDATION_THRESHOLDS,
   FAILURE_CAP,
 } from "../score-engine.js";
-import type { Signal } from "../types.js";
+import type { Signal, SignalId } from "../types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -38,14 +40,16 @@ describe("computeScore", () => {
       ];
       const result = computeScore(signals);
 
-      // (100*25 + 100*20 + 80*15) / (25+20+15) = 5700/60 = 95
-      expect(result.score).toBe(95);
+      // (100*20 + 100*15 + 80*10) / (20+15+10) = 4300/45 = 95.56 → 96
+      expect(result.score).toBe(96);
       expect(result.recommendation).toBe("safe");
       expect(result.signals).toEqual(signals);
-      // 5 signals not provided → listed as skipped
-      expect(result.skippedSignals).toHaveLength(5);
+      // 7 signals not provided → listed as skipped
+      expect(result.skippedSignals).toHaveLength(7);
       expect(result.skippedSignals).toContain("plan-augmentor");
       expect(result.skippedSignals).toContain("contract-checker");
+      expect(result.skippedSignals).toContain("claims-verifier");
+      expect(result.skippedSignals).toContain("undocumented-changes");
     });
 
     it("returns single signal score when only one signal", () => {
@@ -64,8 +68,7 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 100 }),
       ];
       const result = computeScore(signals);
-      // Weighted average: (100*25 + 0*20 + 100*15) / 60 = 4000/60 = 66.67 → 67
-      // 67 < FAILURE_CAP, so cap doesn't apply
+      // Weighted average: (100*20 + 0*15 + 100*10) / 45 = 3000/45 = 66.67 → 67
       expect(result.score).toBe(67);
       expect(result.recommendation).toBe("review");
     });
@@ -77,8 +80,7 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 100 }),
       ];
       const result = computeScore(signals);
-      // Weighted average: (100*25 + 90*20 + 100*15) / 60 = 5800/60 = 96.67 → 97
-      // But passed: false → capped at 70
+      // Weighted average would be > 70, but passed: false → capped at 70
       expect(result.score).toBe(FAILURE_CAP);
       expect(result.recommendation).toBe("review");
     });
@@ -90,7 +92,6 @@ describe("computeScore", () => {
         makeSignal({ id: "gap-analyzer", score: 40, passed: false, requiresLLM: true }),
       ];
       const result = computeScore(signals);
-      // LLM failures don't trigger the cap — score is the weighted average
       expect(result.score).toBeGreaterThan(FAILURE_CAP);
     });
 
@@ -100,7 +101,7 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 85 }),
       ];
       const result = computeScore(signals);
-      // (90*25 + 85*15) / 40 = 3525/40 = 88.125 → 88
+      // (90*20 + 85*10) / 30 = 2650/30 = 88.33 → 88
       expect(result.score).toBe(88);
       expect(result.recommendation).toBe("safe");
     });
@@ -112,8 +113,8 @@ describe("computeScore", () => {
       expect(result.score).toBe(0);
       expect(result.recommendation).toBe("caution");
       expect(result.signals).toEqual([]);
-      // All 8 signals are skipped when none are provided
-      expect(result.skippedSignals).toHaveLength(8);
+      // All 10 signals are skipped when none are provided
+      expect(result.skippedSignals).toHaveLength(10);
     });
 
     it("returns score 0 and caution when all signals have weight 0", () => {
@@ -136,7 +137,7 @@ describe("computeScore", () => {
     it("reports only missing signals as skipped", () => {
       const allIds = Object.keys(SIGNAL_WEIGHTS);
       const allSignals = allIds.map((id) =>
-        makeSignal({ id: id as Parameters<typeof makeSignal>[0]["id"], score: 100 })
+        makeSignal({ id: id as SignalId, score: 100 })
       );
       const result = computeScore(allSignals);
       expect(result.skippedSignals).toEqual([]);
@@ -149,13 +150,12 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 20, passed: false }),
       ];
       const result = computeScore(signals);
-      // (10*25 + 0*20 + 20*15) / 60 = 550/60 = 9.17 → 9
+      // (10*20 + 0*15 + 20*10) / 45 = 400/45 = 8.89 → 9
       expect(result.score).toBe(9);
       expect(result.recommendation).toBe("caution");
     });
 
     it("rounds correctly", () => {
-      // Engineer a score that needs rounding
       const signals = [
         makeSignal({ id: "ci-bridge", score: 77, weight: 1 }),
         makeSignal({ id: "executor", score: 78, weight: 1 }),
@@ -200,7 +200,6 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 0, weight: 40, passed: false }),
       ];
       const result = computeScore(signals);
-      // (100*60 + 0*40) / 100 = 60
       expect(result.score).toBe(60);
     });
 
@@ -210,7 +209,6 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 0, weight: 0 }),
       ];
       const result = computeScore(signals);
-      // Only ci-bridge counts: 100
       expect(result.score).toBe(100);
     });
 
@@ -220,7 +218,6 @@ describe("computeScore", () => {
         makeSignal({ id: "executor", score: 0, weight: 0, passed: false }),
       ];
       const result = computeScore(signals);
-      // Average from weighted only = 100, but executor failed → cap at 70
       expect(result.score).toBe(FAILURE_CAP);
     });
   });
@@ -240,7 +237,7 @@ describe("createSignal", () => {
       details: [],
     });
     expect(signal.weight).toBe(SIGNAL_WEIGHTS["ci-bridge"]);
-    expect(signal.weight).toBe(25);
+    expect(signal.weight).toBe(20);
   });
 
   it("allows custom weight override", () => {
@@ -300,6 +297,30 @@ describe("createSignal", () => {
     expect(signal.score).toBe(0);
   });
 
+  it("creates signals for new v2 signal types", () => {
+    const claimsSignal = createSignal({
+      id: "claims-verifier",
+      name: "Claims Verifier",
+      score: 85,
+      passed: true,
+      details: [],
+      requiresLLM: true,
+    });
+    expect(claimsSignal.weight).toBe(15);
+    expect(claimsSignal.id).toBe("claims-verifier");
+
+    const undocSignal = createSignal({
+      id: "undocumented-changes",
+      name: "Undocumented Changes",
+      score: 70,
+      passed: true,
+      details: [],
+      requiresLLM: true,
+    });
+    expect(undocSignal.weight).toBe(10);
+    expect(undocSignal.id).toBe("undocumented-changes");
+  });
+
   it("preserves all provided fields", () => {
     const details = [
       { label: "npm run build", status: "pass" as const, message: "CI job passed" },
@@ -320,15 +341,17 @@ describe("createSignal", () => {
   });
 
   it("uses correct default weight for each signal type", () => {
-    const ids: Array<{ id: Parameters<typeof createSignal>[0]["id"]; expected: number }> = [
-      { id: "ci-bridge", expected: 25 },
-      { id: "credential-scan", expected: 20 },
-      { id: "executor", expected: 15 },
-      { id: "plan-augmentor", expected: 15 },
-      { id: "contract-checker", expected: 10 },
+    const ids: Array<{ id: SignalId; expected: number }> = [
+      { id: "ci-bridge", expected: 20 },
+      { id: "credential-scan", expected: 15 },
+      { id: "executor", expected: 10 },
+      { id: "plan-augmentor", expected: 10 },
+      { id: "contract-checker", expected: 5 },
       { id: "diff-analyzer", expected: 5 },
       { id: "coverage-mapper", expected: 5 },
       { id: "gap-analyzer", expected: 5 },
+      { id: "claims-verifier", expected: 15 },
+      { id: "undocumented-changes", expected: 10 },
     ];
     for (const { id, expected } of ids) {
       const signal = createSignal({ id, name: id, score: 100, passed: true, details: [] });
@@ -338,13 +361,51 @@ describe("createSignal", () => {
 });
 
 // ---------------------------------------------------------------------------
+// getWeights
+// ---------------------------------------------------------------------------
+
+describe("getWeights", () => {
+  it("returns v1+v2 weights for v1+v2 mode", () => {
+    const weights = getWeights("v1+v2");
+    expect(weights).toBe(SIGNAL_WEIGHTS);
+  });
+
+  it("returns v2-only weights for v2-only mode", () => {
+    const weights = getWeights("v2-only");
+    expect(weights).toBe(SIGNAL_WEIGHTS_V2);
+  });
+
+  it("v2-only weights zero out test-plan-dependent signals", () => {
+    const weights = getWeights("v2-only");
+    expect(weights["ci-bridge"]).toBe(0);
+    expect(weights["executor"]).toBe(0);
+    expect(weights["plan-augmentor"]).toBe(0);
+    expect(weights["gap-analyzer"]).toBe(0);
+  });
+
+  it("v2-only weights emphasize claims and undocumented", () => {
+    const weights = getWeights("v2-only");
+    expect(weights["claims-verifier"]).toBe(30);
+    expect(weights["undocumented-changes"]).toBe(25);
+  });
+
+  it("v1+v2 weights include all signals", () => {
+    const weights = getWeights("v1+v2");
+    for (const w of Object.values(weights)) {
+      expect(w).toBeGreaterThan(0);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 describe("constants", () => {
-  it("SIGNAL_WEIGHTS has all signal IDs", () => {
+  it("SIGNAL_WEIGHTS has all 10 signal IDs", () => {
     expect(Object.keys(SIGNAL_WEIGHTS).sort()).toEqual([
       "ci-bridge",
+      "claims-verifier",
       "contract-checker",
       "coverage-mapper",
       "credential-scan",
@@ -352,11 +413,17 @@ describe("constants", () => {
       "executor",
       "gap-analyzer",
       "plan-augmentor",
+      "undocumented-changes",
     ]);
   });
 
-  it("SIGNAL_WEIGHTS sum to 100", () => {
+  it("SIGNAL_WEIGHTS v1+v2 sum to 100", () => {
     const sum = Object.values(SIGNAL_WEIGHTS).reduce((a, b) => a + b, 0);
+    expect(sum).toBe(100);
+  });
+
+  it("SIGNAL_WEIGHTS_V2 non-zero values sum to 100", () => {
+    const sum = Object.values(SIGNAL_WEIGHTS_V2).reduce((a, b) => a + b, 0);
     expect(sum).toBe(100);
   });
 

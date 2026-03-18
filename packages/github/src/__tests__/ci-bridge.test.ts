@@ -239,10 +239,10 @@ describe("collectCISignal", () => {
       expect(signal.requiresLLM).toBe(false);
     });
 
-    it("has weight 25", async () => {
+    it("has weight 20", async () => {
       const octokit = makeOctokit([]);
       const signal = await collectCISignal({ ...BASE_OPTIONS, octokit, classifiedItems: [] });
-      expect(signal.weight).toBe(25);
+      expect(signal.weight).toBe(20);
     });
   });
 });

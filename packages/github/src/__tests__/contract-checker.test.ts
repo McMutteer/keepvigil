@@ -160,9 +160,9 @@ describe("checkContracts", () => {
       expect(signal.requiresLLM).toBe(true);
     });
 
-    it("has weight 10", async () => {
+    it("has weight 5", async () => {
       const { signal } = await checkContracts({ diff: "", llm: makeLLM("unused") });
-      expect(signal.weight).toBe(10);
+      expect(signal.weight).toBe(5);
     });
   });
 });
