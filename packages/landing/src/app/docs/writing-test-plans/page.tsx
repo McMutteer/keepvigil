@@ -5,9 +5,9 @@ import { PrevNext } from "@/components/docs/prev-next";
 import { getPrevNext } from "@/lib/docs-nav";
 
 export const metadata: Metadata = {
-  title: "Writing Test Plans | Vigil Docs",
+  title: "Writing PR Descriptions | Vigil Docs",
   description:
-    "How to write test plans that maximize Vigil's detection power. The difference between a fake 70/100 and a real confidence score.",
+    "How to write PR descriptions that maximize Vigil's verification power. Good descriptions lead to better claims verification.",
 };
 
 export default function WritingTestPlansPage() {
@@ -16,75 +16,153 @@ export default function WritingTestPlansPage() {
   return (
     <>
       <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary mb-2">
-        Writing Test Plans
+        Writing PR Descriptions
       </h1>
       <p className="text-text-secondary mb-8">
-        The quality of your confidence score depends on the quality of your test
-        plan. Here&apos;s how to write plans that catch real bugs.
+        Vigil verifies any PR — no test plan required. But the quality of your
+        confidence score depends on what you write in the PR description.
+        Here&apos;s how to get the most out of it.
       </p>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        The Problem with Default Test Plans
+        How Vigil Reads Your PR
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        AI coding agents generate test plans with almost every PR. But most of
-        those items are <strong className="text-text-primary">existence checks</strong>
-        &nbsp;— &quot;does this function exist?&quot;, &quot;does this file
-        import X?&quot; Vigil verifies them correctly, they all pass, and you
-        get a high score. But the score is misleading — existence checks
-        don&apos;t catch logic bugs, broken contracts between files, or missing
-        edge cases.
+        Vigil extracts{" "}
+        <strong className="text-text-primary">claims</strong> from your PR title
+        and body — anything that describes what this PR does, what changed, or
+        what should work. It then verifies those claims against the actual diff.
+        The more specific your description, the deeper the verification.
+      </p>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        A PR with the title &quot;fix auth bug&quot; and no body still gets
+        verified — Vigil will analyze the diff for undocumented changes,
+        credential leaks, and CI status. But a well-written description unlocks
+        claims verification: Vigil checks that what you <em>said</em> you did
+        matches what you <em>actually</em> did.
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-8">
         <div className="bg-bg-surface border border-white/[0.06] rounded-[12px] p-5">
           <p className="text-xs font-medium uppercase tracking-[0.05em] text-failure mb-3">
-            Before — Existence-only plan
+            Before — Minimal description
           </p>
           <div className="space-y-2 text-sm text-text-secondary">
-            <p>☑ Function exists in auth.ts</p>
-            <p>☑ Route handler is exported</p>
-            <p>☑ Config file has JWT section</p>
-            <p>☑ Middleware is imported</p>
-            <p>☑ Error type is defined</p>
-            <p>☑ Test file exists</p>
+            <p className="font-medium text-text-primary">fix auth bug</p>
+            <p className="italic text-text-muted">(no body)</p>
           </div>
           <div className="mt-4 pt-3 border-t border-white/[0.06]">
             <p className="text-sm text-text-muted">
-              Result: <span className="text-accent font-mono">6/6 passed</span>{" "}
-              · Score: 70 · <span className="text-failure">Bug shipped</span>
+              Result: undocumented change detection only ·{" "}
+              <span className="text-accent font-mono">Score: 65</span>
             </p>
           </div>
         </div>
 
         <div className="bg-bg-surface border border-accent/20 rounded-[12px] p-5">
           <p className="text-xs font-medium uppercase tracking-[0.05em] text-success mb-3">
-            After — Multi-category plan
+            After — Descriptive PR
           </p>
           <div className="space-y-2 text-sm text-text-secondary">
-            <p>☑ validateToken returns error for expired JWTs</p>
-            <p>☑ Route handler calls validateToken before DB query</p>
-            <p>☑ Frontend sends token in Authorization header</p>
-            <p>☑ Backend reads from same header name</p>
-            <p>☑ Missing token returns 401, not 500</p>
-            <p>☑ Expired token returns 401 with &quot;expired&quot; message</p>
+            <p className="font-medium text-text-primary">
+              fix: expired JWT returns 500 instead of 401
+            </p>
+            <p>
+              The validateToken middleware was not catching TokenExpiredError.
+              Added a catch block that returns 401 with an &quot;expired&quot;
+              message. Also updated the frontend to redirect to /login on 401.
+            </p>
           </div>
           <div className="mt-4 pt-3 border-t border-white/[0.06]">
             <p className="text-sm text-text-muted">
-              Result: <span className="text-accent font-mono">5/6 passed</span>{" "}
-              · Score: 85 ·{" "}
-              <span className="text-success">Bug caught before merge</span>
+              Result: 4 claims verified against diff ·{" "}
+              <span className="text-accent font-mono">Score: 88</span> ·{" "}
+              <span className="text-success">
+                Undocumented change in config.ts surfaced
+              </span>
             </p>
           </div>
         </div>
       </div>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        The Four Categories
+        Tips for Better PR Descriptions
+      </h2>
+
+      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
+        1. State what changed and why
+      </h3>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Vigil extracts claims from natural language. The more concrete your
+        description, the more claims it can verify. Mention specific files,
+        functions, or behaviors.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <div className="bg-code-bg rounded-[8px] p-3">
+          <p className="text-xs text-failure mb-1">Weak</p>
+          <code className="font-mono text-[13px] text-code-text">
+            Updated the auth flow
+          </code>
+        </div>
+        <div className="bg-code-bg rounded-[8px] p-3">
+          <p className="text-xs text-success mb-1">Strong</p>
+          <code className="font-mono text-[13px] text-code-text">
+            validateToken in src/middleware/auth.ts now catches TokenExpiredError
+            and returns 401
+          </code>
+        </div>
+      </div>
+
+      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
+        2. Mention both sides of a contract
+      </h3>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        If your change touches both backend and frontend, describe both. Vigil
+        will verify that the diff matches on both sides — catching mismatches
+        between what the API returns and what the UI expects.
+      </p>
+
+      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
+        3. Call out edge cases you handled
+      </h3>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        If you handled a null check, an empty array, or a race condition,
+        mention it. These become claims that Vigil verifies in the diff.
+      </p>
+
+      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
+        4. Let Vigil find what you missed
+      </h3>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Vigil&apos;s Undocumented Change Detection compares your description
+        against the full diff. Changes you didn&apos;t mention get flagged. This
+        is most useful when your description is detailed — the contrast between
+        &quot;documented&quot; and &quot;undocumented&quot; changes becomes
+        meaningful.
+      </p>
+
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        Bonus: Including a Test Plan
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        A strong test plan balances four types of items. Aim for these rough
-        proportions:
+        If your PR includes a markdown checkbox test plan, Vigil runs in dual
+        mode — combining v2 claims verification with v1 test plan execution.
+        This gives you the deepest analysis possible.
+      </p>
+
+      <Callout variant="info" title="Test plans are optional, not deprecated">
+        <p>
+          AI coding agents often generate test plans automatically. If your
+          workflow already produces them, great — Vigil uses them. If not, Vigil
+          works just as well with a plain PR description.
+        </p>
+      </Callout>
+
+      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
+        The Four Categories of Test Items
+      </h3>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        When writing a test plan, balance these four types of items:
       </p>
 
       <div className="overflow-x-auto mb-6">
@@ -143,139 +221,77 @@ export default function WritingTestPlansPage() {
         </table>
       </div>
 
-      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Five Rules for Better Test Plans
-      </h2>
-
       <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
-        1. Use full file paths
+        Test Plan Tips
       </h3>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        Vigil reads files by path. Ambiguous names like{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          auth.ts
-        </code>{" "}
-        might resolve to the wrong file. Use the full path from the repo root.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <div className="bg-code-bg rounded-[8px] p-3">
-          <p className="text-xs text-failure mb-1">❌ Ambiguous</p>
-          <code className="font-mono text-[13px] text-code-text">
-            auth.ts validates tokens
-          </code>
-        </div>
-        <div className="bg-code-bg rounded-[8px] p-3">
-          <p className="text-xs text-success mb-1">✅ Specific</p>
-          <code className="font-mono text-[13px] text-code-text">
-            src/middleware/auth.ts validates tokens
-          </code>
-        </div>
-      </div>
-
-      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
-        2. Be specific about logic
-      </h3>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        Don&apos;t say &quot;normalizes values.&quot; Say exactly what the
-        normalization does and what inputs it uses. Vigil reads the actual code —
-        give it something concrete to verify.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <div className="bg-code-bg rounded-[8px] p-3">
-          <p className="text-xs text-failure mb-1">❌ Vague</p>
-          <code className="font-mono text-[13px] text-code-text">
-            normalizes the target value
-          </code>
-        </div>
-        <div className="bg-code-bg rounded-[8px] p-3">
-          <p className="text-xs text-success mb-1">✅ Specific</p>
-          <code className="font-mono text-[13px] text-code-text">
-            PATCH handler reads existing.type before calling normalize
-          </code>
-        </div>
-      </div>
-
-      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
-        3. Verify contracts across files
-      </h3>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        When frontend and backend must agree on a field name, API shape, or
-        enum, write a separate item for each side. Vigil verifies one file per
-        assertion — two items, two files, same expectation.
-      </p>
-      <CodeBlock
-        filename="example"
-        code={`## Test Plan
-- [ ] \`src/api/routes/users.ts\` returns { id, name, email } in GET /users response
-- [ ] \`src/app/components/UserList.tsx\` reads id, name, email from the API response`}
-      />
-
-      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
-        4. Describe edge case mechanisms
-      </h3>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        Don&apos;t just say &quot;handles errors.&quot; Describe the mechanism —
-        what check prevents the bad state, what the code does when it triggers.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <div className="bg-code-bg rounded-[8px] p-3">
-          <p className="text-xs text-failure mb-1">❌ Vague</p>
-          <code className="font-mono text-[13px] text-code-text">
-            prevents double submit
-          </code>
-        </div>
-        <div className="bg-code-bg rounded-[8px] p-3">
-          <p className="text-xs text-success mb-1">✅ Mechanism</p>
-          <code className="font-mono text-[13px] text-code-text">
-            handleSubmit checks isLoading and returns early if true
-          </code>
-        </div>
-      </div>
-
-      <h3 className="text-lg font-semibold text-text-primary mt-8 mb-3">
-        5. Leave a blank line before footers
-      </h3>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        AI agents often append a &quot;Generated with...&quot; line right after
-        the last checkbox. This can merge with the last item and corrupt the
-        assertion. Always leave a blank line between the last test item and any
-        footer text.
-      </p>
+      <ul className="list-disc ml-6 space-y-2 text-text-secondary mb-6">
+        <li>
+          <strong className="text-text-primary">Use full file paths</strong> —
+          Vigil reads files by path. Use the full path from the repo root, not
+          just the filename.
+        </li>
+        <li>
+          <strong className="text-text-primary">
+            Be specific about logic
+          </strong>{" "}
+          — Don&apos;t say &quot;normalizes values.&quot; Say exactly what the
+          normalization does and what inputs it uses.
+        </li>
+        <li>
+          <strong className="text-text-primary">
+            Verify contracts across files
+          </strong>{" "}
+          — When frontend and backend must agree on a field name, write a
+          separate item for each side.
+        </li>
+        <li>
+          <strong className="text-text-primary">
+            Describe edge case mechanisms
+          </strong>{" "}
+          — Don&apos;t just say &quot;handles errors.&quot; Describe the
+          mechanism — what check prevents the bad state.
+        </li>
+        <li>
+          <strong className="text-text-primary">
+            Leave a blank line before footers
+          </strong>{" "}
+          — AI agents often append a &quot;Generated with...&quot; line that can
+          merge with the last checkbox item.
+        </li>
+      </ul>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         Template
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Copy this into your PR description and fill in the items:
+        A good PR description for Vigil — with optional test plan:
       </p>
       <CodeBlock
         filename="PR description"
-        code={`## Test Plan
+        code={`## Summary
+Fixes expired JWT returning 500 instead of 401. The validateToken middleware
+now catches TokenExpiredError. Frontend redirects to /login on 401.
 
-### Existence
-- [ ] \`path/to/file.ts\` exports the expected function/type
-- [ ] \`path/to/other.ts\` imports the dependency
+## Test Plan (optional — for deeper verification)
 
 ### Logic
-- [ ] \`path/to/handler.ts\` validates input before processing
-- [ ] \`path/to/service.ts\` uses the correct field from the database result
-- [ ] \`path/to/util.ts\` returns early when input is empty
+- [ ] \`src/middleware/auth.ts\` catches TokenExpiredError and returns 401
+- [ ] \`src/middleware/auth.ts\` returns 401 with "expired" message body
 
 ### Contracts
-- [ ] \`src/api/route.ts\` returns { field1, field2 } in the response
-- [ ] \`src/app/component.tsx\` reads field1, field2 from the response
+- [ ] \`src/api/routes/users.ts\` returns 401 for expired tokens
+- [ ] \`src/app/hooks/useAuth.ts\` redirects to /login on 401 response
 
 ### Edge Cases
-- [ ] \`path/to/handler.ts\` returns 400 when required field is missing
-- [ ] \`path/to/form.tsx\` disables submit button while request is in flight`}
+- [ ] \`src/middleware/auth.ts\` returns 401 (not 500) when token is malformed`}
       />
 
-      <Callout variant="info" title="Vigil also helps automatically">
+      <Callout variant="info" title="Vigil works on any PR">
         <p>
-          Even without a perfect test plan, Vigil&apos;s signals work together
-          to find issues. The Credential Scan catches secrets regardless of the
-          plan. The Coverage Mapper finds untested files. And Pro signals analyze
-          the actual diff to find gaps the test plan missed.
+          Even without a description or test plan, Vigil runs undocumented
+          change detection, credential scanning, CI bridge, and coverage
+          mapping. A good description just unlocks the full power of claims
+          verification.
         </p>
       </Callout>
 

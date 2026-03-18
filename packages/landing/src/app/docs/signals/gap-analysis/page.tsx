@@ -30,6 +30,11 @@ export default function GapAnalysisPage() {
         to connect your own LLM provider.
       </Callout>
 
+      <Callout variant="info" title="Requires test plan">
+        This signal runs when the PR includes a test plan with checkbox items.
+        For PRs without test plans, Vigil uses Claims Verification instead.
+      </Callout>
+
       <p className="text-text-secondary leading-relaxed mb-4">
         The Gap Analysis signal identifies areas of the changed code that are
         not covered by <em>any</em> test plan item — the &ldquo;unknown

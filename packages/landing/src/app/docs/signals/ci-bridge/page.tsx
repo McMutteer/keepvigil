@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Callout } from "@/components/docs/callout";
 import { PrevNext } from "@/components/docs/prev-next";
 import { getPrevNext } from "@/lib/docs-nav";
 
@@ -19,6 +20,11 @@ export default function CiBridgePage() {
       <p className="text-text-secondary mb-8">
         Weight: 25 &middot; Free tier
       </p>
+
+      <Callout variant="info" title="Requires test plan">
+        This signal runs when the PR includes a test plan with checkbox items.
+        For PRs without test plans, Vigil uses Claims Verification instead.
+      </Callout>
 
       <p className="text-text-secondary leading-relaxed mb-4">
         The CI Bridge signal connects your test plan items to GitHub Actions

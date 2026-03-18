@@ -49,7 +49,8 @@ export default function BillingPage() {
                 $0
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                6 signals, unlimited repos
+                Claims Verification, Undocumented Change Detection, credential
+                scanning, coverage mapping, unlimited repos
               </td>
             </tr>
             <tr>
@@ -60,7 +61,9 @@ export default function BillingPage() {
                 $19/mo
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                9 signals + BYOLLM + webhooks
+                Everything in Free + Impact Analysis (contract checking, diff
+                analysis, gap analysis), inline review comments, BYOLLM,
+                webhooks
               </td>
             </tr>
             <tr>
@@ -71,7 +74,7 @@ export default function BillingPage() {
                 $49/mo
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                Dashboard + SSO + custom rules
+                Everything in Pro + team dashboard, SSO, audit log
               </td>
             </tr>
           </tbody>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Callout } from "@/components/docs/callout";
 import { PrevNext } from "@/components/docs/prev-next";
 import { getPrevNext } from "@/lib/docs-nav";
 
@@ -17,8 +18,15 @@ export default function CoverageMapperPage() {
         Coverage Mapper
       </h1>
       <p className="text-text-secondary mb-8">
-        Weight: 10 &middot; Free tier
+        Weight: 5 &middot; Free tier
       </p>
+
+      <Callout variant="info" title="Works on any PR">
+        This signal runs on every PR — no test plan required. It analyzes the
+        diff to find changed files and checks for corresponding test files.
+        When a test plan exists, files referenced by test plan items also count
+        as covered.
+      </Callout>
 
       <p className="text-text-secondary leading-relaxed mb-4">
         The Coverage Mapper signal checks whether each file changed in the PR

@@ -27,17 +27,15 @@ export default function CommandsPage() {
         /vigil retry
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Re-run all signals from scratch. Post a comment on the PR with exactly{" "}
+        Re-run all signals from scratch — works for both modes (PRs with and
+        without a test plan). Post a comment on the PR with exactly{" "}
         <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
           /vigil retry
         </code>{" "}
         and Vigil will create a new check run, re-execute every signal, and
         update the PR comment with fresh results.
       </p>
-      <CodeBlock
-        filename="PR comment"
-        code={`/vigil retry`}
-      />
+      <CodeBlock filename="PR comment" code={`/vigil retry`} />
       <p className="text-text-secondary leading-relaxed mb-4">
         This is useful when external conditions have changed since the original
         run — for example, a CI pipeline that was temporarily broken, or a
@@ -84,13 +82,16 @@ export default function CommandsPage() {
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>
-          <strong className="text-text-primary">OWNER</strong> — repository owner
+          <strong className="text-text-primary">OWNER</strong> — repository
+          owner
         </li>
         <li>
-          <strong className="text-text-primary">MEMBER</strong> — organization member
+          <strong className="text-text-primary">MEMBER</strong> — organization
+          member
         </li>
         <li>
-          <strong className="text-text-primary">COLLABORATOR</strong> — invited collaborator
+          <strong className="text-text-primary">COLLABORATOR</strong> — invited
+          collaborator
         </li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
@@ -113,8 +114,12 @@ export default function CommandsPage() {
         When a retry is triggered, Vigil:
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
-        <li>Creates a new GitHub Check Run (the old one remains for history)</li>
-        <li>Re-executes the specified items (or all items for a full retry)</li>
+        <li>
+          Creates a new GitHub Check Run (the old one remains for history)
+        </li>
+        <li>
+          Re-executes the specified items (or all items for a full retry)
+        </li>
         <li>Recalculates the confidence score based on the new results</li>
         <li>
           Updates the existing PR comment with a{" "}
@@ -130,8 +135,8 @@ export default function CommandsPage() {
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
         The PR comment is updated in place — Vigil does not create duplicate
-        comments. The retry tag makes it clear that the results reflect a
-        re-run rather than the initial analysis.
+        comments. The retry tag makes it clear that the results reflect a re-run
+        rather than the initial analysis.
       </p>
 
       <PrevNext prev={prev} next={next} />

@@ -21,6 +21,11 @@ export default function PlanAugmentorPage() {
         Weight: 15 | Tier: Free | Requires LLM
       </p>
 
+      <Callout variant="info" title="Requires test plan">
+        This signal runs when the PR includes a test plan with checkbox items.
+        For PRs without test plans, Vigil uses Claims Verification instead.
+      </Callout>
+
       <Callout variant="info">
         The Plan Augmentor goes beyond verifying what you wrote &mdash; it finds
         what you forgot to write.
