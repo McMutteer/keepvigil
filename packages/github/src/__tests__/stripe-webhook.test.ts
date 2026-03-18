@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createHmac } from "node:crypto";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import type { Database } from "@vigil/core/db";
 import { setStripeWebhookDeps, handleStripeWebhook } from "../webhooks/stripe.js";
 
 // Mock @vigil/core
@@ -45,7 +47,7 @@ function makeReq(body: string, signature?: string) {
         },
       };
     },
-  } as unknown as import("node:http").IncomingMessage;
+  } as unknown as IncomingMessage;
 }
 
 function makeRes() {
@@ -63,10 +65,10 @@ function makeRes() {
     get status() { return status; },
     get body() { return body; },
     get headers() { return headers; },
-  } as unknown as import("node:http").ServerResponse & { status: number; body: string; headers: Record<string, string> };
+  } as unknown as ServerResponse & { status: number; body: string; headers: Record<string, string> };
 }
 
-const mockDb = {} as unknown as import("@vigil/core/db").Database;
+const mockDb = {} as unknown as Database;
 
 // ---------------------------------------------------------------------------
 // Tests
