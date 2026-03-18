@@ -217,6 +217,22 @@ describe("parseVigilConfig", () => {
     expect(warnings.some(w => w.includes("limited to 10"))).toBe(true);
   });
 
+  it("accepts viewport at exactly 4K area (3840x2160)", () => {
+    const yaml = "viewports:\n  - label: exactly4k\n    width: 3840\n    height: 2160\n";
+    const { config, warnings } = parseVigilConfig(yaml);
+    // 3840×2160 = 8,294,400 — exactly at limit, should pass
+    expect(config.viewports).toHaveLength(1);
+    expect(config.viewports?.[0].label).toBe("exactly4k");
+    expect(warnings).toEqual([]);
+  });
+
+  it("rejects viewport with negative dimensions", () => {
+    const yaml = "viewports:\n  - label: neg\n    width: -1\n    height: 768\n";
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.viewports).toBeUndefined();
+    expect(warnings.some(w => w.includes("viewports[0]"))).toBe(true);
+  });
+
   it("omits viewports key when all entries are invalid", () => {
     const yaml = "viewports:\n  - label: bad\n    width: 0\n    height: 0\n";
     const { config, warnings } = parseVigilConfig(yaml);
