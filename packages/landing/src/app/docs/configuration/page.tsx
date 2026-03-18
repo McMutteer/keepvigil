@@ -27,8 +27,9 @@ export default function ConfigurationPage() {
       </p>
 
       <Callout variant="info">
-        Configuration is optional. Vigil runs Free tier signals with zero
-        config.
+        Configuration is optional. Vigil works zero-config on any PR. Most
+        options below apply to test plan mode — if you just want PR
+        verification, you don&apos;t need a config file at all.
       </Callout>
 
       {/* Minimal */}
@@ -109,138 +110,266 @@ notifications:
           <tbody>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">version</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  version
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">number</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">1</code>
+                number
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Config version</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Must be 1</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  1
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Config version
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Must be 1
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">timeouts.shell</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  timeouts.shell
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">number</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">120</code>
+                number
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Shell command timeout (seconds)</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Max 3600</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  120
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Shell command timeout (seconds)
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Max 3600
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">timeouts.api</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  timeouts.api
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">number</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">30</code>
+                number
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">API request timeout (seconds)</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Max 300</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  30
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                API request timeout (seconds)
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Max 300
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">timeouts.browser</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  timeouts.browser
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">number</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">60</code>
+                number
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Browser test timeout (seconds)</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Max 600</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  60
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Browser test timeout (seconds)
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Max 600
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">timeouts.assertion</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  timeouts.assertion
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">number</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">30</code>
+                number
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Assertion check timeout (seconds)</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Max 300</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  30
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Assertion check timeout (seconds)
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Max 300
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">skip.categories</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  skip.categories
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">string[]</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">[]</code>
+                string[]
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Categories to skip</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  []
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Categories to skip
+              </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
                 build, api, ui-flow, visual, metadata, assertion, manual, vague
               </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">shell.allow</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  shell.allow
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">string[]</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">[]</code>
+                string[]
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Custom allowed command prefixes</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Max 20 entries</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  []
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Custom allowed command prefixes
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Max 20 entries
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">shell.image</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  shell.image
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">string</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">node:22-alpine</code>
+                string
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Docker image for shell executor</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">&mdash;</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  node:22-alpine
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Docker image for shell executor
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                &mdash;
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">llm.provider</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  llm.provider
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">string</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">&mdash;</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">LLM provider</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">openai | groq | ollama</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                string
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                &mdash;
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                LLM provider
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                openai | groq | ollama
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">llm.model</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  llm.model
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">string</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">&mdash;</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Model name</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">&mdash;</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                string
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                &mdash;
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Model name
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                &mdash;
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">llm.api_key</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  llm.api_key
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">string</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">&mdash;</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">API key for the provider</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">&mdash;</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                string
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                &mdash;
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                API key for the provider
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                &mdash;
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">notifications.on</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  notifications.on
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">string</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">&mdash;</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">When to notify</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">failure | always</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                string
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                &mdash;
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                When to notify
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                failure | always
+              </td>
             </tr>
             <tr>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">notifications.urls</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  notifications.urls
+                </code>
               </td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">string[]</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">&mdash;</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Webhook URLs</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Max 5, must be https:// or Slack/Discord</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                string[]
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                &mdash;
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Webhook URLs
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Max 5, must be https:// or Slack/Discord
+              </td>
             </tr>
           </tbody>
         </table>
@@ -252,12 +381,12 @@ notifications:
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Vigil validates your configuration file on every PR run. Invalid or
-        out-of-range values are silently dropped and replaced with defaults.
-        The configuration file will never cause Vigil to crash or skip a run.
+        out-of-range values are silently dropped and replaced with defaults. The
+        configuration file will never cause Vigil to crash or skip a run.
       </p>
       <p className="text-text-secondary leading-relaxed mb-4">
-        When values are rejected, Vigil generates warnings that appear in the
-        PR comment inside a collapsible &ldquo;Applied Configuration&rdquo;
+        When values are rejected, Vigil generates warnings that appear in the PR
+        comment inside a collapsible &ldquo;Applied Configuration&rdquo;
         section. This lets you know something was off without blocking your
         workflow.
       </p>
@@ -299,8 +428,8 @@ notifications:
           main
         </code>
         ), not from the PR head. This prevents untrusted forks from injecting
-        malicious configuration — such as adding dangerous shell commands to
-        the allowlist or pointing the LLM provider to an attacker-controlled
+        malicious configuration — such as adding dangerous shell commands to the
+        allowlist or pointing the LLM provider to an attacker-controlled
         endpoint.
       </Callout>
 

@@ -22,6 +22,12 @@ export default function ByollmPage() {
         Use your own API key for Pro-tier signals. Zero variable cost for Vigil.
       </p>
 
+      <Callout variant="info" title="BYOLLM is now optional">
+        Vigil uses its own LLM by default — BYOLLM is optional for teams that
+        require their own model provider for compliance, data residency, or cost
+        control reasons.
+      </Callout>
+
       <Callout variant="pro" title="Pro Tier Signals">
         BYOLLM unlocks Diff vs Claims, Gap Analysis, and Contract Checker
         signals. Without it, Vigil runs Free tier signals only.
@@ -48,30 +54,48 @@ export default function ByollmPage() {
           </thead>
           <tbody>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">OpenAI</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">https://api.openai.com/v1</code>
+                OpenAI
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">gpt-4o-mini</code>
-              </td>
-            </tr>
-            <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Groq</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">https://api.groq.com/openai/v1</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  https://api.openai.com/v1
+                </code>
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">llama-3.3-70b-versatile</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  gpt-4o-mini
+                </code>
               </td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Ollama</td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">http://localhost:11434/v1</code>
+                Groq
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">llama3</code>
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  https://api.groq.com/openai/v1
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  llama-3.3-70b-versatile
+                </code>
+              </td>
+            </tr>
+            <tr>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Ollama
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  http://localhost:11434/v1
+                </code>
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+                  llama3
+                </code>
               </td>
             </tr>
           </tbody>
@@ -151,7 +175,9 @@ export default function ByollmPage() {
         <li>Diff vs Claims analysis</li>
         <li>Gap analysis</li>
         <li>Plan Augmentor (generates and verifies missing test items)</li>
-        <li>Contract Checker (validates API/frontend contract compatibility)</li>
+        <li>
+          Contract Checker (validates API/frontend contract compatibility)
+        </li>
         <li>Assertion verification (for file-based checks)</li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
@@ -185,28 +211,53 @@ export default function ByollmPage() {
           </thead>
           <tbody>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Diff vs Claims</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Always — compares the PR diff against test plan claims</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Diff vs Claims
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Always — compares the PR diff against test plan claims
+              </td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Gap Analysis</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Always — identifies untested changes in the diff</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Gap Analysis
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Always — identifies untested changes in the diff
+              </td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Assertion Verifier</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">For file verification — reads source files and validates claims</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Assertion Verifier
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                For file verification — reads source files and validates claims
+              </td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Plan Augmentor</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Always — generates missing test items and verifies them (Free tier uses platform key, Pro uses BYOLLM)</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Plan Augmentor
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Always — generates missing test items and verifies them (Free
+                tier uses platform key, Pro uses BYOLLM)
+              </td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Contract Checker</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Pro only — detects API/frontend contract mismatches</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Contract Checker
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Pro only — detects API/frontend contract mismatches
+              </td>
             </tr>
             <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Classifier</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Fallback only — used when rule-based matching is ambiguous</td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Classifier
+              </td>
+              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
+                Fallback only — used when rule-based matching is ambiguous
+              </td>
             </tr>
           </tbody>
         </table>
@@ -221,19 +272,24 @@ export default function ByollmPage() {
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>
-          <strong className="text-text-primary">CI Bridge</strong> — monitors your CI pipeline status
+          <strong className="text-text-primary">CI Bridge</strong> — monitors
+          your CI pipeline status
         </li>
         <li>
-          <strong className="text-text-primary">Credential Scan</strong> — scans the diff for leaked secrets
+          <strong className="text-text-primary">Credential Scan</strong> — scans
+          the diff for leaked secrets
         </li>
         <li>
-          <strong className="text-text-primary">Test Execution</strong> — runs shell commands in a sandboxed container
+          <strong className="text-text-primary">Test Execution</strong> — runs
+          shell commands in a sandboxed container
         </li>
         <li>
-          <strong className="text-text-primary">Coverage Mapper</strong> — checks if changed files are covered by the test plan
+          <strong className="text-text-primary">Coverage Mapper</strong> —
+          checks if changed files are covered by the test plan
         </li>
         <li>
-          <strong className="text-text-primary">Plan Augmentor</strong> — generates and verifies missing test items using the platform key
+          <strong className="text-text-primary">Plan Augmentor</strong> —
+          generates and verifies missing test items using the platform key
         </li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">

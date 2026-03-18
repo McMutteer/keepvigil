@@ -4,8 +4,7 @@ import { getPrevNext } from "@/lib/docs-nav";
 
 export const metadata: Metadata = {
   title: "Changelog | Vigil Docs",
-  description:
-    "Release history and notable changes to Vigil.",
+  description: "Release history and notable changes to Vigil.",
 };
 
 export default function ChangelogPage() {
@@ -20,13 +19,45 @@ export default function ChangelogPage() {
         Release history and notable changes
       </p>
 
+      {/* v4.0 */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        v4.0 &mdash; PR Verification
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
+      <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
+        <li>
+          Vigil now verifies{" "}
+          <strong className="text-text-primary">any PR</strong> &mdash; no test
+          plan required
+        </li>
+        <li>
+          New:{" "}
+          <strong className="text-text-primary">Claims Verification</strong>{" "}
+          &mdash; extracts claims from PR title/body, verifies against diff
+        </li>
+        <li>
+          New:{" "}
+          <strong className="text-text-primary">
+            Undocumented Change Detection
+          </strong>{" "}
+          &mdash; surfaces changes not mentioned in the PR
+        </li>
+        <li>
+          New:{" "}
+          <strong className="text-text-primary">Dual-mode pipeline</strong>{" "}
+          &mdash; v1+v2 with test plan, v2-only without
+        </li>
+        <li>
+          New: v2-specific onboarding tips for repos without test plans
+        </li>
+        <li>Rebalanced signal weights for 10-signal architecture</li>
+      </ul>
+
       {/* v3.1 */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         v3.1 &mdash; Commercial Launch
       </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        March 2026
-      </p>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>
           Dedicated{" "}
@@ -62,9 +93,7 @@ export default function ChangelogPage() {
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         v3.0 &mdash; Signal Improvements
       </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        March 2026
-      </p>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>
           New signal:{" "}
@@ -73,8 +102,8 @@ export default function ChangelogPage() {
         </li>
         <li>
           New signal:{" "}
-          <strong className="text-text-primary">Contract Checker</strong> &mdash;
-          verifies API/frontend type compatibility
+          <strong className="text-text-primary">Contract Checker</strong>{" "}
+          &mdash; verifies API/frontend type compatibility
         </li>
         <li>
           Coverage Mapper reform &mdash; plan-covered files count as tested
@@ -89,9 +118,7 @@ export default function ChangelogPage() {
           </code>{" "}
           for project context
         </li>
-        <li>
-          Smart file reader &mdash; keyword-directed context extraction
-        </li>
+        <li>Smart file reader &mdash; keyword-directed context extraction</li>
         <li>Onboarding tips on first Vigil comment per PR</li>
       </ul>
 
@@ -99,9 +126,7 @@ export default function ChangelogPage() {
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         v2.0 &mdash; Confidence Score
       </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        March 2026
-      </p>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>Score engine: weighted 0&ndash;100 confidence score</li>
         <li>
@@ -121,9 +146,7 @@ export default function ChangelogPage() {
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         v1.0 &mdash; Core
       </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        March 2026
-      </p>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>GitHub App with webhook integration</li>
         <li>Test plan parser (markdown checkbox extraction)</li>

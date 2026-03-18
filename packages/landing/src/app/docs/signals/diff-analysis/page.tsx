@@ -7,7 +7,7 @@ import { getPrevNext } from "@/lib/docs-nav";
 export const metadata: Metadata = {
   title: "Diff vs Claims | Vigil Docs",
   description:
-    "LLM-powered signal that compares actual code changes against test plan promises.",
+    "LLM-powered signal that compares actual code changes against PR description claims.",
 };
 
 export default function DiffAnalysisPage() {
@@ -19,7 +19,7 @@ export default function DiffAnalysisPage() {
         Diff vs Claims
       </h1>
       <p className="text-text-secondary mb-8">
-        Weight: 10 &middot; Pro tier
+        Weight: 5 &middot; Pro tier
       </p>
 
       <Callout variant="pro" title="Pro signal">
@@ -30,22 +30,28 @@ export default function DiffAnalysisPage() {
         to connect your own LLM provider.
       </Callout>
 
+      <Callout variant="info" title="Works on any PR">
+        This signal runs on every PR — no test plan required. It compares the
+        diff against the PR description claims. When a test plan exists, it
+        also checks test plan coverage.
+      </Callout>
+
       <p className="text-text-secondary leading-relaxed mb-4">
         The Diff vs Claims signal uses an LLM to read the actual PR diff and
-        compare it against the test plan. It identifies changes in the code
-        that the test plan does not cover — the gap between what was changed
-        and what was promised to be tested.
+        compare it against the claims in the PR description. It identifies
+        changes in the code that are not covered by any stated claim — the gap
+        between what was changed and what was described.
       </p>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         How It Works
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Vigil sends the full diff and the parsed test plan to the LLM. The LLM
+        Vigil sends the full diff and the PR description to the LLM. The LLM
         analyzes each changed file, function, and code path, then identifies
-        which changes are covered by at least one test plan item and which are
-        not. The LLM is prompted to be generous — only changes that genuinely
-        lack coverage are flagged.
+        which changes are covered by at least one claim in the PR description
+        and which are not. The LLM is prompted to be generous — only changes
+        that genuinely lack coverage are flagged.
       </p>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
@@ -93,7 +99,7 @@ export default function DiffAnalysisPage() {
         Prompt Injection Protection
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Since the LLM reads user-supplied content (the PR diff and test plan),
+        Since the LLM reads user-supplied content (the PR diff and description),
         Vigil applies prompt injection protections. Backtick characters in user
         content are escaped, and the prompt includes explicit data boundary
         instructions to prevent the LLM from treating diff content as

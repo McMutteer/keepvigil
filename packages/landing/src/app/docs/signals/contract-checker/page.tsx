@@ -21,6 +21,12 @@ export default function ContractCheckerPage() {
         Weight: 10 | Tier: Pro | Requires LLM
       </p>
 
+      <Callout variant="info" title="Works on any PR">
+        This signal runs on every PR that touches both backend and frontend
+        files — no test plan required. It analyzes the diff directly for
+        contract mismatches.
+      </Callout>
+
       <Callout variant="info">
         The #1 source of runtime crashes in fullstack PRs: the backend returns
         one shape, the frontend expects another.

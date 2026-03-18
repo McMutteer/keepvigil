@@ -21,6 +21,11 @@ export default function CredentialScanPage() {
         Weight: 20 &middot; Free tier
       </p>
 
+      <Callout variant="info" title="Works on any PR">
+        This signal runs on every PR — no test plan required. It analyzes the
+        raw diff for hardcoded secrets regardless of whether a test plan exists.
+      </Callout>
+
       <p className="text-text-secondary leading-relaxed mb-4">
         The Credential Scan signal analyzes the PR diff for hardcoded secrets,
         API keys, tokens, and other sensitive values. It scans only{" "}
