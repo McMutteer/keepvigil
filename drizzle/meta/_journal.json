@@ -50,6 +50,13 @@
       "when": 1773849590790,
       "tag": "0006_abnormal_winter_soldier",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773853180994,
+      "tag": "0007_smart_ultimates",
+      "breakpoints": true
     }
   ]
 }
