@@ -8,6 +8,9 @@ const AppConfigSchema = z.object({
   databaseUrl:         z.string().url("DATABASE_URL must be a valid URL"),
   groqApiKey:          z.string().default(""),
   groqModel:           z.string().default("openai/gpt-oss-120b"),
+  githubClientId:        z.string().default(""),
+  githubClientSecret:    z.string().default(""),
+  sessionSecret:         z.string().default(""),
   stripeGatewayUrl:      z.string().default(""),
   stripeGatewayApiKey:   z.string().default(""),
   stripeForwardingSecret: z.string().default(""),
@@ -15,6 +18,25 @@ const AppConfigSchema = z.object({
   stripeTeamPriceId:     z.string().default(""),
   port:                z.coerce.number().int().min(1).max(65535).default(3200),
   nodeEnv:             z.string().default("development"),
+}).superRefine((data, ctx) => {
+  // OAuth config must be all-or-nothing
+  const oauthFields = [data.githubClientId, data.githubClientSecret, data.sessionSecret];
+  const populated = oauthFields.filter(Boolean).length;
+  if (populated > 0 && populated < 3) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "OAuth requires all three: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, SESSION_SECRET",
+      path: ["githubClientId"],
+    });
+  }
+  // SESSION_SECRET must be at least 32 characters when set
+  if (data.sessionSecret && data.sessionSecret.length < 32) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "SESSION_SECRET must be at least 32 characters for HS256 security",
+      path: ["sessionSecret"],
+    });
+  }
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;
@@ -29,6 +51,9 @@ export function loadConfig(): AppConfig {
     databaseUrl:         process.env.DATABASE_URL,
     groqApiKey:          process.env.GROQ_API_KEY,
     groqModel:           process.env.GROQ_MODEL,
+    githubClientId:         process.env.GITHUB_CLIENT_ID,
+    githubClientSecret:     process.env.GITHUB_CLIENT_SECRET,
+    sessionSecret:          process.env.SESSION_SECRET,
     stripeGatewayUrl:       process.env.STRIPE_GATEWAY_URL,
     stripeGatewayApiKey:    process.env.STRIPE_GATEWAY_API_KEY,
     stripeForwardingSecret: process.env.STRIPE_FORWARDING_SECRET,

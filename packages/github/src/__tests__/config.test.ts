@@ -114,4 +114,31 @@ describe("loadConfig", () => {
     vi.stubEnv("DATABASE_URL", "");
     expect(() => loadConfig()).toThrow(/Configuration error/);
   });
+
+  it("throws when OAuth is partially configured (only client ID)", () => {
+    vi.stubEnv("GITHUB_CLIENT_ID", "Iv1.test");
+    expect(() => loadConfig()).toThrow(/OAuth requires all three/);
+  });
+
+  it("throws when SESSION_SECRET is too short", () => {
+    vi.stubEnv("GITHUB_CLIENT_ID", "Iv1.test");
+    vi.stubEnv("GITHUB_CLIENT_SECRET", "secret");
+    vi.stubEnv("SESSION_SECRET", "short");
+    expect(() => loadConfig()).toThrow(/SESSION_SECRET must be at least 32 characters/);
+  });
+
+  it("allows fully configured OAuth with long secret", () => {
+    vi.stubEnv("GITHUB_CLIENT_ID", "Iv1.test");
+    vi.stubEnv("GITHUB_CLIENT_SECRET", "secret");
+    vi.stubEnv("SESSION_SECRET", "a-secret-that-is-at-least-32-bytes-long");
+    const config = loadConfig();
+    expect(config.githubClientId).toBe("Iv1.test");
+    expect(config.sessionSecret).toBe("a-secret-that-is-at-least-32-bytes-long");
+  });
+
+  it("allows empty OAuth config (all three empty)", () => {
+    // No OAuth vars stubbed — all default to ""
+    const config = loadConfig();
+    expect(config.githubClientId).toBe("");
+  });
 });
