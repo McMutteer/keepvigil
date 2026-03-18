@@ -26,3 +26,25 @@ related: [2026-03-17-legal-implementation-and-coderabbit-benchmark]
 **Resultado:** 6 PRs mergeados (#52, #56-#60). 841→991 tests (+18%). 4 security fixes, 5 a11y/SEO fixes, allowlist expandido, 404 page, legal helpers refactorizados. `docs/vigil-self-evaluation.md` creado con 9 failure patterns y backlog priorizado. McMutteer activado como Pro.
 
 **Aprendido:** (1) Benchmarkear contra competidores antes de publicar legales descubre clausulas que nunca habrias pensado (no-model-training). (2) "Proveedores de LLM" es overbroad cuando el usuario puede traer su propio provider via BYOLLM — hay que distinguir "tu default" vs "el del usuario". (3) Un assertion executor que trata respuestas no parseables como PASS es un bug silencioso que infla scores — fail-safe siempre. (4) `response.body?.cancel()` no existe en el Fetch API standard — usar `arrayBuffer()` para drenar streams. (5) Los rate limiters in-memory con read→check→increment tienen race conditions en Node.js aunque sea single-threaded — los callbacks async crean ventanas. (6) El self-evaluation log (`docs/vigil-self-evaluation.md`) es el artefacto mas valioso de esta sesion — convierte cada PR review de Vigil en una mejora futura del producto.
+
+---
+id: 2026-03-18-v2-phase1-claims-undocumented
+type: feat
+project: vigil
+branch: main
+pr: 66, 67, 68, 69, 70
+date: 2026-03-18
+tags: [v2, claims-verifier, undocumented-changes, dual-mode, pipeline-restructure, product-pivot]
+summary: "Vigil v2 Phase 1: pipeline now processes ALL PRs with claims verification and undocumented change detection — 5 PRs, 42 new tests."
+related: [2026-03-17-full-codebase-audit]
+---
+
+### El Gran Pivot
+
+**Hilo:** La sesion anterior (audit) dejo el codebase solido — 991 tests, security clean, legal publicado. Pero la pregunta de fondo seguia: "pagaria alguien por esto?" La respuesta honesta fue no — Vigil v1 solo servia a devs que usan AI agents que generan test plans con checkboxes. Demasiado nicho. Esta sesion fue el pivot: de "test plan verifier" a "PR verifier."
+
+**Lo que paso:** Empezamos divagando sobre la realidad del producto — cinco descubrimientos brutales: (1) el sandbox no puede ejecutar comandos reales, (2) un score numerico no cambia comportamiento, (3) BYOLLM es friccion pura, (4) la mayoria de PRs no tienen test plans, (5) la competencia es zero-config. De ahi salio el vision doc (`docs/vision-v2.md`) con tres capas: claims verification, undocumented changes, impact analysis. Lo guardamos local (gitignored). Luego ejecutamos Phase 1 en 5 PRs encadenados. El cambio arquitectonico central: quitar el `hasTestPlan()` gate del webhook handler — Vigil ahora procesa TODO PR. El pipeline se reestructuro con dual-mode (`v1+v2` vs `v2-only`) y perfiles de pesos diferentes por modo. La unica friction real fueron 6 tests que hardcodeaban signal weights — al rebalancear para incluir los 2 nuevos signals, los numeros cambiaron. El pattern de `diff-analyzer.ts` (system prompt + JSON parsing + graceful degradation) se copio perfectamente para ambos nuevos signals.
+
+**Resultado:** 5 PRs mergeados (#66-#70). 2 nuevos signals (claims-verifier, undocumented-changes). Pipeline dual-mode. Formato de comentario v2 con secciones Claims y Undocumented. 1279→1321 tests. Vision doc local como roadmap para fases 2-5.
+
+**Aprendido:** (1) El pattern de signal en Vigil es tan consistente que crear uno nuevo es copiar `diff-analyzer.ts` y cambiar el prompt — 30 min por signal incluyendo tests. (2) Dual-mode weights con `getWeights(mode)` es mas limpio que condicionales en cada signal — el peso 0 hace que `computeScore` ignore el signal automaticamente. (3) Cuando rebalanceas weights, **todos** los tests que hardcodean el numero van a romper — buscar con grep antes de mergear. (4) `hasTestPlan()` no se elimina del codebase, solo se mueve del webhook al pipeline — la decision v1+v2 vs v2-only se toma adentro, no afuera.
