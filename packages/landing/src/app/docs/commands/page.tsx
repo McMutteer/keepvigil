@@ -7,7 +7,7 @@ import { getPrevNext } from "@/lib/docs-nav";
 export const metadata: Metadata = {
   title: "Commands | Vigil Docs",
   description:
-    "Interact with Vigil via PR comments — retry runs, re-run specific items.",
+    "Interact with Vigil via PR comments — retry, explain findings, ignore false positives, verify claims.",
 };
 
 export default function CommandsPage() {
@@ -72,13 +72,79 @@ export default function CommandsPage() {
         preserved — only the specified items are re-executed.
       </p>
 
+      {/* @vigil recheck */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        @vigil recheck
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Alias for{" "}
+        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+          /vigil retry
+        </code>{" "}
+        &mdash; re-runs all signals from scratch. Useful if you prefer the{" "}
+        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">@</code>{" "}
+        mention style.
+      </p>
+      <CodeBlock filename="PR comment" code={`@vigil recheck`} />
+
+      {/* @vigil explain */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        @vigil explain [finding]
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Ask Vigil to explain a specific finding in more detail. Vigil will use
+        the LLM to provide context about why the finding was flagged and what
+        you should consider.
+      </p>
+      <CodeBlock
+        filename="PR comment"
+        code={`@vigil explain hardcoded redirect URI`}
+      />
+
+      {/* @vigil verify */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        @vigil verify [claim]
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Manually verify a specific claim against the diff. Useful when you want
+        Vigil to check something specific that wasn&apos;t in the original PR
+        description.
+      </p>
+      <CodeBlock
+        filename="PR comment"
+        code={`@vigil verify rate limiting is applied to all API endpoints`}
+      />
+
+      {/* @vigil ignore */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        @vigil ignore [finding]
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Suppress a finding permanently for this repository. Vigil stores the
+        ignore pattern in the database and will skip matching findings in all
+        future PRs for this repo.
+      </p>
+      <CodeBlock
+        filename="PR comment"
+        code={`# Ignore a specific false positive
+@vigil ignore hardcoded redirect URI
+
+# The pattern matches case-insensitively against finding labels and messages`}
+      />
+
+      <Callout variant="info" title="Repo Memory">
+        Ignore rules are stored per repository and persist across PRs. You can
+        review stored rules by checking the repo_rules database table. Rules
+        are scoped by owner/repo so they never leak across repositories.
+      </Callout>
+
       {/* Trust Model */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         Trust Model
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Only users with one of the following GitHub associations can trigger
-        retry commands:
+        Vigil commands:
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>

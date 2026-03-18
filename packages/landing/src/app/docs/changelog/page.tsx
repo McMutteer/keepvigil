@@ -19,6 +19,111 @@ export default function ChangelogPage() {
         Release history and notable changes
       </p>
 
+      {/* v4.3 */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        v4.3 &mdash; Signal Quality
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
+      <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
+        <li>
+          Fixed template literal confusion in diffs &mdash; backticks in
+          JSX/TSX code are no longer misread as single quotes
+        </li>
+        <li>
+          Credential scan now reduces severity for test files instead of
+          failing the entire signal
+        </li>
+        <li>
+          Coverage mapper walks up parent directories to find{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            __tests__/
+          </code>{" "}
+          test files
+        </li>
+        <li>
+          Config files (
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            *.config.*
+          </code>
+          ,{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            nginx.conf
+          </code>
+          ,{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            Dockerfile
+          </code>
+          ) excluded from coverage analysis
+        </li>
+      </ul>
+
+      {/* v4.2 */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        v4.2 &mdash; Dashboard
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
+      <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
+        <li>
+          New:{" "}
+          <strong className="text-text-primary">Dashboard</strong> at{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            /dashboard
+          </code>{" "}
+          &mdash; view PR verification history, scores, and repo metrics
+        </li>
+        <li>
+          GitHub OAuth login with JWT sessions
+        </li>
+        <li>
+          Execution persistence &mdash; pipeline results now stored in
+          database with score, signals, and pipeline mode
+        </li>
+        <li>
+          Dashboard API: paginated executions, stats, repos, and execution
+          detail endpoints
+        </li>
+        <li>
+          Dashboard link added to landing navbar and pricing page
+        </li>
+      </ul>
+
+      {/* v4.1 */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        v4.1 &mdash; Inline Comments &amp; Conversational
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
+      <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
+        <li>
+          <strong className="text-text-primary">Inline review comments</strong>{" "}
+          &mdash; findings posted directly on diff lines via GitHub Reviews API
+          (Pro only)
+        </li>
+        <li>
+          New commands:{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            @vigil explain
+          </code>
+          ,{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            @vigil verify
+          </code>
+          ,{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            @vigil recheck
+          </code>
+          ,{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            @vigil ignore
+          </code>
+        </li>
+        <li>
+          Repo memory &mdash; persistent ignore rules per repository via{" "}
+          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+            @vigil ignore
+          </code>
+        </li>
+      </ul>
+
       {/* v4.0 */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         v4.0 &mdash; PR Verification
