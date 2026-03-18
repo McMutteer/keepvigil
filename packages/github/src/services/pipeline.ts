@@ -174,6 +174,9 @@ async function _runPipeline(
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 
   // Stage 0: Check subscription plan + rate limit
+  if (!pipelineDb) {
+    log.warn("pipelineDb not initialized — all users fall back to free tier");
+  }
   const tier = pipelineDb ? await checkPlan(pipelineDb, Number(installationId)) : "free" as const;
   const proEnabled = isPro(tier);
   log.info({ installationId, tier, proEnabled }, "Subscription plan resolved");

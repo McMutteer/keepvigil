@@ -171,6 +171,11 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult
         warnings.push(`\`viewports\`: limited to ${MAX_VIEWPORTS} entries — remaining entries ignored`);
         break;
       }
+      // Cap viewport area to 4K (3840×2160 = 8,294,400 pixels)
+      if (w * h > 8_294_400) {
+        warnings.push(`\`viewports[${i}]\` (${label}): area ${w}×${h} exceeds 4K limit — ignored`);
+        continue;
+      }
       vps.push({ label: label.trim(), width: w, height: h });
     }
     if (vps.length > 0) config.viewports = vps;
