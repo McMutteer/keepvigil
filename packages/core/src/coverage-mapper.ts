@@ -38,6 +38,11 @@ const NON_SOURCE_PATTERNS = [
   /^Cargo\.toml$/i,
   /^go\.mod$/i,
   /^go\.sum$/i,
+  /\.config\.[jt]sx?$/i,
+  /\.config\.mjs$/i,
+  /\.config\.cjs$/i,
+  /nginx\.conf$/i,
+  /^entrypoint\.sh$/i,
 ];
 
 /** Test file patterns (these ARE tests, not source needing coverage) */
@@ -76,18 +81,29 @@ function generateTestCandidates(filePath: string): string[] {
 
   // TypeScript / JavaScript
   if (/\.[jt]sx?$/.test(ext)) {
-    // __tests__/foo.test.ts (most common in TS/JS)
+    // __tests__/foo.test.ts in same directory (most common in TS/JS)
     candidates.push(path.join(dir, "__tests__", `${base}.test${ext}`));
     candidates.push(path.join(dir, "__tests__", `${base}.spec${ext}`));
     // Co-located: foo.test.ts
     candidates.push(path.join(dir, `${base}.test${ext}`));
     candidates.push(path.join(dir, `${base}.spec${ext}`));
+    // Walk up to find __tests__/ at parent/package level
+    // e.g., packages/github/src/services/foo.ts → packages/github/src/__tests__/foo.test.ts
+    let current = dir;
+    let parent = path.dirname(current);
+    while (parent && parent !== current && parent !== ".") {
+      candidates.push(path.join(parent, "__tests__", `${base}.test${ext}`));
+      candidates.push(path.join(parent, "__tests__", `${base}.spec${ext}`));
+      current = parent;
+      parent = path.dirname(current);
+    }
     // Top-level test dirs
     candidates.push(`test/${base}.test${ext}`);
     candidates.push(`tests/${base}.test${ext}`);
+    candidates.push(`__tests__/${base}.test${ext}`);
     // Also try .ts variant if source is .tsx
     if (ext === ".tsx") {
-      candidates.push(path.join(dir, "__tests__", `${base}.test.ts`));
+      candidates.push(path.join(path.dirname(filePath), "__tests__", `${base}.test.ts`));
     }
   }
 
