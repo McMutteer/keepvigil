@@ -9,7 +9,7 @@ import type {
   CategoryLabel,
   ConfidenceScore,
 } from "@vigil/core";
-import type { ReportItem, ReportSummary, CheckConclusion } from "../services/reporter.js";
+import type { ReportItem, ReportSummary } from "../services/reporter.js";
 import {
   determineConclusion,
   conclusionFromScore,
