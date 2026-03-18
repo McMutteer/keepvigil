@@ -80,6 +80,11 @@ const LAYERS = [
         description:
           "Checks if changed files have corresponding test files. Files referenced by the test plan count as covered.",
       },
+      {
+        name: "Test Execution",
+        description:
+          "Runs shell commands from the test plan in a sandboxed Docker container. Real verification, not just static analysis.",
+      },
     ],
   },
   {
