@@ -203,6 +203,7 @@ async function _runPipeline(
   let classifiedItems: ClassifiedItem[] = [];
   let executionResults: ExecutionResult[] = [];
   let pipelineError: string | null = null;
+  let diff: string | null = null;
   const signals: Signal[] = [];
 
   try {
@@ -210,7 +211,7 @@ async function _runPipeline(
     const llm = createPipelineLLM(vigiConfig, groqApiKey);
 
     // Stage 3: Fetch PR diff (always — both modes need it)
-    const diff = await fetchPRDiff({ octokit, owner, repo, pullNumber });
+    diff = await fetchPRDiff({ octokit, owner, repo, pullNumber });
 
     // =====================================================================
     // v2 signals — run for ALL PRs (claims, undocumented, credential, coverage)
@@ -345,6 +346,8 @@ async function _runPipeline(
         retryItemIds,
         signals: signals.length > 0 ? signals : undefined,
         pipelineMode: mode,
+        diff,
+        proEnabled,
       });
     } catch (reportErr) {
       log.error({ err: reportErr }, "Failed to report results");
