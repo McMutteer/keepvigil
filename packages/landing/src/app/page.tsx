@@ -6,11 +6,7 @@ import { Problem } from "@/components/sections/problem";
 import { HowItWorksLanding } from "@/components/sections/how-it-works-landing";
 import { Signals } from "@/components/sections/signals";
 import { Evidence } from "@/components/sections/evidence";
-import { TestPlansPreview } from "@/components/sections/test-plans-preview";
-import { Config } from "@/components/sections/config";
 import { SecurityTrust } from "@/components/sections/security-trust";
-import { Pricing } from "@/components/sections/pricing";
-import { Faq } from "@/components/sections/faq";
 import { CtaFooter } from "@/components/sections/cta-footer";
 
 export default function Home() {
@@ -31,11 +27,7 @@ export default function Home() {
         <HowItWorksLanding />
         <Signals />
         <Evidence />
-        <TestPlansPreview />
-        <Config />
         <SecurityTrust />
-        <Pricing />
-        <Faq />
       </main>
       <CtaFooter />
     </>
