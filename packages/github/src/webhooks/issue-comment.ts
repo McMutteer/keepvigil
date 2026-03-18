@@ -265,14 +265,14 @@ async function handleIgnore(
       await replyToComment(context, owner, repo, pullNumber,
         `Got it — I'll suppress findings matching "${pattern}" for **${owner}/${repo}** in future runs.`);
     } catch (err) {
-      log.error({ err, owner, repo, pattern }, "Failed to save ignore rule");
+      log.error({ err, owner, repo, patternLength: pattern.length }, "Failed to save ignore rule");
       await replyToComment(context, owner, repo, pullNumber,
         `I understood the request, but couldn't save the rule right now. Please try again or use \`.vigil.yml\` to configure skip rules.`);
     }
   } else {
     await replyToComment(context, owner, repo, pullNumber,
       `I can't save rules right now — database not available. Use \`.vigil.yml\` to configure skip rules instead.`);
-    log.warn({ owner, repo, pattern }, "Ignore command received but DB not initialized");
+    log.warn({ owner, repo, patternLength: pattern.length }, "Ignore command received but DB not initialized");
   }
 }
 

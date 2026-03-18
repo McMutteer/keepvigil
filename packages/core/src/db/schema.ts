@@ -1,4 +1,7 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean, integer, json, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, uuid, varchar, timestamp, text, boolean, integer, json, index, uniqueIndex } from "drizzle-orm/pg-core";
+
+/** Rule types for per-repo memory */
+export const ruleTypeEnum = pgEnum("rule_type_enum", ["ignore", "convention"]);
 
 /** Tracks GitHub App installations */
 export const installations = pgTable("installations", {
@@ -51,7 +54,7 @@ export const repoRules = pgTable("repo_rules", {
   owner: varchar("owner", { length: 255 }).notNull(),
   repo: varchar("repo", { length: 255 }).notNull(),
   /** Rule type: "ignore" suppresses matching findings, "convention" is informational */
-  ruleType: varchar("rule_type", { length: 50 }).notNull().default("ignore"),
+  ruleType: ruleTypeEnum("rule_type").notNull().default("ignore"),
   /** Pattern to match against finding labels/messages (case-insensitive substring) */
   pattern: text("pattern").notNull(),
   /** Who created this rule */
