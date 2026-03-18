@@ -1,5 +1,4 @@
 import type { Context } from "probot";
-import { hasTestPlan } from "../utils/has-test-plan.js";
 import { createPendingCheckRun } from "../services/check-run.js";
 import { enqueueVerification } from "../services/queue.js";
 import { parseVigilConfig } from "../services/vigil-config.js";
@@ -22,22 +21,15 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
     return;
   }
 
+  const prTitle = pr.title ?? "";
   const prBody = pr.body ?? "";
-
-  if (!hasTestPlan(prBody)) {
-    context.log.info(
-      { pr: pr.number, repo: repository.full_name },
-      "No test plan found in PR body — skipping",
-    );
-    return;
-  }
 
   const owner = repository.owner.login;
   const repo = repository.name;
 
   context.log.info(
     { pr: pr.number, repo: repository.full_name, action: context.payload.action },
-    "Test plan detected — creating check run",
+    "Processing PR — creating check run",
   );
 
   // Fetch .vigil.yml (best-effort — never blocks the job).
@@ -91,6 +83,7 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
       pullNumber: pr.number,
       headSha: pr.head.sha,
       checkRunId,
+      prTitle,
       prBody,
       vigiConfig,
       configWarnings,

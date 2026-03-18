@@ -2,7 +2,6 @@ import type { Context } from "probot";
 import { createPendingCheckRun } from "../services/check-run.js";
 import { enqueueVerification } from "../services/queue.js";
 import { parseVigilConfig } from "../services/vigil-config.js";
-import { hasTestPlan } from "../utils/has-test-plan.js";
 import { createLogger } from "@vigil/core";
 
 const log = createLogger("issue-comment");
@@ -71,12 +70,8 @@ export async function handleIssueComment(context: IssueCommentContext): Promise<
     const octokit = context.octokit;
     const { data: pr } = await octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
 
+    const prTitle = pr.title ?? "";
     const prBody = pr.body ?? "";
-    if (!hasTestPlan(prBody)) {
-      log.info({ owner, repo, pullNumber }, "PR has no test plan — skipping retry");
-      return;
-    }
-
     const headSha = pr.head.sha;
 
     // Fetch .vigil.yml config (same trust model as PR open: use head ref for same-repo trusted authors)
@@ -119,6 +114,7 @@ export async function handleIssueComment(context: IssueCommentContext): Promise<
         pullNumber,
         headSha,
         checkRunId,
+        prTitle,
         prBody,
         vigiConfig,
         configWarnings,

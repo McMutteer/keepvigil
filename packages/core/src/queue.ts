@@ -14,6 +14,8 @@ export interface VerifyTestPlanJob {
   pullNumber: number;
   headSha: string;
   checkRunId: number;
+  /** PR title — used by v2 claims extraction */
+  prTitle: string;
   prBody: string;
   /** Parsed .vigil.yml config from the head commit, or undefined if not present */
   vigiConfig?: VigilConfig;

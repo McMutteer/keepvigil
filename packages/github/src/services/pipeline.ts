@@ -170,6 +170,9 @@ async function _runPipeline(
   correlationId: string,
 ): Promise<void> {
   const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig, configWarnings, retryItemIds } = job;
+  // Backward compat: in-flight jobs queued before v2 may lack prTitle
+  // Used by v2 signals (claims-verifier, undocumented-changes) in PR 5
+  const _prTitle = job.prTitle ?? "";
 
   log.info({ owner, repo, pullNumber }, "Pipeline started");
 

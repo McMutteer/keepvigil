@@ -23,6 +23,7 @@ describe("VerifyTestPlanJob type", () => {
       pullNumber: 42,
       headSha: "abc123def456",
       checkRunId: 789,
+      prTitle: "feat: run tests",
       prBody: "## Test Plan\n- [ ] Run tests",
     };
 
@@ -43,6 +44,7 @@ describe("VerifyTestPlanJob type", () => {
       pullNumber: 1,
       headSha: "aaa",
       checkRunId: 1,
+      prTitle: "test",
       prBody: "body",
       vigiConfig: {} as VigilConfig,
     };
@@ -58,6 +60,7 @@ describe("VerifyTestPlanJob type", () => {
       pullNumber: 1,
       headSha: "aaa",
       checkRunId: 1,
+      prTitle: "test",
       prBody: "body",
       configWarnings: ["Unknown key 'foo' — ignored"],
     };
@@ -74,6 +77,7 @@ describe("VerifyTestPlanJob type", () => {
       pullNumber: 1,
       headSha: "aaa",
       checkRunId: 1,
+      prTitle: "test",
       prBody: "body",
       retryItemIds: ["tp-1", "tp-3"],
     };
@@ -89,6 +93,7 @@ describe("VerifyTestPlanJob type", () => {
       pullNumber: 1,
       headSha: "aaa",
       checkRunId: 1,
+      prTitle: "test",
       prBody: "body",
     };
 
@@ -105,6 +110,7 @@ describe("VerifyTestPlanJob type", () => {
       pullNumber: 1,
       headSha: "sha",
       checkRunId: 1,
+      prTitle: "",
       prBody: "",
     };
 
@@ -120,6 +126,7 @@ describe("VerifyTestPlanJob type", () => {
       pullNumber: 1,
       headSha: "sha",
       checkRunId: 1,
+      prTitle: "",
       prBody: "",
       retryItemIds: [],
     };
