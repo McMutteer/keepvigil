@@ -2,7 +2,7 @@ import { ScrollReveal } from "../scroll-reveal";
 
 export function Problem() {
   return (
-    <section className="py-24 sm:py-32">
+    <section className="py-16 sm:py-20">
       <ScrollReveal>
         <div className="mx-auto max-w-[720px] px-6 text-center">
           <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-6">
@@ -16,6 +16,10 @@ export function Problem() {
             approve. You merge. Not because you&apos;re careless — because
             there&apos;s no easy way to verify. The gap between what your agent
             promised and what actually got tested grows with every PR.
+          </p>
+          <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[600px] mx-auto mt-4">
+            A leaked credential. A broken API contract. A test that was never
+            run. These are the risks of merging on trust.
           </p>
         </div>
       </ScrollReveal>

@@ -13,7 +13,7 @@ export function CtaFooter() {
               Merge with confidence.
             </h2>
             <p className="text-base sm:text-lg leading-relaxed text-text-secondary mb-8">
-              Install Vigil in 30 seconds. Free forever for open source.
+              Install Vigil in 30 seconds. Free forever. No credit card required.
             </p>
             <a
               href="https://github.com/apps/keepvigil"
@@ -58,7 +58,7 @@ export function CtaFooter() {
                   </a>
                 </li>
                 <li>
-                  <a href="/#pricing" className="text-text-muted hover:text-text-secondary transition-colors">
+                  <a href="/pricing" className="text-text-muted hover:text-text-secondary transition-colors">
                     Pricing
                   </a>
                 </li>
@@ -104,6 +104,21 @@ export function CtaFooter() {
                 <li>
                   <a href="/about" className="text-text-muted hover:text-text-secondary transition-colors">
                     About
+                  </a>
+                </li>
+                <li>
+                  <a href="/docs/changelog" className="text-text-muted hover:text-text-secondary transition-colors">
+                    Changelog
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://keepvigil.dev/health"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-text-muted hover:text-text-secondary transition-colors"
+                  >
+                    Status
                   </a>
                 </li>
               </ul>
