@@ -43,6 +43,13 @@
       "when": 1773848267851,
       "tag": "0005_little_red_ghost",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773849590790,
+      "tag": "0006_abnormal_winter_soldier",
+      "breakpoints": true
     }
   ]
 }
