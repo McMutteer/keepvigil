@@ -18,6 +18,14 @@ vi.mock("@vigil/core", () => ({
   createLLMClient: () => ({ model: "test-model", provider: "groq", chat: vi.fn() }),
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(), debug: vi.fn() }),
   runWithCorrelationId: (_id: string, fn: () => unknown) => fn(),
+  scanCredentials: vi.fn().mockReturnValue({ id: "credential-scan", name: "Credential Scan", score: 100, weight: 15, passed: true, details: [], requiresLLM: false }),
+  extractChangedFilesWithStatus: vi.fn().mockReturnValue([]),
+  mapCoverage: vi.fn().mockReturnValue({ id: "coverage-mapper", name: "Coverage Mapper", score: 100, weight: 5, passed: true, details: [], requiresLLM: false }),
+  getWeights: vi.fn().mockReturnValue({
+    "ci-bridge": 20, "credential-scan": 15, "executor": 10, "plan-augmentor": 10,
+    "contract-checker": 5, "diff-analyzer": 5, "coverage-mapper": 5, "gap-analyzer": 5,
+    "claims-verifier": 15, "undocumented-changes": 10,
+  }),
 }));
 
 vi.mock("../services/reporter.js", () => ({
@@ -44,6 +52,47 @@ vi.mock("../services/subscription.js", () => ({
 
 vi.mock("../services/rate-limiter.js", () => ({
   checkRateLimit: vi.fn().mockReturnValue({ allowed: true }),
+}));
+
+vi.mock("../services/claims-verifier.js", () => ({
+  verifyClaims: vi.fn().mockResolvedValue({ id: "claims-verifier", name: "Claims Verifier", score: 100, weight: 15, passed: true, details: [], requiresLLM: true }),
+}));
+
+vi.mock("../services/undocumented-changes.js", () => ({
+  detectUndocumentedChanges: vi.fn().mockResolvedValue({ id: "undocumented-changes", name: "Undocumented Changes", score: 100, weight: 10, passed: true, details: [], requiresLLM: true }),
+}));
+
+vi.mock("../services/diff-fetcher.js", () => ({
+  fetchPRDiff: vi.fn().mockResolvedValue("diff --git a/file.ts b/file.ts\n+some change"),
+  fetchRepoFileList: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("../services/ci-bridge.js", () => ({
+  collectCISignal: vi.fn().mockResolvedValue({ id: "ci-bridge", name: "CI Bridge", score: 100, weight: 20, passed: true, details: [], requiresLLM: false }),
+}));
+
+vi.mock("../services/executor-adapter.js", () => ({
+  buildExecutorSignal: vi.fn().mockReturnValue({ id: "executor", name: "Executor", score: 100, weight: 10, passed: true, details: [], requiresLLM: false }),
+}));
+
+vi.mock("../services/diff-analyzer.js", () => ({
+  analyzeDiff: vi.fn().mockResolvedValue({ id: "diff-analyzer", name: "Diff Analyzer", score: 100, weight: 5, passed: true, details: [], requiresLLM: true }),
+}));
+
+vi.mock("../services/gap-analyzer.js", () => ({
+  analyzeGaps: vi.fn().mockResolvedValue({ id: "gap-analyzer", name: "Gap Analyzer", score: 100, weight: 5, passed: true, details: [], requiresLLM: true }),
+}));
+
+vi.mock("../services/plan-augmentor.js", () => ({
+  augmentPlan: vi.fn().mockResolvedValue({ id: "plan-augmentor", name: "Plan Augmentor", score: 100, weight: 10, passed: true, details: [], requiresLLM: true }),
+}));
+
+vi.mock("../services/contract-checker.js", () => ({
+  checkContracts: vi.fn().mockResolvedValue({ signal: { id: "contract-checker", name: "Contract Checker", score: 100, weight: 5, passed: true, details: [], requiresLLM: true }, verifiedFiles: new Set() }),
+}));
+
+vi.mock("../utils/has-test-plan.js", () => ({
+  hasTestPlan: vi.fn().mockReturnValue(true),
 }));
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import type { VigilConfig, ConfidenceScore, Signal } from "@vigil/core";
+import type { VigilConfig, ConfidenceScore, Signal, PipelineMode } from "@vigil/core";
 import type { ReportItem, ReportSummary } from "./reporter.js";
 import { truncateToBytes } from "./check-run-updater.js";
 
@@ -9,9 +9,9 @@ const MAX_EVIDENCE_BLOCK_BYTES = 2000;
 const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
-export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], confidenceScore?: ConfidenceScore, isFirstRun?: boolean): string {
+export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], confidenceScore?: ConfidenceScore, isFirstRun?: boolean, pipelineMode?: PipelineMode): string {
   if (confidenceScore) {
-    return buildScoreCommentBody(items, summary, confidenceScore, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds, isFirstRun);
+    return buildScoreCommentBody(items, summary, confidenceScore, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds, isFirstRun, pipelineMode);
   }
   return buildV1CommentBody(items, summary, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds);
 }
@@ -87,7 +87,7 @@ function buildContextualRecommendation(score: ConfidenceScore, summary: ReportSu
 }
 
 /** Score-based comment format — shows confidence score, signal table, and test plan results in a details block. */
-function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], isFirstRun?: boolean): string {
+function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], isFirstRun?: boolean, _pipelineMode?: PipelineMode): string {
   const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
   const recommendationEmoji: Record<string, string> = { safe: "\u2705", review: "\u26A0\uFE0F", caution: "\uD83D\uDD34" };
   const emoji = recommendationEmoji[confidenceScore.recommendation] ?? "";
@@ -118,6 +118,17 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
 
   if (pipelineError) {
     parts.push(`> **Note:** ${pipelineError}`, "");
+  }
+
+  // v2 sections: Claims + Undocumented Changes (when those signals are present)
+  const claimsSection = buildClaimsSection(confidenceScore.signals);
+  if (claimsSection) {
+    parts.push(claimsSection, "");
+  }
+
+  const undocSection = buildUndocumentedSection(confidenceScore.signals);
+  if (undocSection) {
+    parts.push(undocSection, "");
   }
 
   // Signal table
@@ -168,16 +179,18 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     }
   }
 
-  // Test plan results in a collapsible details block
-  const v1Content = buildV1DetailsContent(items, summary);
-  parts.push(
-    "<details>",
-    "<summary>Test plan results</summary>",
-    "",
-    v1Content,
-    "",
-    "</details>",
-  );
+  // Test plan results in a collapsible details block (only when items exist)
+  if (items.length > 0) {
+    const v1Content = buildV1DetailsContent(items, summary);
+    parts.push(
+      "<details>",
+      "<summary>Test plan results</summary>",
+      "",
+      v1Content,
+      "",
+      "</details>",
+    );
+  }
 
   const configBlock = buildConfigBlock(vigiConfig, configWarnings);
   if (configBlock) {
@@ -623,6 +636,46 @@ Vigil works best when your test plan includes **logic and contract checks**, not
 [Full guide →](https://keepvigil.dev/docs/test-plans)
 
 </details>`;
+}
+
+// ---------------------------------------------------------------------------
+// v2 section builders
+// ---------------------------------------------------------------------------
+
+/** Build a "Claims" section from the claims-verifier signal details. */
+function buildClaimsSection(signals: Signal[]): string {
+  const claimsSignal = signals.find((s) => s.id === "claims-verifier");
+  if (!claimsSignal || claimsSignal.details.length === 0) return "";
+
+  // Skip if the only detail is a "skip" status (neutral signal)
+  if (claimsSignal.details.length === 1 && claimsSignal.details[0].status === "skip") return "";
+
+  const lines: string[] = ["### Claims"];
+  for (const detail of claimsSignal.details) {
+    const icon = detail.status === "pass" ? "\u2705"
+      : detail.status === "fail" ? "\u274C"
+      : "\u26A0\uFE0F";
+    lines.push(`${icon} **"${escapeTableCell(detail.label)}"** — ${detail.message}`);
+  }
+
+  return lines.join("\n");
+}
+
+/** Build an "Undocumented Changes" section from the undocumented-changes signal details. */
+function buildUndocumentedSection(signals: Signal[]): string {
+  const undocSignal = signals.find((s) => s.id === "undocumented-changes");
+  if (!undocSignal || undocSignal.details.length === 0) return "";
+
+  // Skip if the only detail is a "skip" or "pass" status (nothing found)
+  if (undocSignal.details.length === 1 && (undocSignal.details[0].status === "skip" || undocSignal.details[0].status === "pass")) return "";
+
+  const lines: string[] = ["### Undocumented Changes"];
+  for (const detail of undocSignal.details) {
+    const icon = detail.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
+    lines.push(`- ${icon} **${escapeTableCell(detail.label)}:** ${detail.message}`);
+  }
+
+  return lines.join("\n");
 }
 
 export { COMMENT_MARKER };
