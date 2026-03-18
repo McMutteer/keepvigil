@@ -176,6 +176,12 @@ export function Navbar() {
           {/* Desktop right */}
           <div className="hidden sm:flex items-center gap-3">
             <a
+              href="/dashboard"
+              className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
+            >
+              Dashboard
+            </a>
+            <a
               href="https://github.com/McMutteer/keepvigil"
               target="_blank"
               rel="noopener noreferrer"
@@ -307,6 +313,13 @@ export function Navbar() {
                 >
                   About
                 </Link>
+                <a
+                  href="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                >
+                  Dashboard
+                </a>
                 <a
                   href="https://github.com/McMutteer/keepvigil"
                   target="_blank"
