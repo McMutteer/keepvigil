@@ -115,7 +115,18 @@ export async function checkMetadata(
       };
     }
     const rawHtml = await response.text();
-    const html = rawHtml.length > MAX_HTML_LENGTH ? rawHtml.slice(0, MAX_HTML_LENGTH) : rawHtml;
+    // Enforce size limit even when Content-Length header is missing or spoofed
+    if (rawHtml.length > MAX_HTML_LENGTH) {
+      return {
+        ogTags: {},
+        jsonLd: [],
+        missingOgTags: EXPECTED_OG_TAGS,
+        jsonLdValid: false,
+        jsonLdErrors: [`HTML exceeds ${MAX_HTML_LENGTH} byte limit (${rawHtml.length} bytes)`],
+        htmlTitle: null,
+      };
+    }
+    const html = rawHtml;
 
     const ogTags = extractOgTags(html);
     const missingOgTags = EXPECTED_OG_TAGS.filter((tag) => !ogTags[tag]);

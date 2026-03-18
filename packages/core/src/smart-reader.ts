@@ -133,7 +133,7 @@ export function findRelevantLines(
     const truncated = Buffer.from(result, "utf-8")
       .subarray(0, MAX_OUTPUT_BYTES)
       .toString("utf-8")
-      .replace(/[\uFFFD]$/, "");
+      .replace(/\uFFFD/g, "");
     return truncated + "\n\n...(context truncated)";
   }
 
@@ -168,6 +168,6 @@ export function prepareFileContent(
   const truncated = Buffer.from(content, "utf-8")
     .subarray(0, maxBytes)
     .toString("utf-8")
-    .replace(/[\uFFFD]$/, "");
+    .replace(/\uFFFD/g, "");
   return truncated + "\n\n...(truncated)";
 }

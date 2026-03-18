@@ -68,11 +68,15 @@ function matchAgainstAllowlist(cmd: string, extraAllowPrefixes: string[]): Valid
       // Extra validation for npx: reject dangerous flags
       if (cmd.startsWith("npx ")) {
         const args = cmd.split(/\s+/).slice(2); // skip "npx <tool>"
-        for (const arg of args) {
-          const cleaned = arg.replace(/^['"]|['"]$/g, "");
-          const flag = cleaned.split("=")[0];
-          if (DANGEROUS_NPX_FLAGS.includes(flag)) {
-            return { allowed: false, reason: `npx flag not allowed: "${flag}"` };
+        for (const raw of args) {
+          // Strip surrounding quotes, then check each potential flag.
+          // Also check the raw arg — `eslint="--config=x"` should not bypass.
+          const cleaned = raw.replace(/^['"]|['"]$/g, "");
+          const candidates = [cleaned, ...cleaned.split("=")];
+          for (const candidate of candidates) {
+            if (DANGEROUS_NPX_FLAGS.includes(candidate)) {
+              return { allowed: false, reason: `npx flag not allowed: "${candidate}"` };
+            }
           }
         }
       }

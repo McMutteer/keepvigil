@@ -39,12 +39,17 @@ export const FAILURE_CAP = 70;
  * 5. Derive recommendation from thresholds
  */
 export function computeScore(signals: Signal[]): ConfidenceScore {
+  // Determine which signals were not provided
+  const presentIds = new Set(signals.map((s) => s.id));
+  const allIds = Object.keys(SIGNAL_WEIGHTS) as SignalId[];
+  const skippedSignals = allIds.filter((id) => !presentIds.has(id));
+
   if (signals.length === 0) {
     return {
       score: 0,
       recommendation: "caution",
       signals: [],
-      skippedSignals: [],
+      skippedSignals,
     };
   }
 
@@ -54,7 +59,7 @@ export function computeScore(signals: Signal[]): ConfidenceScore {
       score: 0,
       recommendation: "caution",
       signals,
-      skippedSignals: [],
+      skippedSignals,
     };
   }
 
@@ -73,7 +78,7 @@ export function computeScore(signals: Signal[]): ConfidenceScore {
     score,
     recommendation: deriveRecommendation(score),
     signals,
-    skippedSignals: [],
+    skippedSignals,
   };
 }
 
