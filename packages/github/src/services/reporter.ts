@@ -1,5 +1,5 @@
 import type { ProbotOctokit } from "probot";
-import type { ClassifiedItem, ExecutionResult, VigilConfig, Signal, ConfidenceScore } from "@vigil/core";
+import type { ClassifiedItem, ExecutionResult, VigilConfig, Signal, ConfidenceScore, PipelineMode } from "@vigil/core";
 import { createLogger, computeScore } from "@vigil/core";
 import { updateCheckRun, determineConclusion, conclusionFromScore } from "./check-run-updater.js";
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
@@ -55,6 +55,8 @@ export interface ReportContext {
   retryItemIds?: string[];
   /** Signals collected during the pipeline — used to compute confidence score. */
   signals?: Signal[];
+  /** Pipeline mode — v1+v2 (has test plan) or v2-only (no test plan) */
+  pipelineMode?: PipelineMode;
 }
 
 // ---------------------------------------------------------------------------
@@ -232,6 +234,7 @@ export async function reportResults(context: ReportContext): Promise<void> {
       context.retryItemIds,
       confidenceScore,
       isFirstRun,
+      context.pipelineMode,
     );
 
     if (existingCommentId) {
