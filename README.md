@@ -4,7 +4,7 @@
 
 <h1 align="center">Vigil</h1>
 
-<p align="center"><strong>Confidence scores for AI-generated PRs.</strong></p>
+<p align="center"><strong>Verifies that your PR does what it says it does.</strong></p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
@@ -16,65 +16,69 @@
 
 ## The Problem
 
-AI agents (Claude Code, Cursor, Copilot) generate PRs with beautiful test plans that nobody verifies. Developers merge on blind trust. As agent usage grows, the gap between "what was promised" and "what was verified" widens.
+Your PR says "adds auth middleware." Did it? Your PR says "no breaking changes." Are there any? The gap between what a PR claims and what the code actually does grows with every merge.
 
-No tool exists that answers: **"Can I safely merge this AI-generated PR?"**
-
-Vigil does. It gives every pull request a **confidence score from 0 to 100** based on 9 independent signals — so you can merge with confidence, not with guilt.
+Vigil closes that gap. It reads your PR description, verifies every claim against the actual diff, and surfaces changes you didn't mention — so reviewers know exactly what's real.
 
 ---
 
 ## How It Works
 
 1. **Install** — Add Vigil from the [GitHub Marketplace](https://github.com/marketplace/keepvigil) or self-host
-2. **Push a PR** — Include a test plan section with checkboxes in the PR description
-3. **Get a Score** — Vigil runs 9 signals, posts a confidence score and recommendation as a PR comment
+2. **Open a PR** — Any PR. No test plan needed. No configuration.
+3. **Get Verified** — Vigil checks claims, surfaces undocumented changes, and analyzes impact
 
 ```text
-┌──────────────────────────────────────────┐
-│   Vigil Confidence Score: 95/100         │
-│                                          │
-│   ✅ CI checks passed (3/3)        w25   │
-│   ✅ No credentials in diff        w20   │
-│   ✅ Test execution: 12/12 passed  w15   │
-│   ✅ Plan augmentor: 5/5 verified  w15   │
-│   ✅ Contracts compatible          w10   │
-│   ✅ Coverage: 100% of files       w5    │
-│   ✅ Diff matches claims           w5    │
-│   ✅ No gaps detected              w5    │
-│   ✅ Assertions verified (7 files) —     │
-│                                          │
-│   Recommendation: Safe to merge          │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│   Vigil — PR Verification: 82/100                    │
+│                                                      │
+│   Claims                                             │
+│   ✅ "Add rate limiting to API endpoints"            │
+│      — confirmed, rate-limiter.ts created            │
+│   ✅ "Add tests for rate limiter"                    │
+│      — confirmed, 12 tests in rate-limiter.test.ts   │
+│   ⚠️ "No breaking changes"                           │
+│      — GET /api/users adds rateLimit field            │
+│                                                      │
+│   Undocumented Changes                               │
+│   ⚠️ New dependency: ioredis (not mentioned)          │
+│   ⚠️ Environment variable: REDIS_URL (not documented) │
+│                                                      │
+│   Impact                                             │
+│   ✅ Credentials scan clean                          │
+│   ⚠️ Coverage gap: src/middleware/auth.ts             │
+│   ✅ No breaking API changes                         │
+│                                                      │
+│   Score: 82/100 — Review recommended                 │
+└──────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Signals
+## Three Verification Layers
 
-Vigil evaluates every PR across 9 signals. Each contributes to a weighted score.
+| Layer | Tier | Description |
+|-------|------|-------------|
+| **Claims Verification** | Free | Extracts claims from PR title and body, verifies each against the diff |
+| **Undocumented Changes** | Free | Surfaces significant changes not mentioned in the PR description |
+| **Impact Analysis** | Pro | Breaking changes, coverage gaps, contract violations, credential patterns |
 
-| Signal | Weight | Tier | Description |
-|--------|--------|------|-------------|
-| CI Bridge | 25 | Free | Maps test plan items to GitHub Actions results |
-| Credential Scan | 20 | Free | Detects hardcoded secrets, API keys, and passwords in the diff |
-| Test Execution | 15 | Free | Runs test plan items in Docker sandbox, browser, or assertion mode |
-| Plan Augmentor | 15 | Free | Auto-generates and verifies items the test plan missed |
-| Contract Checker | 10 | Pro | Verifies API/frontend type contracts match across files |
-| Coverage Mapper | 5 | Free | Checks changed files have test files or test plan references |
-| Diff vs Claims | 5 | Pro | LLM compares actual changes vs test plan promises |
-| Gap Analysis | 5 | Pro | LLM identifies untested code changes |
-| Assertion Verifier | — | Free | Reads source files and verifies claims via LLM (shares executor weight) |
+Under the hood, 10 signals feed into a weighted verification score:
 
-### Score & Recommendation
+| Signal | Weight | Description |
+|--------|--------|-------------|
+| Claims Verifier | 15 | Verifies PR claims against the diff |
+| Undocumented Changes | 10 | Detects unmentioned changes |
+| CI Bridge | 20 | Maps test plan items to CI results |
+| Credential Scan | 15 | Detects secrets in the diff |
+| Test Execution | 10 | Runs test plan items in sandbox |
+| Plan Augmentor | 10 | Auto-generates verification items |
+| Coverage Mapper | 5 | Checks changed files have tests |
+| Contract Checker | 5 | Verifies cross-file type contracts |
+| Diff Analyzer | 5 | LLM compares diff vs PR claims |
+| Gap Analyzer | 5 | LLM identifies untested changes |
 
-| Score | Recommendation | Check Run |
-|-------|---------------|-----------|
-| 80–100 | Safe to merge | Success |
-| 50–79 | Review needed | Neutral |
-| 0–49 | Caution | Failure |
-
-Any deterministic signal failure (CI, credentials, execution, coverage) caps the score at 70 — one hard failure means it's never "safe to merge."
+**Dual-mode:** PRs with test plans get all 10 signals. PRs without test plans get the 6 that don't require one — still a full verification.
 
 ---
 
@@ -82,7 +86,7 @@ Any deterministic signal failure (CI, credentials, execution, coverage) caps the
 
 ### GitHub Marketplace (hosted)
 
-Install from the [GitHub Marketplace](https://github.com/marketplace/keepvigil), select your repos, and you're done. Free tier runs 6 signals with zero configuration.
+Install from the [GitHub Marketplace](https://github.com/marketplace/keepvigil), select your repos, and you're done. Free tier includes Claims Verification, Undocumented Change Detection, credential scanning, and coverage mapping — unlimited PRs, unlimited repos.
 
 ### Self-host
 
@@ -98,63 +102,38 @@ docker compose up
 
 ## Configuration
 
-Per-repo configuration via `.vigil.yml` in the repository root:
+Vigil works zero-config. Optionally customize via `.vigil.yml` in the repository root:
 
 ```yaml
 version: 1
 
-# Timeouts (seconds)
 timeouts:
   shell: 300
   api: 30
   browser: 60
 
-# Skip specific test categories
 skip:
   categories:
     - visual
     - metadata
 
-# Shell executor
 shell:
   image: "nikolaik/python-nodejs:python3.12-nodejs22"
   allow:
     - "npm run build"
     - "pytest"
 
-# Webhook notifications
 notifications:
-  on: failure    # failure | always
+  on: failure
   urls:
     - https://hooks.slack.com/services/T.../B.../xxx
-
-# LLM for Pro signals (BYOLLM)
-llm:
-  provider: groq
-  model: llama-3.3-70b-versatile
-  api_key: gsk_xxx
 ```
-
----
-
-## BYOLLM (Bring Your Own LLM)
-
-Pro-tier signals use LLM analysis. Configure your own provider in `.vigil.yml`:
-
-```yaml
-llm:
-  provider: groq          # openai | groq | ollama
-  model: llama-3.3-70b-versatile
-  api_key: gsk_your_key_here
-```
-
-Supported providers: **OpenAI**, **Groq**, **Ollama** (local). Without `llm:` config, Vigil runs Free tier signals only — still valuable, zero LLM cost.
 
 ---
 
 ## Documentation
 
-Full documentation is available at **[keepvigil.dev](https://keepvigil.dev)**.
+Full docs at **[keepvigil.dev/docs](https://keepvigil.dev/docs/getting-started)**.
 
 ---
 
@@ -164,7 +143,7 @@ Full documentation is available at **[keepvigil.dev](https://keepvigil.dev)**.
 |-------|-----------|
 | Runtime | Node.js 22 + TypeScript 5.8 |
 | GitHub Integration | Probot 14 + Octokit |
-| LLM | BYOLLM (OpenAI, Groq, Ollama) — configurable per repo |
+| LLM | Platform Groq (default) + BYOLLM option |
 | Browser Automation | Playwright |
 | Task Queue | BullMQ + Redis 7 |
 | Database | PostgreSQL 16 + Drizzle ORM |
@@ -175,33 +154,20 @@ Full documentation is available at **[keepvigil.dev](https://keepvigil.dev)**.
 
 ## Development
 
-This is a pnpm monorepo with four packages:
+pnpm monorepo with four packages:
 
 ```text
 packages/
-  core/         — types, parser, classifier, score engine, credential scanner, coverage mapper, smart reader
+  core/         — types, parser, classifier, score engine, credential scanner, coverage mapper
   github/       — Probot app, webhooks, pipeline, signals, reporter
-  executors/    — shell, API, browser, and assertion test execution
+  executors/    — shell, API, browser, and assertion execution
   landing/      — Next.js 15 landing page (keepvigil.dev)
 ```
 
-836+ tests across 30+ files. v3 is feature-complete.
-
-**Quality gates** (must pass before every PR):
+1321+ tests across 49 files.
 
 ```bash
-pnpm build
-pnpm test
-pnpm lint
-pnpm typecheck
-```
-
-**Run locally:**
-
-```bash
-cp .env.example .env
-# Fill in GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GROQ_API_KEY, etc.
-docker compose up
+pnpm build && pnpm test && pnpm lint && pnpm typecheck
 ```
 
 ---
