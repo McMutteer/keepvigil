@@ -71,7 +71,7 @@ async function makeCookie(config: AppConfig, installationIds: number[] = [111]):
 // Mock database helpers
 // ---------------------------------------------------------------------------
 
-function makeMockDb(rows: unknown[] = [], countResult = [{ total: 0 }]) {
+function makeMockDb(rows: unknown[] = [], _countResult = [{ total: 0 }]) {
   const limitFn = vi.fn().mockReturnValue({
     offset: vi.fn().mockResolvedValue(rows),
   });
