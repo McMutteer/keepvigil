@@ -39,35 +39,62 @@ export default function ScoringPage() {
         integer.
       </p>
 
-      {/* Worked Example */}
+      {/* Worked Example — v1+v2 */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Worked Example
+        Worked Example — v1+v2 (PR with test plan)
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Consider a PR where all nine signals are active. Here is how the final
-        score is calculated:
+        When a PR includes a test plan, all ten verification layers are active.
+        Here is how the final score is calculated:
       </p>
       <CodeBlock
-        filename="example calculation"
-        code={`Signal              Score   Weight   Contribution
-─────────────────   ─────   ──────   ────────────
-CI Bridge             100   x  25   =       2500
-Credential Scan       100   x  20   =       2000
-Test Execution         67   x  15   =       1005
-Plan Augmentor         80   x  15   =       1200
-Contract Checker       90   x  10   =        900
-Coverage Mapper        75   x   5   =        375
-Diff vs Claims         85   x   5   =        425
-Gap Analysis           90   x   5   =        450
-                                    ────────────
-Total                          100         8855
+        filename="v1+v2 example"
+        code={`Signal                Score   Weight   Contribution
+────────────────────  ─────   ──────   ────────────
+Claims Verifier         92   x  15   =       1380
+Undocumented Changes    85   x  10   =        850
+CI Bridge              100   x  20   =       2000
+Credential Scan        100   x  15   =       1500
+Test Execution          67   x  10   =        670
+Plan Augmentor          80   x  10   =        800
+Contract Checker        90   x   5   =        450
+Diff Analyzer           85   x   5   =        425
+Coverage Mapper         75   x   5   =        375
+Gap Analysis            90   x   5   =        450
+                                     ────────────
+Total                          100         8900
 
-Score = 8855 / 100 = 88.6 → 89`}
+Score = 8900 / 100 = 89`}
+      />
+
+      {/* Worked Example — v2-only */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        Worked Example — v2-only (PR without test plan)
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">
+        When a PR has no test plan, test-plan-dependent signals (CI Bridge, Test
+        Execution, Plan Augmentor, Gap Analysis) receive zero weight. The
+        remaining six layers are reweighted to total 100:
+      </p>
+      <CodeBlock
+        filename="v2-only example"
+        code={`Signal                Score   Weight   Contribution
+────────────────────  ─────   ──────   ────────────
+Claims Verifier         78   x  30   =       2340
+Undocumented Changes    60   x  25   =       1500
+Credential Scan        100   x  20   =       2000
+Contract Checker        85   x  10   =        850
+Coverage Mapper         70   x  10   =        700
+Diff Analyzer           90   x   5   =        450
+                                     ────────────
+Total                          100         7840
+
+Score = 7840 / 100 = 78`}
       />
       <p className="text-text-secondary leading-relaxed mb-4">
-        The Assertion Verifier shares weight with Test Execution. When both
-        produce results, the executor signal reflects the combined outcome of
-        shell commands and file assertions.
+        In v2-only mode, Claims Verifier and Undocumented Changes carry the
+        most weight because they are the primary code-level verification layers
+        that do not depend on a test plan.
       </p>
 
       {/* Recommendation Tiers */}
@@ -137,20 +164,21 @@ Score = 8855 / 100 = 88.6 → 89`}
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
         <li>
-          <strong className="text-text-primary">CI Bridge</strong> — CI pipeline failed
-        </li>
-        <li>
           <strong className="text-text-primary">Credential Scan</strong> — secrets detected in the diff
         </li>
         <li>
-          <strong className="text-text-primary">Test Execution</strong> — shell commands or assertions failed
+          <strong className="text-text-primary">CI Bridge</strong> — CI pipeline failed (v1+v2 only)
+        </li>
+        <li>
+          <strong className="text-text-primary">Test Execution</strong> — shell commands or assertions failed (v1+v2 only)
         </li>
         <li>
           <strong className="text-text-primary">Coverage Mapper</strong> — changed files have no test coverage
         </li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
-        LLM-based signals (Diff vs Claims and Gap Analysis) do{" "}
+        LLM-based signals (Claims Verifier, Undocumented Changes, Diff Analyzer,
+        Gap Analysis) do{" "}
         <strong className="text-text-primary">not</strong> trigger the failure cap.
         They are advisory: they can lower the score, but they cannot block a PR
         from being &quot;Safe to merge&quot; on their own. This reflects the inherent

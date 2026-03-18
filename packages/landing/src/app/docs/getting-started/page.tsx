@@ -8,7 +8,7 @@ import { getPrevNext } from "@/lib/docs-nav";
 export const metadata: Metadata = {
   title: "Getting Started | Vigil Docs",
   description:
-    "Install Vigil and get your first confidence score in under 2 minutes.",
+    "Install Vigil and get your first verification score in under 2 minutes.",
 };
 
 export default function GettingStartedPage() {
@@ -20,7 +20,7 @@ export default function GettingStartedPage() {
         Getting Started
       </h1>
       <p className="text-text-secondary mb-8">
-        Install Vigil and get your first confidence score in under 2 minutes.
+        Install Vigil and get your first verification score in under 2 minutes.
       </p>
 
       {/* Step 1 */}
@@ -49,19 +49,21 @@ export default function GettingStartedPage() {
 
       {/* Step 2 */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        2. Create a PR with a test plan
+        2. Open a Pull Request
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        If you use AI coding agents like Claude Code, Cursor, or GitHub
-        Copilot, your PRs likely already include test plans. These agents
-        generate checkbox lists describing what should be verified before
-        merging. Vigil reads those checkboxes and turns them into real checks.
+        Open a pull request — any PR works. With or without a test plan, Vigil
+        analyzes your changes across multiple verification layers: credential
+        scanning, CI status, diff analysis, coverage mapping, and more.
       </p>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Here is what a typical test plan looks like in your PR description:
+        If your PR includes a test plan (common with AI coding agents like
+        Claude Code, Cursor, or GitHub Copilot), Vigil will also parse and
+        execute those items for deeper verification. Here is what a typical
+        test plan looks like:
       </p>
       <CodeBlock
-        filename="PR description"
+        filename="PR description (optional)"
         code={`## Test Plan
 - [ ] \`npm test\` passes
 - [ ] \`src/auth.ts\` validates JWT tokens
@@ -69,35 +71,28 @@ export default function GettingStartedPage() {
 - [ ] No hardcoded credentials in diff`}
       />
       <p className="text-text-secondary leading-relaxed mb-4">
-        Each checkbox becomes a test plan item. Vigil assigns each one an ID
-        (like{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          tp-1
-        </code>
-        ,{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          tp-2
-        </code>
-        ), classifies its type, and routes it to the appropriate executor.
+        When present, each checkbox becomes a test plan item that Vigil
+        classifies and routes to the appropriate executor — but even without a
+        test plan, you still get a full verification score.
       </p>
 
       {/* Step 3 */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        3. See your confidence score
+        3. See your verification score
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Once the PR is opened or updated, Vigil automatically:
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
-        <li>Parses the test plan from the PR body</li>
-        <li>Classifies each item (shell command, file assertion, API test, etc.)</li>
-        <li>Collects 9 independent signals in parallel</li>
-        <li>Calculates a weighted confidence score from 0 to 100</li>
+        <li>Analyzes the diff and detects what changed</li>
+        <li>Runs independent verification layers in parallel</li>
+        <li>Parses and executes test plan items, if present</li>
+        <li>Calculates a weighted verification score from 0 to 100</li>
         <li>Posts results as a PR comment and GitHub Check Run</li>
       </ul>
       <CodeBlock
         filename="PR comment"
-        code={`🛡️ Vigil Confidence Score: 82/100 — Safe to merge
+        code={`🛡️ Vigil Verification Score: 82/100 — Safe to merge
 
 | Signal            | Score | Status |
 |-------------------|-------|--------|
