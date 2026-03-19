@@ -213,11 +213,16 @@ export interface MetadataExecutionContext {
 /** Supported LLM providers */
 export type LLMProvider = "openai" | "groq" | "ollama";
 
+/** Reasoning effort levels for models that support chain-of-thought */
+export type ReasoningEffort = "none" | "low" | "medium" | "high";
+
 /** Configuration for creating an LLM client */
 export interface LLMConfig {
   provider: LLMProvider;
   model: string;
   apiKey: string;
+  /** Default reasoning effort for all calls from this client */
+  reasoningEffort?: ReasoningEffort;
 }
 
 /** Unified LLM client interface — all consumers use this */
@@ -228,6 +233,8 @@ export interface LLMClient {
     user: string;
     /** Per-request timeout in milliseconds (default: 15_000) */
     timeoutMs?: number;
+    /** Override reasoning effort for this specific call */
+    reasoningEffort?: ReasoningEffort;
   }): Promise<string>;
   /** The model being used (for logging/debugging) */
   readonly model: string;

@@ -8,6 +8,7 @@ const mockReportResults = vi.hoisted(() => vi.fn());
 
 vi.mock("@vigil/core", () => ({
   createLLMClient: () => ({ model: "test-model", provider: "groq", chat: vi.fn() }),
+  createLLMClientWithFallback: () => ({ model: "gpt-5.4-nano", provider: "openai", chat: vi.fn() }),
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(), debug: vi.fn() }),
   runWithCorrelationId: (_id: string, fn: () => unknown) => fn(),
   scanCredentials: vi.fn().mockReturnValue({ id: "credential-scan", name: "Credential Scan", score: 100, weight: 20, passed: true, details: [], requiresLLM: false }),
@@ -105,7 +106,7 @@ describe("runPipeline (v2-only)", () => {
   it("runs v2 signals and reports results", async () => {
     const probot = makeProbot();
 
-    await runPipeline(makeJob(), probot, "groq-key");
+    await runPipeline(makeJob(), probot, { groqApiKey: "groq-key" });
 
     expect(mockReportResults).toHaveBeenCalledOnce();
     const ctx = mockReportResults.mock.calls[0][0];
@@ -118,7 +119,7 @@ describe("runPipeline (v2-only)", () => {
     mockFetchDiff.mockResolvedValue(null);
     const probot = makeProbot();
 
-    await runPipeline(makeJob(), probot, "groq-key");
+    await runPipeline(makeJob(), probot, { groqApiKey: "groq-key" });
 
     expect(mockReportResults).toHaveBeenCalledOnce();
     const ctx = mockReportResults.mock.calls[0][0];
@@ -128,7 +129,7 @@ describe("runPipeline (v2-only)", () => {
   it("always passes empty classifiedItems and executionResults", async () => {
     const probot = makeProbot();
 
-    await runPipeline(makeJob(), probot, "groq-key");
+    await runPipeline(makeJob(), probot, { groqApiKey: "groq-key" });
 
     const ctx = mockReportResults.mock.calls[0][0];
     expect(ctx.classifiedItems).toEqual([]);
@@ -139,7 +140,7 @@ describe("runPipeline (v2-only)", () => {
     mockFetchDiff.mockRejectedValue(new Error("network failure"));
     const probot = makeProbot();
 
-    await runPipeline(makeJob(), probot, "groq-key");
+    await runPipeline(makeJob(), probot, { groqApiKey: "groq-key" });
 
     expect(mockReportResults).toHaveBeenCalledOnce();
     const ctx = mockReportResults.mock.calls[0][0];

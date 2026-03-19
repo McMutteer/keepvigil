@@ -83,7 +83,11 @@ async function main(): Promise<void> {
   });
 
   // Start BullMQ worker (consumes verify-test-plan queue)
-  const worker: Worker = createWorker(config.redisUrl, probot, config.groqApiKey);
+  const worker: Worker = createWorker(config.redisUrl, probot, {
+    openaiApiKey: config.openaiApiKey || undefined,
+    groqApiKey: config.groqApiKey,
+    groqModel: config.groqModel,
+  });
 
   // Create webhook middleware
   const webhookMiddleware = await createNodeMiddleware(vigilApp, { probot });

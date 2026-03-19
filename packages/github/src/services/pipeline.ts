@@ -9,7 +9,8 @@
 import { randomUUID } from "node:crypto";
 import type { Probot } from "probot";
 import type { Signal, VerifyTestPlanJob } from "@vigil/core";
-import { createLLMClient, scanCredentials, extractChangedFilesWithStatus, mapCoverage, createLogger, runWithCorrelationId, getWeights } from "@vigil/core";
+import { createLLMClient, createLLMClientWithFallback, scanCredentials, extractChangedFilesWithStatus, mapCoverage, createLogger, runWithCorrelationId, getWeights } from "@vigil/core";
+import type { ReasoningEffort } from "@vigil/core";
 import type { Database } from "@vigil/core/db";
 import { reportResults } from "./reporter.js";
 import { fetchPRDiff, fetchRepoFileList } from "./diff-fetcher.js";
@@ -30,24 +31,40 @@ export function setPipelineDb(database: Database): void {
   pipelineDb = database;
 }
 
+export interface PipelineLLMConfig {
+  openaiApiKey?: string;
+  groqApiKey: string;
+  groqModel?: string;
+}
+
 /**
  * Run the full verification pipeline for a single PR job.
  */
 export async function runPipeline(
   job: VerifyTestPlanJob,
   probot: Probot,
-  groqApiKey: string,
+  llmConfig: PipelineLLMConfig,
 ): Promise<void> {
   const correlationId = randomUUID();
-  return runWithCorrelationId(correlationId, () => _runPipeline(job, probot, groqApiKey, correlationId));
+  return runWithCorrelationId(correlationId, () => _runPipeline(job, probot, llmConfig, correlationId));
 }
 
 // ---------------------------------------------------------------------------
 // LLM client creation
 // ---------------------------------------------------------------------------
 
-/** Default platform model — configurable via GROQ_MODEL env var */
-const PLATFORM_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+/** Default Groq model — fallback when OpenAI is not configured */
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+
+/** OpenAI nano model — primary when OPENAI_API_KEY is set */
+const OPENAI_MODEL = "gpt-5.4-nano";
+
+/** Reasoning effort by subscription tier */
+const TIER_REASONING: Record<string, ReasoningEffort> = {
+  free: "none",
+  pro: "low",
+  team: "low",
+};
 
 // ---------------------------------------------------------------------------
 // Helper: push signal with weight override
@@ -64,7 +81,7 @@ function pushSignal(signals: Signal[], signal: Signal, weight: number): void {
 async function _runPipeline(
   job: VerifyTestPlanJob,
   probot: Probot,
-  groqApiKey: string,
+  llmConfig: PipelineLLMConfig,
   correlationId: string,
 ): Promise<void> {
   const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig, configWarnings } = job;
@@ -104,12 +121,22 @@ async function _runPipeline(
   const signals: Signal[] = [];
 
   try {
-    // Stage 1: Create LLM client
-    const llm = createLLMClient({
-      provider: "groq",
-      model: PLATFORM_MODEL,
-      apiKey: groqApiKey,
-    });
+    // Stage 1: Create LLM client (OpenAI nano primary, Groq fallback)
+    const reasoningEffort = TIER_REASONING[tier] ?? "none";
+    const groqModel = llmConfig.groqModel || GROQ_MODEL;
+
+    const llm = llmConfig.openaiApiKey
+      ? createLLMClientWithFallback(
+          { provider: "openai", model: OPENAI_MODEL, apiKey: llmConfig.openaiApiKey, reasoningEffort },
+          { provider: "groq", model: groqModel, apiKey: llmConfig.groqApiKey },
+        )
+      : createLLMClient({
+          provider: "groq",
+          model: groqModel,
+          apiKey: llmConfig.groqApiKey,
+        });
+
+    log.info({ provider: llmConfig.openaiApiKey ? "openai" : "groq", model: llmConfig.openaiApiKey ? OPENAI_MODEL : groqModel, reasoningEffort }, "LLM client created");
 
     // Stage 2: Fetch PR diff
     diff = await fetchPRDiff({ octokit, owner, repo, pullNumber });
