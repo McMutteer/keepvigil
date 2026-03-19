@@ -35,12 +35,18 @@ function makeSignal(overrides: Partial<Signal> & Pick<Signal, "id" | "details">)
   };
 }
 
-function makeOctokit(createReviewMock = vi.fn().mockResolvedValue({})) {
-  return {
+function makeOctokit(
+  createReviewMock = vi.fn().mockResolvedValue({}),
+  existingComments: Array<{ path: string; position: number | null; user: { type: string } }> = [],
+) {
+  const listReviewComments = vi.fn().mockResolvedValue(existingComments);
+  const octokit = {
     rest: {
-      pulls: { createReview: createReviewMock },
+      pulls: { createReview: createReviewMock, listReviewComments },
     },
+    paginate: vi.fn().mockImplementation((_method: unknown, _params: unknown) => Promise.resolve(existingComments)),
   } as unknown as Parameters<typeof postReviewComments>[0]["octokit"];
+  return octokit;
 }
 
 // ---------------------------------------------------------------------------
@@ -220,6 +226,67 @@ describe("postReviewComments", () => {
     });
 
     expect(count).toBe(0); // graceful degradation
+  });
+
+  it("skips comments already posted by the bot in a previous review", async () => {
+    const createReview = vi.fn().mockResolvedValue({});
+    // Simulate existing bot comment on src/auth.ts at position 4 (where line 12 maps to)
+    const octokit = makeOctokit(createReview, [
+      { path: "src/auth.ts", position: 4, user: { type: "Bot" } },
+    ]);
+
+    const signals: Signal[] = [
+      makeSignal({
+        id: "credential-scan",
+        name: "Credential Scan",
+        details: [{
+          label: "Secret",
+          status: "fail",
+          message: "Found secret",
+          file: "src/auth.ts",
+          line: 12,
+        }],
+      }),
+    ];
+
+    const count = await postReviewComments({
+      octokit, owner: "acme", repo: "webapp", pullNumber: 42,
+      headSha: "abc123", diff: SAMPLE_DIFF, signals,
+    });
+
+    // The finding maps to src/auth.ts position 3, which already has a bot comment
+    expect(count).toBe(0);
+    expect(createReview).not.toHaveBeenCalled();
+  });
+
+  it("posts only new comments when some already exist", async () => {
+    const createReview = vi.fn().mockResolvedValue({});
+    // Bot already commented on src/auth.ts:4 but not on package.json:4
+    const octokit = makeOctokit(createReview, [
+      { path: "src/auth.ts", position: 4, user: { type: "Bot" } },
+    ]);
+
+    const signals: Signal[] = [
+      makeSignal({
+        id: "credential-scan",
+        name: "Credential Scan",
+        details: [
+          { label: "Secret", status: "fail", message: "Found secret", file: "src/auth.ts", line: 12 },
+          { label: "Dep", status: "warn", message: "New dependency", file: "package.json", line: 13 },
+        ],
+      }),
+    ];
+
+    const count = await postReviewComments({
+      octokit, owner: "acme", repo: "webapp", pullNumber: 42,
+      headSha: "abc123", diff: SAMPLE_DIFF, signals,
+    });
+
+    // Only package.json comment is new
+    expect(count).toBe(1);
+    expect(createReview).toHaveBeenCalledOnce();
+    const call = createReview.mock.calls[0][0];
+    expect(call.comments[0].path).toBe("package.json");
   });
 
   it("skips lines not in the diff", async () => {

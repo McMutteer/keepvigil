@@ -99,20 +99,62 @@ export async function postReviewComments(options: ReviewCommenterOptions): Promi
   const dedupedComments = [...dedupMap.values()].slice(0, MAX_INLINE_COMMENTS);
 
   try {
+    // Fetch existing review comments from the bot to avoid duplicates across re-reviews
+    const existingComments = await fetchExistingBotComments(octokit, owner, repo, pullNumber);
+    const newComments = dedupedComments.filter((c) => {
+      const key = `${c.path}:${c.position}`;
+      return !existingComments.has(key);
+    });
+
+    if (newComments.length === 0) {
+      log.info({ owner, repo, pullNumber }, "All inline comments already posted — skipping");
+      return 0;
+    }
+
     await octokit.rest.pulls.createReview({
       owner,
       repo,
       pull_number: pullNumber,
       commit_id: headSha,
       event: "COMMENT",
-      comments: dedupedComments,
+      comments: newComments,
     });
 
-    log.info({ owner, repo, pullNumber, count: dedupedComments.length }, "Review comments posted");
-    return dedupedComments.length;
+    log.info({ owner, repo, pullNumber, count: newComments.length, skipped: dedupedComments.length - newComments.length }, "Review comments posted");
+    return newComments.length;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     log.warn({ error: msg.replace(/ghs_[A-Za-z0-9]+/g, "***"), owner, repo, pullNumber }, "Failed to post review comments — findings are still in the issue comment");
     return 0;
   }
+}
+
+/**
+ * Fetch existing review comments from the bot on this PR.
+ * Returns a Set of "path:position" keys for deduplication.
+ */
+async function fetchExistingBotComments(
+  octokit: ProbotOctokit,
+  owner: string,
+  repo: string,
+  pullNumber: number,
+): Promise<Set<string>> {
+  const keys = new Set<string>();
+  try {
+    const comments = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
+      owner,
+      repo,
+      pull_number: pullNumber,
+      per_page: 100,
+    });
+    for (const c of comments) {
+      if (c.user?.type !== "Bot") continue;
+      if (c.position != null && c.path) {
+        keys.add(`${c.path}:${c.position}`);
+      }
+    }
+  } catch (err) {
+    log.warn({ err, owner, repo, pullNumber }, "Failed to fetch existing review comments — proceeding without dedup");
+  }
+  return keys;
 }
