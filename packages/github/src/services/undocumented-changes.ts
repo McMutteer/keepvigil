@@ -48,11 +48,24 @@ Severity levels:
 IMPORTANT calibration rules (to avoid false positives):
 - Import changes that serve the described feature are NOT undocumented
 - New test files are NOT undocumented (they support the described changes)
-- Config/linting/formatting changes are NOT significant unless they change behavior
 - File renames or moves that serve the described feature are NOT undocumented
 - Type definition changes that support the described feature are NOT undocumented
 - Changes that are OBVIOUS consequences of the described feature are NOT undocumented
   (e.g., if PR says "add rate limiting", adding a rate-limit config is expected)
+
+ALWAYS ignore these files — they are NEVER significant unless they change runtime behavior:
+- .eslintrc*, .prettierrc*, eslint.config.*, prettier.config.*
+- tsconfig.json, tsconfig.*.json, vitest.config.*, jest.config.*
+- .github/workflows/*, Makefile, docker-compose.yml, Dockerfile
+- *.md (documentation), *.lock, *.lockb, .gitignore
+- Any file that only changes whitespace, formatting, or import order
+
+Examples of CORRECT behavior:
+- PR: "Add Redis caching" → Adding ioredis to package.json = undocumented (dependency not mentioned)
+- PR: "Add Redis caching" → Adding redis.config.ts = NOT undocumented (obvious consequence)
+- PR: "Fix auth bug" → Changing .eslintrc = NOT undocumented (formatting, not behavioral)
+- PR: "Refactor API" → Adding new env var API_TIMEOUT = undocumented (env vars always matter)
+- PR: "Update deps" → Removing a package = NOT undocumented (expected in a deps update)
 
 Return ONLY valid JSON (no markdown, no explanation):
 {

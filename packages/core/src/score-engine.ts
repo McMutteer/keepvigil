@@ -91,10 +91,11 @@ export function computeScore(signals: Signal[]): ConfidenceScore {
   const weightedSum = weighted.reduce((sum, s) => sum + s.score * s.weight, 0);
   let score = Math.round(weightedSum / totalWeight);
 
-  // Failure cap only applies for non-LLM signals (deterministic failures).
-  // LLM-based signals are speculative — they inform but don't hard-cap.
-  const hasDeterministicFailure = signals.some((s) => !s.passed && !s.requiresLLM);
-  if (hasDeterministicFailure && score > FAILURE_CAP) {
+  // Failure cap only applies for critical deterministic signals (credential leaks).
+  // Non-critical failures (coverage mapper) inform but don't hard-cap.
+  const CRITICAL_SIGNALS: Set<string> = new Set(["credential-scan"]);
+  const hasCriticalFailure = signals.some((s) => !s.passed && !s.requiresLLM && CRITICAL_SIGNALS.has(s.id));
+  if (hasCriticalFailure && score > FAILURE_CAP) {
     score = FAILURE_CAP;
   }
 
