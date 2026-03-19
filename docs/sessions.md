@@ -48,3 +48,29 @@ related: [2026-03-17-full-codebase-audit]
 **Resultado:** 5 PRs mergeados (#66-#70). 2 nuevos signals (claims-verifier, undocumented-changes). Pipeline dual-mode. Formato de comentario v2 con secciones Claims y Undocumented. 1279→1321 tests. Vision doc local como roadmap para fases 2-5.
 
 **Aprendido:** (1) El pattern de signal en Vigil es tan consistente que crear uno nuevo es copiar `diff-analyzer.ts` y cambiar el prompt — 30 min por signal incluyendo tests. (2) Dual-mode weights con `getWeights(mode)` es mas limpio que condicionales en cada signal — el peso 0 hace que `computeScore` ignore el signal automaticamente. (3) Cuando rebalanceas weights, **todos** los tests que hardcodean el numero van a romper — buscar con grep antes de mergear. (4) `hasTestPlan()` no se elimina del codebase, solo se mueve del webhook al pipeline — la decision v1+v2 vs v2-only se toma adentro, no afuera.
+
+---
+id: 2026-03-19-full-circle
+type: design
+project: vigil
+branch: main
+pr: 94, 95
+date: 2026-03-19
+tags: [strategic-pivot, ai-first, messaging-rewrite, docs-cleanup, deploy, dogfooding-fixes, coverage-exclude, dedup]
+summary: "From audit to identity: deployed PRs #88-#93, fixed last 2 dogfooding bugs, rewrote entire landing+docs for AI-first positioning, and confronted what Vigil actually is."
+related: [2026-03-18-v2-phase1-claims-undocumented]
+---
+
+### El Espejo
+
+**Hilo:** Todo lo tecnico estaba hecho — dashboard, OAuth, i18n, auto-approve, v1 deprecado, 768 tests. Habiamos construido el motor completo. Pero al pararnos a mirar el producto terminado, la pregunta obvia: "¿y esto quien lo compra?" Esta sesion fue eso — dejar de construir y empezar a entender.
+
+**Lo que paso:** Empezamos con housekeeping: ROADMAP.md estaba 3 fases atras, issues #12 y #13 apuntaban a codigo eliminado, 15 branches zombies en origin. Todo limpio en 15 minutos. Luego el deploy — 6 PRs acumulados (#88-#93) que nunca llegaron al servidor. El deploy revelo que los contenedores cambiaron de nombre (`keepvigil-*` → `code-*`) y Traefik apuntaba al fantasma del contenedor viejo. Port 3200 ocupado, stop containers viejos, update Traefik config, reiniciar — 10 minutos de fricciones de infra que siempre aparecen. Con todo live, atacamos los ultimos 2 bugs de dogfooding: (1) coverage mapper flaggeaba 20+ componentes React como "sin tests" — implementamos `coverage.exclude` en `.vigil.yml` para que repos configuren paths a ignorar, (2) inline comments se duplicaban en re-reviews — agregamos `fetchExistingBotComments()` que checa comments del bot antes de postear. PR #94, 768 tests, deploy.
+
+Pero lo heavy vino despues. El usuario pregunto: "¿alguien pagaria por esto?" Y tuve que ser honesto. Vigil a $19/mo compitiendo genericamente contra CodeRabbit a $24/dev — dificil. El problema que resolvemos es real pero no es lo suficientemente doloroso para la mayoria. La revelacion: **el dolor no esta en "PRs mal documentados" — esta en "PRs que nadie realmente verifico."** Y ese dolor se multiplica exponencialmente con AI agents generando codigo. El pitch cambio de "verifies your PR" a "merge with confidence" — de lo tecnico a lo emocional. De "herramienta de verificacion" a "capa de confianza para la era del AI coding."
+
+Dos agentes en paralelo reescribieron todo el landing (hero, signals, FAQ, pricing — ambos idiomas) y limpiaron 20 paginas de docs (8 eliminadas, 10 reescritas). Build exitoso, deploy, "Merge with confidence" live en keepvigil.dev.
+
+**Resultado:** PRs #94-#95. Deploy completo. 2 bugs de dogfooding cerrados. 29 archivos cambiados en landing/docs (-2727 lineas de features deprecadas). 4 documentos estrategicos nuevos en memory (strategy, plan-landing, plan-docs, plan-content). CLAUDE.md y MEMORY.md actualizados.
+
+**Aprendido:** (1) Construir el producto es la parte facil — entender para quien es, es lo dificil. Puedes tener 768 tests y un deploy limpio y aun asi no saber si alguien pagaria. (2) El angulo de "AI agent verification" no es un pivot — es una lente. El producto no cambia; la forma de contarlo si. El mismo `claims-verifier` que verifica PRs humanos verifica PRs de Devin. (3) "Merge with confidence" transmite urgencia emocional. "Verifies that your PR does what it says it does" transmite precision tecnica. Para vender, la emocion gana. (4) Worktrees aislados para agentes paralelos funcionan perfecto para landing+docs (archivos distintos), pero hay que copiar manualmente los cambios del worktree al repo principal antes de commitear — `git add` no ve archivos de otro worktree. (5) Los contenedores Docker cambian de nombre cuando cambias el `COMPOSE_PROJECT_NAME` (o el directorio). Traefik apunta a nombres de contenedor, no a servicios — siempre verificar despues de un rebuild.
