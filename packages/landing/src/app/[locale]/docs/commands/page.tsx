@@ -27,8 +27,7 @@ export default function CommandsPage() {
         /vigil retry
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Re-run all signals from scratch — works for both modes (PRs with and
-        without a test plan). Post a comment on the PR with exactly{" "}
+        Re-run all signals from scratch. Post a comment on the PR with exactly{" "}
         <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
           /vigil retry
         </code>{" "}
@@ -40,36 +39,6 @@ export default function CommandsPage() {
         This is useful when external conditions have changed since the original
         run — for example, a CI pipeline that was temporarily broken, or a
         preview deployment that was not ready yet.
-      </p>
-
-      {/* /vigil retry with IDs */}
-      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        /vigil retry tp-1 tp-3
-      </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        Re-run only specific test plan items by their IDs. Item IDs are shown in
-        the Vigil report (
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          tp-1
-        </code>
-        ,{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          tp-2
-        </code>
-        , etc.). Specify one or more IDs separated by spaces.
-      </p>
-      <CodeBlock
-        filename="PR comment"
-        code={`# Re-run only items tp-1 and tp-3
-/vigil retry tp-1 tp-3
-
-# Re-run a single item
-/vigil retry tp-5`}
-      />
-      <p className="text-text-secondary leading-relaxed mb-4">
-        Items not included in the selective retry will show a status of
-        &quot;Not retried&quot; in the updated report. Their previous results are
-        preserved — only the specified items are re-executed.
       </p>
 
       {/* @vigil recheck */}
@@ -184,7 +153,7 @@ export default function CommandsPage() {
           Creates a new GitHub Check Run (the old one remains for history)
         </li>
         <li>
-          Re-executes the specified items (or all items for a full retry)
+          Re-executes all six verification signals
         </li>
         <li>Recalculates the confidence score based on the new results</li>
         <li>
@@ -193,10 +162,6 @@ export default function CommandsPage() {
             (retry)
           </code>{" "}
           tag in the title
-        </li>
-        <li>
-          Adds a banner showing which item IDs were re-run (for selective
-          retries)
         </li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">

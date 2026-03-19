@@ -26,10 +26,6 @@ function IconClaimsVerification() {
   return <SignalIcon><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="M9 15l2 2 4-4" /></SignalIcon>;
 }
 
-function IconUndocumentedChanges() {
-  return <SignalIcon><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></SignalIcon>;
-}
-
 function IconImpactAnalysis() {
   return <SignalIcon><path d="M12 3l8 4v5c0 5.25-3.5 9.74-8 11-4.5-1.26-8-5.75-8-11V7l8-4z" /></SignalIcon>;
 }
@@ -99,9 +95,8 @@ function LayerCard({
 export function Signals({ dict }: { dict: Dictionary }) {
   const t = dict.signals;
   const layers = [
-    { icon: <IconClaimsVerification />, ...t.layers.claimsVerification },
-    { icon: <IconUndocumentedChanges />, ...t.layers.undocumentedChanges },
-    { icon: <IconImpactAnalysis />, ...t.layers.impactAnalysis },
+    { icon: <IconClaimsVerification />, ...t.layers.trustVerification },
+    { icon: <IconImpactAnalysis />, ...t.layers.deepAnalysis },
   ];
 
   return (
@@ -118,7 +113,7 @@ export function Signals({ dict }: { dict: Dictionary }) {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {layers.map((layer, i) => (
             <LayerCard key={i} {...layer} index={i} />
           ))}

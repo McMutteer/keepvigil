@@ -9,49 +9,31 @@ export function getDocsNav(locale: string): NavItem[] {
   const p = `/${locale}/docs`;
   return [
     { title: "Getting Started", href: `${p}/getting-started` },
-    { title: "Writing Test Plans", href: `${p}/writing-test-plans` },
     { title: "How It Works", href: `${p}/how-it-works` },
     { title: "Configuration", href: `${p}/configuration` },
     {
       title: "Signals",
       href: `${p}/signals`,
       items: [
-        { title: "CI Bridge", href: `${p}/signals/ci-bridge` },
         { title: "Credential Scan", href: `${p}/signals/credential-scan` },
-        { title: "Test Execution", href: `${p}/signals/test-execution` },
         { title: "Coverage Mapper", href: `${p}/signals/coverage-mapper` },
-        {
-          title: "Assertion Verifier",
-          href: `${p}/signals/assertion-verifier`,
-        },
-        {
-          title: "Plan Augmentor",
-          href: `${p}/signals/plan-augmentor`,
-        },
         {
           title: "Contract Checker",
           href: `${p}/signals/contract-checker`,
           badge: "Pro",
         },
         {
-          title: "Diff vs Claims",
+          title: "Diff Analysis",
           href: `${p}/signals/diff-analysis`,
-          badge: "Pro",
-        },
-        {
-          title: "Gap Analysis",
-          href: `${p}/signals/gap-analysis`,
           badge: "Pro",
         },
       ],
     },
     { title: "Confidence Score", href: `${p}/scoring` },
     { title: "Commands", href: `${p}/commands` },
-    { title: "BYOLLM", href: `${p}/byollm`, badge: "Pro" },
-    { title: "Notifications", href: `${p}/notifications` },
-    { title: "Shell Allowlist", href: `${p}/shell-allowlist` },
-    { title: "Security", href: `${p}/security` },
     { title: "Dashboard", href: `${p}/dashboard`, badge: "Pro" },
+    { title: "Notifications", href: `${p}/notifications` },
+    { title: "Security", href: `${p}/security` },
     { title: "Billing & Plans", href: `${p}/billing` },
     { title: "Changelog", href: `${p}/changelog` },
   ];

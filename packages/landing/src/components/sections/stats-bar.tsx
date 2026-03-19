@@ -4,8 +4,8 @@ import type { Dictionary } from "@/i18n/get-dictionary";
 export function StatsBar({ dict }: { dict: Dictionary }) {
   const t = dict.statsBar;
   const STATS = [
-    { value: "3", label: t.verificationLayers },
-    { value: "10", label: t.signalsPerPr },
+    { value: "2", label: t.verificationLayers },
+    { value: "6", label: t.signalsPerPr },
     { value: "30s", label: t.setupTime },
     { value: "0", label: t.configRequired },
   ];

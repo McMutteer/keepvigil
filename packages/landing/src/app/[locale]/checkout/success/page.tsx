@@ -10,20 +10,16 @@ export const metadata: Metadata = {
 
 const unlockedFeatures = [
   {
-    name: "Diff vs Claims",
-    description: "LLM gap detection between PR changes and test plan claims",
-  },
-  {
-    name: "Gap Analysis",
-    description: "Find changed files that no test plan item covers",
-  },
-  {
     name: "Contract Checker",
     description: "API and frontend compatibility verification",
   },
   {
-    name: "BYOLLM",
-    description: "Use your own OpenAI, Groq, or Ollama API key",
+    name: "Diff Analyzer",
+    description: "LLM-powered structural and semantic diff analysis",
+  },
+  {
+    name: "Inline Review Comments",
+    description: "Findings posted directly on diff lines",
   },
   {
     name: "Webhook Notifications",
@@ -34,22 +30,22 @@ const unlockedFeatures = [
 const nextSteps = [
   {
     step: 1,
-    text: "Configure your LLM key in",
-    code: ".vigil.yml",
-    href: "/docs/byollm",
-    linkText: "BYOLLM docs",
-  },
-  {
-    step: 2,
     text: "Push a PR to any enabled repo",
     href: "/docs/getting-started",
     linkText: "Getting started",
   },
   {
-    step: 3,
-    text: "See the full confidence score with all 9 signals",
+    step: 2,
+    text: "See the full confidence score with all 6 signals",
     href: "/docs/scoring",
     linkText: "Scoring guide",
+  },
+  {
+    step: 3,
+    text: "Configure notifications in",
+    code: ".vigil.yml",
+    href: "/docs/configuration",
+    linkText: "Configuration docs",
   },
 ];
 

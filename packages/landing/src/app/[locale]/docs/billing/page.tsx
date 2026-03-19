@@ -61,9 +61,8 @@ export default function BillingPage() {
                 $19/mo
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                Everything in Free + Impact Analysis (contract checking, diff
-                analysis, gap analysis), inline review comments, BYOLLM,
-                webhooks
+                Everything in Free + Deep Analysis (contract checking, diff
+                analysis), inline review comments, webhooks
               </td>
             </tr>
             <tr>
@@ -176,28 +175,6 @@ export default function BillingPage() {
           </tbody>
         </table>
       </div>
-
-      {/* BYOLLM Billing */}
-      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        BYOLLM Billing
-      </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        Vigil doesn&apos;t charge for LLM usage. You provide your own API key
-        (OpenAI, Groq, or Ollama) and pay your provider directly. Typical cost
-        is less than $0.01 per PR.
-      </p>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        You control the provider, model, and spending. Configure your LLM
-        connection in{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          .vigil.yml
-        </code>{" "}
-        under the{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          llm
-        </code>{" "}
-        section.
-      </p>
 
       {/* FAQ */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
