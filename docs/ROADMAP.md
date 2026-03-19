@@ -63,25 +63,45 @@ All P0/P1 bugs fixed, structured logging, metrics, 836+ tests, CI pipeline, grac
 - Vite + React 19 SPA at `/dashboard/` (same design system as landing)
 - Nginx deployment integration (dual build, SPA fallback)
 - Landing CTA — Dashboard link in navbar + pricing page card
-- 1387 tests across 55 files
+
+### Signal Quality — Dogfooding Fixes (PR #88)
+Found by running Vigil on its own dashboard PRs (#81-#87). All fixed and verified:
+- [x] Template literal confusion in diffs — `escapeCodeFence()` replaces `escapeBackticks()`, only escaping triple-backtick sequences
+- [x] Credential scan in test files — test files get `warn` status, generic fixture values skipped, test-only findings score 70
+- [x] Coverage mapper path matching — walk up parent directories to find `__tests__/` at package level
+- [x] Coverage mapper config noise — added `*.config.*`, `nginx.conf`, `entrypoint.sh` to non-source exclusions
+
+### Phase 5 — v1 Deprecation (PR #91)
+- [x] Removed `packages/executors` (shell, browser, API executors + Chromium/Playwright)
+- [x] Removed BYOLLM — all PRs use platform LLM (Groq)
+- [x] Removed parser + classifier from `packages/core`
+- [x] Simplified pipeline to v2-only (6 signals: claims-verifier, undocumented-changes, credential-scan, coverage-mapper, contract-checker, diff-analyzer)
+- [x] Docker image ~500MB lighter (no Chromium)
+
+### Auto-approve (PR #92)
+- [x] `.vigil.yml` `auto_approve.threshold` (80-100) — submits approving GitHub review when score exceeds threshold
+- [x] Pro/Team only gating
+- [x] Config parser validates threshold range
+
+### i18n EN/ES (PR #93)
+- [x] Landing page fully translated (31 pages, 62 HTML outputs)
+- [x] `[locale]` dynamic segment with `generateStaticParams`
+- [x] Translation dictionaries (`en.ts`, `es.ts`)
+- [x] Language switcher in navbar (EN | ES)
 
 ---
 
 ## Next Up
 
-### Deploy Dashboard
-- [ ] Run migration `0007_smart_ultimates.sql` on production
-- [ ] Enable OAuth in GitHub App settings + add callback URL
-- [ ] Set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` on server
+### Deploy Latest (PRs #88-#93)
+- [ ] Verify env vars on server: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET`
+- [ ] Verify OAuth callback URL in GitHub App settings
 - [ ] Deploy via `ssh root@161.97.97.243 deploy-keepvigil.sh`
-- [ ] Verify `/dashboard` loads, OAuth flow works end-to-end
+- [ ] Verify: `/dashboard` loads, OAuth flow, i18n locale switching, auto-approve config
 
-### Signal Quality — Dogfooding Fixes
-Found by running Vigil on its own dashboard PRs (#81-#87):
-- [ ] Template literal confusion in diffs — LLM misreads backticks as single quotes in JSX/TSX (critical, ~10+ false positives per PR)
-- [ ] Credential scan in test files — reduce weight for `__tests__/` paths, skip generic values
-- [ ] Coverage mapper path matching — handle `__tests__/` directory pattern (not just colocated `.test.ts`)
-- [ ] Coverage mapper config noise — exclude non-code files (.conf, .yml, Dockerfile, .md)
+### Signal Quality — Open Issues
+- [ ] Coverage mapper flags React components as needing tests — 20+ false positives on frontend PRs (tanks score to 70)
+- [ ] Inline review comments accumulate on re-reviews — no deduplication against previous reviews
 
 ### Announce (blocked: waiting for Marketplace approval)
 - [ ] Twitter/X thread — show real siegekit PR #24 as demo
@@ -92,16 +112,16 @@ Found by running Vigil on its own dashboard PRs (#81-#87):
 
 ## Future
 
-### Phase 5 — v1 Deprecation
-- [ ] Deprecate BYOLLM (v1-only, platform LLM is fast enough)
-- [ ] Deprecate shell executor (security surface, low usage)
-- [ ] Simplify pipeline to v2-only
-
 ### Platform
-- [ ] Auto-approve support (score > threshold → auto-approve PR)
+- [ ] Dashboard i18n (currently English only)
 - [ ] Team features (shared dashboard, SSO, custom scoring rules)
-- [ ] i18n EN/ES
 - [ ] GitLab / Bitbucket support (evaluate demand)
+- [ ] Pricing restructure (per-developer, trial PRs, freemium by repo — needs usage data)
+
+### Infrastructure
+- [ ] Landing Dockerfile SHA pin (matches main Dockerfile)
+- [ ] Redis maxmemory-policy: `allkeys-lru` instead of `noeviction`
+- [ ] CSP header in nginx
 
 ---
 
@@ -109,5 +129,7 @@ Found by running Vigil on its own dashboard PRs (#81-#87):
 
 - **Real-world testing:** siegekit PRs #8-#14 (v1), #24 (v2 first production test)
 - **Best score:** 95/100 on keepvigil PR #47
-- **Dogfooding:** Vigil reviews its own PRs — bugs found are tracked in "Signal Quality" above
+- **Dogfooding:** Vigil reviews its own PRs — tracked in project memory
+- **757 tests** across 39 files (core + github packages)
 - Marketplace review pending — GitHub will notify via email
+- v1 modules removed: parser, classifier, executors, Chromium, BYOLLM
