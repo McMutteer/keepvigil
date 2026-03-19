@@ -69,15 +69,13 @@ export function createLLMClient(config: LLMConfig): LLMClient {
             temperature: 0,
           };
 
-          // Add reasoning effort for supported models via extra_body
-          const extraBody = (effort && effort !== "none" && supportsReasoning(config.model))
-            ? { reasoning: { effort } }
-            : undefined;
-
-          const response = await client.chat.completions.create(
-            extraBody ? { ...params, ...extraBody } as typeof params : params,
-            { timeout: timeoutMs ?? DEFAULT_TIMEOUT_MS },
-          );
+          const response = await client.chat.completions.create({
+            ...params,
+            // Reasoning effort for GPT-5.4 models — undocumented param, SDK passes it through
+            ...(effort && effort !== "none" && supportsReasoning(config.model)
+              ? { reasoning: { effort } }
+              : {}),
+          } as typeof params, { timeout: timeoutMs ?? DEFAULT_TIMEOUT_MS });
 
           const content = response.choices[0]?.message?.content;
           if (!content) {
