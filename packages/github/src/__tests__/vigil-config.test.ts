@@ -70,4 +70,40 @@ notifications:
     expect(config).toEqual({});
     expect(warnings).toEqual([]);
   });
+
+  it("parses valid auto_approve config", () => {
+    const { config, warnings } = parseVigilConfig("auto_approve:\n  threshold: 90");
+    expect(warnings).toEqual([]);
+    expect(config.autoApprove?.threshold).toBe(90);
+  });
+
+  it("accepts threshold at minimum (80)", () => {
+    const { config, warnings } = parseVigilConfig("auto_approve:\n  threshold: 80");
+    expect(warnings).toEqual([]);
+    expect(config.autoApprove?.threshold).toBe(80);
+  });
+
+  it("accepts threshold at maximum (100)", () => {
+    const { config, warnings } = parseVigilConfig("auto_approve:\n  threshold: 100");
+    expect(warnings).toEqual([]);
+    expect(config.autoApprove?.threshold).toBe(100);
+  });
+
+  it("rejects threshold below 80", () => {
+    const { config, warnings } = parseVigilConfig("auto_approve:\n  threshold: 50");
+    expect(config.autoApprove).toBeUndefined();
+    expect(warnings[0]).toContain("out of range");
+  });
+
+  it("rejects non-numeric threshold", () => {
+    const { config, warnings } = parseVigilConfig("auto_approve:\n  threshold: high");
+    expect(config.autoApprove).toBeUndefined();
+    expect(warnings[0]).toContain("must be a number");
+  });
+
+  it("floors decimal threshold", () => {
+    const { config, warnings } = parseVigilConfig("auto_approve:\n  threshold: 92.7");
+    expect(warnings).toEqual([]);
+    expect(config.autoApprove?.threshold).toBe(92);
+  });
 });

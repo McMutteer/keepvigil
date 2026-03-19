@@ -7,6 +7,7 @@ import { updateCheckRun, determineConclusion, conclusionFromScore } from "./chec
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
 import { notifyWebhooks } from "./webhook-notifier.js";
 import { postReviewComments } from "./review-commenter.js";
+import { maybeAutoApprove } from "./auto-approve.js";
 
 const log = createLogger("reporter");
 
@@ -310,6 +311,22 @@ export async function reportResults(context: ReportContext): Promise<void> {
   if (context.db && context.installationId && context.jobId) {
     void persistExecution(context, confidenceScore, summary, conclusion).catch((err) => {
       log.error({ err }, "Failed to persist execution");
+    });
+  }
+
+  // Senary — auto-approve PR if score exceeds threshold (Pro/Team, fire-and-forget)
+  if (confidenceScore && !context.pipelineError) {
+    void maybeAutoApprove({
+      octokit: context.octokit,
+      owner: context.owner,
+      repo: context.repo,
+      pullNumber: context.pullNumber,
+      headSha: context.headSha,
+      confidenceScore,
+      vigiConfig: context.vigiConfig,
+      proEnabled: context.proEnabled ?? false,
+    }).catch((err) => {
+      log.error({ err }, "Auto-approve failed");
     });
   }
 }
