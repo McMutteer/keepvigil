@@ -39,52 +39,23 @@ export default function ScoringPage() {
         integer.
       </p>
 
-      {/* Worked Example — v1+v2 */}
+      {/* Worked Example */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Worked Example — v1+v2 (PR with test plan)
+        Worked Example
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        When a PR includes a test plan, all ten verification layers are active.
-        Here is how the final score is calculated:
+        Here is how the final score is calculated with all six signals active
+        (Pro plan):
       </p>
       <CodeBlock
-        filename="v1+v2 example"
-        code={`Signal                Score   Weight   Contribution
-────────────────────  ─────   ──────   ────────────
-Claims Verifier         92   x  15   =       1380
-Undocumented Changes    85   x  10   =        850
-CI Bridge              100   x  20   =       2000
-Credential Scan        100   x  15   =       1500
-Test Execution          67   x  10   =        670
-Plan Augmentor          80   x  10   =        800
-Contract Checker        90   x   5   =        450
-Diff Analyzer           85   x   5   =        425
-Coverage Mapper         75   x   5   =        375
-Gap Analysis            90   x   5   =        450
-                                     ────────────
-Total                          100         8900
-
-Score = 8900 / 100 = 89`}
-      />
-
-      {/* Worked Example — v2-only */}
-      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Worked Example — v2-only (PR without test plan)
-      </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        When a PR has no test plan, test-plan-dependent signals (CI Bridge, Test
-        Execution, Plan Augmentor, Gap Analysis) receive zero weight. The
-        remaining six layers are reweighted to total 100:
-      </p>
-      <CodeBlock
-        filename="v2-only example"
+        filename="example"
         code={`Signal                Score   Weight   Contribution
 ────────────────────  ─────   ──────   ────────────
 Claims Verifier         78   x  30   =       2340
 Undocumented Changes    60   x  25   =       1500
 Credential Scan        100   x  20   =       2000
-Contract Checker        85   x  10   =        850
 Coverage Mapper         70   x  10   =        700
+Contract Checker        85   x  10   =        850
 Diff Analyzer           90   x   5   =        450
                                      ────────────
 Total                          100         7840
@@ -92,9 +63,9 @@ Total                          100         7840
 Score = 7840 / 100 = 78`}
       />
       <p className="text-text-secondary leading-relaxed mb-4">
-        In v2-only mode, Claims Verifier and Undocumented Changes carry the
-        most weight because they are the primary code-level verification layers
-        that do not depend on a test plan.
+        On the Free tier, only the four Trust Verification signals run (Claims
+        Verifier, Undocumented Changes, Credential Scan, Coverage Mapper). Their
+        weights are renormalized to total 100, so the formula stays the same.
       </p>
 
       {/* Recommendation Tiers */}
@@ -167,39 +138,16 @@ Score = 7840 / 100 = 78`}
           <strong className="text-text-primary">Credential Scan</strong> — secrets detected in the diff
         </li>
         <li>
-          <strong className="text-text-primary">CI Bridge</strong> — CI pipeline failed (v1+v2 only)
-        </li>
-        <li>
-          <strong className="text-text-primary">Test Execution</strong> — shell commands or assertions failed (v1+v2 only)
-        </li>
-        <li>
           <strong className="text-text-primary">Coverage Mapper</strong> — changed files have no test coverage
         </li>
       </ul>
       <p className="text-text-secondary leading-relaxed mb-4">
-        LLM-based signals (Claims Verifier, Undocumented Changes, Diff Analyzer,
-        Gap Analysis) do{" "}
+        LLM-based signals (Claims Verifier, Undocumented Changes, Contract
+        Checker, Diff Analyzer) do{" "}
         <strong className="text-text-primary">not</strong> trigger the failure cap.
         They are advisory: they can lower the score, but they cannot block a PR
         from being &quot;Safe to merge&quot; on their own. This reflects the inherent
         uncertainty of LLM analysis.
-      </p>
-
-      {/* Infrastructure Skips */}
-      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Infrastructure Skips
-      </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        Some test plan items cannot execute due to missing infrastructure. For
-        example, a browser test that requires a preview URL, or a shell command
-        that needs Docker. These items are not failures — they are
-        infrastructure limitations.
-      </p>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        Skipped items are excluded from scoring entirely. They do not penalize
-        the score, but they also do not contribute positively. In the PR
-        comment, they appear with a skip icon and a brief explanation of why
-        they could not run.
       </p>
 
       {/* Action Items */}
@@ -214,11 +162,11 @@ Score = 7840 / 100 = 78`}
         <li>
           <strong className="text-text-primary">Must Fix</strong> — items that
           directly failed a deterministic check. These are blocking issues like
-          leaked credentials, failing tests, or broken builds.
+          leaked credentials or missing test coverage.
         </li>
         <li>
           <strong className="text-text-primary">Consider</strong> — items flagged
-          by advisory signals like gap analysis or coverage mapper. These
+          by advisory signals like contract checker or coverage mapper. These
           deserve a look but may be intentional.
         </li>
       </ul>

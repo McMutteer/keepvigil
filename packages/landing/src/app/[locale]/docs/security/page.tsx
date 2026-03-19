@@ -7,7 +7,7 @@ import { getPrevNext } from "@/lib/docs-nav";
 export const metadata: Metadata = {
   title: "Security | Vigil Docs",
   description:
-    "How Vigil protects your code — sandbox isolation, SSRF prevention, fork trust model, and shell allowlist.",
+    "How Vigil protects your code — read-only analysis, no code storage, fork trust model, and EU-hosted infrastructure.",
 };
 
 export default function SecurityPage() {
@@ -23,96 +23,31 @@ export default function SecurityPage() {
       </p>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Sandbox Isolation
+        Read-Only Analysis
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        All shell commands run inside a Docker container with{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          --network none
-        </code>
-        . This means:
+        Vigil performs static, read-only analysis of your PR diffs. It does not
+        clone your repository, execute any code, or modify any files. The
+        analysis pipeline reads the diff provided by the GitHub API and runs
+        all verification signals against it without ever touching your
+        codebase directly.
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
-        <li>No internet access from inside the sandbox</li>
-        <li>No access to your host machine or other containers</li>
-        <li>No access to environment variables or secrets</li>
-        <li>
-          Read-only access to the repository code (cloned into the container)
-        </li>
-        <li>
-          Default image:{" "}
-          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-            node:22-alpine
-          </code>{" "}
-          (configurable via{" "}
-          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-            shell.image
-          </code>
-          )
-        </li>
+        <li>No code execution — all analysis is static</li>
+        <li>No repository cloning — only diff data from the GitHub API</li>
+        <li>No access to your environment variables or secrets</li>
+        <li>No write access to your repository beyond PR comments and check runs</li>
       </ul>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Shell Allowlist
+        No Code Storage
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Vigil does not execute arbitrary commands. Every command must match the{" "}
-        <DocsLink href="/docs/shell-allowlist" className="text-accent hover:underline">
-          shell allowlist
-        </DocsLink>{" "}
-        — a curated set of safe patterns (npm, pnpm, yarn, pytest, cargo,
-        etc.). Dangerous shell metacharacters are blocked:{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          ; | ` $ &lt; &gt; {"{"} {"}"}
-        </code>
-        .
+        Vigil does not store your source code. Diff data is processed in
+        memory during the analysis pipeline and discarded after results are
+        posted. Only metadata is persisted: scores, signal results, PR
+        numbers, and timestamps. Your code never touches disk on our servers.
       </p>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        NPX commands are further restricted — flags like{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          --config
-        </code>
-        ,{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          --plugin
-        </code>
-        , and{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          --resolve-plugins-relative-to
-        </code>{" "}
-        are blocked to prevent arbitrary code loading.
-      </p>
-
-      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        SSRF Protection
-      </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        The API executor validates all URLs before making requests. The{" "}
-        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-          validateBaseUrl()
-        </code>{" "}
-        function blocks:
-      </p>
-      <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
-        <li>
-          Localhost and loopback addresses (
-          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-            127.0.0.1
-          </code>
-          ,{" "}
-          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-            ::1
-          </code>
-          ,{" "}
-          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-            localhost
-          </code>
-          )
-        </li>
-        <li>Private IP ranges (10.x, 172.16-31.x, 192.168.x)</li>
-        <li>URLs with embedded credentials (user:pass@host)</li>
-        <li>Non-HTTPS URLs (HTTP is blocked)</li>
-      </ul>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         Fork PR Trust Model
@@ -128,24 +63,23 @@ export default function SecurityPage() {
             main
           </code>
           ), not from the fork&apos;s PR head. This prevents untrusted forks
-          from injecting malicious configuration — like adding dangerous
-          commands to{" "}
-          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-            shell.allow
-          </code>{" "}
-          or pointing the LLM to a malicious endpoint.
+          from injecting malicious configuration.
         </p>
       </Callout>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Retry Trust Gate
+        Command Trust Gate
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        The{" "}
+        Vigil commands (
         <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
           /vigil retry
-        </code>{" "}
-        command can only be triggered by users with{" "}
+        </code>
+        ,{" "}
+        <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
+          @vigil recheck
+        </code>
+        , etc.) can only be triggered by users with{" "}
         <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
           OWNER
         </code>
@@ -160,26 +94,6 @@ export default function SecurityPage() {
         association to the repository. This prevents external users from
         spamming re-runs on public repositories.
       </p>
-
-      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
-        Path Validation
-      </h2>
-      <p className="text-text-secondary leading-relaxed mb-4">
-        The assertion executor validates all file paths before reading:
-      </p>
-      <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
-        <li>
-          Path traversal (
-          <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
-            ../
-          </code>
-          ) is rejected
-        </li>
-        <li>Absolute paths are rejected</li>
-        <li>
-          Only files within the cloned repository directory can be accessed
-        </li>
-      </ul>
 
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         Credential Handling
@@ -202,14 +116,19 @@ export default function SecurityPage() {
         LLM Data Boundaries
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        When using BYOLLM, Vigil sends code diffs and file contents to your
-        configured LLM provider. This is your API key, your provider, your data
-        policy. Vigil does not send any data to third-party LLMs unless you
-        explicitly configure it.
+        Vigil sends PR diffs and metadata to its hosted LLM for analysis.
+        This data is used solely for verification and is not stored or used
+        for model training. LLM prompts include data boundary markers and
+        backtick escaping to prevent prompt injection from PR content.
       </p>
+
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        Infrastructure
+      </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        LLM prompts include data boundary markers and backtick escaping to
-        prevent prompt injection from PR content.
+        Vigil runs on EU-hosted servers (Germany). All data in transit is
+        encrypted via TLS. The database stores only execution metadata (scores,
+        signal results, timestamps) — never source code or diff content.
       </p>
 
       <PrevNext prev={prev} next={next} />

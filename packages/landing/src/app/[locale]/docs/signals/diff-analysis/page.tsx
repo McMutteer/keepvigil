@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { DocsLink as Link } from "@/components/docs/docs-link";
 import { Callout } from "@/components/docs/callout";
 import { PrevNext } from "@/components/docs/prev-next";
 import { getPrevNext } from "@/lib/docs-nav";
@@ -23,17 +22,14 @@ export default function DiffAnalysisPage() {
       </p>
 
       <Callout variant="pro" title="Pro signal">
-        This signal requires BYOLLM configuration. See the{" "}
-        <Link href="/docs/byollm" className="text-accent hover:underline">
-          BYOLLM setup guide
-        </Link>{" "}
-        to connect your own LLM provider.
+        This signal is available on Pro and Team plans. It provides deeper
+        structural analysis of your code changes.
       </Callout>
 
       <Callout variant="info" title="Works on any PR">
-        This signal runs on every PR — no test plan required. It compares the
-        diff against the PR description claims. When a test plan exists, it
-        also checks test plan coverage.
+        This signal runs on every PR — no test plan required. It analyzes the
+        diff for structural and semantic issues beyond what claims verification
+        covers.
       </Callout>
 
       <p className="text-text-secondary leading-relaxed mb-4">

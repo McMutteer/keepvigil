@@ -23,6 +23,13 @@ export default function GettingStartedPage() {
         Install Vigil and get your first verification score in under 2 minutes.
       </p>
 
+      <p className="text-text-secondary leading-relaxed mb-4">
+        Whether your PRs are written by humans, AI coding agents like Claude
+        Code, Cursor, or GitHub Copilot, or a mix of both — Vigil verifies
+        that what the PR claims to do matches what the code actually does.
+        Zero config, zero friction.
+      </p>
+
       {/* Step 1 */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         1. Install the GitHub App
@@ -52,28 +59,15 @@ export default function GettingStartedPage() {
         2. Open a Pull Request
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Open a pull request — any PR works. With or without a test plan, Vigil
-        analyzes your changes across multiple verification layers: credential
-        scanning, CI status, diff analysis, coverage mapping, and more.
+        Open any pull request. Vigil automatically analyzes the diff and PR
+        description across six verification signals: claims verification,
+        undocumented change detection, credential scanning, coverage mapping,
+        contract checking, and diff analysis.
       </p>
       <p className="text-text-secondary leading-relaxed mb-4">
-        If your PR includes a test plan (common with AI coding agents like
-        Claude Code, Cursor, or GitHub Copilot), Vigil will also parse and
-        execute those items for deeper verification. Here is what a typical
-        test plan looks like:
-      </p>
-      <CodeBlock
-        filename="PR description (optional)"
-        code={`## Test Plan
-- [ ] \`npm test\` passes
-- [ ] \`src/auth.ts\` validates JWT tokens
-- [ ] API returns 200 for valid requests
-- [ ] No hardcoded credentials in diff`}
-      />
-      <p className="text-text-secondary leading-relaxed mb-4">
-        When present, each checkbox becomes a test plan item that Vigil
-        classifies and routes to the appropriate executor — but even without a
-        test plan, you still get a full verification score.
+        No test plan is required. Vigil reads your PR title and description,
+        extracts claims, and verifies them against the actual code changes.
+        It also catches changes you forgot to mention.
       </p>
 
       {/* Step 3 */}
@@ -84,27 +78,25 @@ export default function GettingStartedPage() {
         Once the PR is opened or updated, Vigil automatically:
       </p>
       <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
-        <li>Analyzes the diff and detects what changed</li>
-        <li>Runs independent verification layers in parallel</li>
-        <li>Parses and executes test plan items, if present</li>
+        <li>Reads the PR title and description to extract claims</li>
+        <li>Analyzes the diff for undocumented changes</li>
+        <li>Scans for leaked credentials</li>
+        <li>Checks test coverage for changed files</li>
         <li>Calculates a weighted verification score from 0 to 100</li>
         <li>Posts results as a PR comment and GitHub Check Run</li>
       </ul>
       <CodeBlock
         filename="PR comment"
-        code={`🛡️ Vigil Verification Score: 82/100 — Safe to merge
+        code={`Vigil Verification Score: 85/100 — Safe to merge
 
-| Signal            | Score | Status |
-|-------------------|-------|--------|
-| CI Bridge         |   100 |   ✅   |
-| Credential Scan   |   100 |   ✅   |
-| Test Execution    |    75 |   ⚠️   |
-| Plan Augmentor    |    90 |   ✅   |
-| Contract Checker  |   100 |   ✅   |
-| Coverage Mapper   |    60 |   ⚠️   |
-| Diff vs Claims    |    80 |   ✅   |
-| Gap Analysis      |    70 |   ⚠️   |
-| Assertion Verifier|   100 |   ✅   |`}
+| Signal              | Score | Status |
+|---------------------|-------|--------|
+| Claims Verifier     |    92 |   Pass |
+| Undocumented Changes|    78 |   Pass |
+| Credential Scan     |   100 |   Pass |
+| Coverage Mapper     |    70 |   Pass |
+| Contract Checker    |    85 |   Pass |
+| Diff Analyzer       |    90 |   Pass |`}
       />
 
       {/* Step 4 */}
@@ -113,8 +105,8 @@ export default function GettingStartedPage() {
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Vigil works out of the box with zero configuration. If you need to
-        customize timeouts, add shell commands to the allowlist, or bring your
-        own LLM, drop a{" "}
+        customize notifications, auto-approval thresholds, or coverage
+        exclusions, drop a{" "}
         <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
           .vigil.yml
         </code>{" "}

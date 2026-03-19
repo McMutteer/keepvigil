@@ -27,10 +27,9 @@ const PLANS = [
     badge: "Recommended",
     features: [
       "Everything in Free, plus:",
-      "Diff vs Claims — LLM gap detection",
-      "Gap Analysis — find untested changes",
       "Contract Checker — API/frontend compatibility",
-      "BYOLLM — use your own API key",
+      "Diff Analyzer — structural diff analysis",
+      "Inline review comments on diff lines",
       "Webhook notifications (Slack/Discord)",
       "Priority support",
     ],
@@ -136,8 +135,8 @@ export function Pricing() {
 
         <ScrollReveal delay={400}>
           <p className="text-center text-xs text-text-muted mt-8">
-            All plans include unlimited PRs. BYOLLM means you control LLM costs
-            — typically &lt; $0.01 per PR.
+            All plans include unlimited repos and unlimited PRs. No credit card
+            required for the Free tier.
           </p>
         </ScrollReveal>
       </div>

@@ -85,7 +85,7 @@ export function TestPlansPreview() {
         <ScrollReveal delay={300}>
           <p className="text-center mt-8">
             <a
-              href="/docs/writing-test-plans"
+              href="/docs/getting-started"
               className="text-sm text-accent hover:underline underline-offset-4 transition-colors"
             >
               Read the full guide &rarr;

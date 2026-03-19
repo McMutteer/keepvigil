@@ -138,8 +138,6 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const docsLinks = [
     { label: t.docsLinks.gettingStarted, href: `/${locale}/docs/getting-started` },
     { label: t.docsLinks.configuration, href: `/${locale}/docs/configuration` },
-    { label: t.docsLinks.byollm, href: `/${locale}/docs/byollm` },
-    { label: t.docsLinks.shellAllowlist, href: `/${locale}/docs/shell-allowlist` },
     { label: t.docsLinks.security, href: `/${locale}/docs/security` },
   ];
 

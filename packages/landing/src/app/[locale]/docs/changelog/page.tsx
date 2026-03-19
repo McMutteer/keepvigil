@@ -19,6 +19,32 @@ export default function ChangelogPage() {
         Release history and notable changes
       </p>
 
+      {/* v5.0 */}
+      <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
+        v5.0 &mdash; v1 Deprecated
+      </h2>
+      <p className="text-text-secondary leading-relaxed mb-4">March 2026</p>
+      <ul className="list-disc ml-6 space-y-1 text-text-secondary mb-4">
+        <li>
+          <strong className="text-text-primary">v1 pipeline deprecated</strong>{" "}
+          &mdash; removed BYOLLM, shell executor, browser executor, API
+          executor, assertion verifier, test plan parser, and item classifier
+        </li>
+        <li>
+          Removed signals: CI Bridge, Test Execution, Plan Augmentor, Gap
+          Analysis
+        </li>
+        <li>
+          Vigil now runs a single v2 pipeline with 6 signals on every PR
+        </li>
+        <li>
+          Simplified architecture: read-only diff analysis, no code execution
+        </li>
+        <li>
+          Removed Chromium/Playwright dependency
+        </li>
+      </ul>
+
       {/* v4.3 */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">
         v4.3 &mdash; Signal Quality

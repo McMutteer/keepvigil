@@ -64,11 +64,6 @@ export function CtaFooter({ dict, locale }: { dict: Dictionary; locale: Locale }
                   </a>
                 </li>
                 <li>
-                  <a href={`/${locale}/docs/byollm`} className="text-text-muted hover:text-text-secondary transition-colors">
-                    {t.byollm}
-                  </a>
-                </li>
-                <li>
                   <a href={`/${locale}/docs/security`} className="text-text-muted hover:text-text-secondary transition-colors">
                     {t.security}
                   </a>
@@ -95,11 +90,6 @@ export function CtaFooter({ dict, locale }: { dict: Dictionary; locale: Locale }
                     className="text-text-muted hover:text-text-secondary transition-colors"
                   >
                     {t.github}
-                  </a>
-                </li>
-                <li>
-                  <a href={`/${locale}/docs/writing-test-plans`} className="text-text-muted hover:text-text-secondary transition-colors">
-                    {t.writingTestPlans}
                   </a>
                 </li>
                 <li>
