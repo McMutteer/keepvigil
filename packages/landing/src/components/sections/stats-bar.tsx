@@ -1,13 +1,15 @@
 import { ScrollReveal } from "../scroll-reveal";
+import type { Dictionary } from "@/i18n/get-dictionary";
 
-const STATS = [
-  { value: "3", label: "Verification Layers" },
-  { value: "10", label: "Signals per PR" },
-  { value: "30s", label: "Setup Time" },
-  { value: "0", label: "Config Required" },
-];
+export function StatsBar({ dict }: { dict: Dictionary }) {
+  const t = dict.statsBar;
+  const STATS = [
+    { value: "3", label: t.verificationLayers },
+    { value: "10", label: t.signalsPerPr },
+    { value: "30s", label: t.setupTime },
+    { value: "0", label: t.configRequired },
+  ];
 
-export function StatsBar() {
   return (
     <section className="py-12">
       <div className="mx-auto max-w-[1200px] px-6">

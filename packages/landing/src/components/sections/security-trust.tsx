@@ -1,45 +1,34 @@
 import { ScrollReveal } from "../scroll-reveal";
+import type { Dictionary } from "@/i18n/get-dictionary";
+import type { Locale } from "@/i18n/config";
 
-const TRUST_CARDS = [
-  {
-    icon: "🔒",
-    title: "Sandboxed Execution",
-    description:
-      "All commands run in Docker containers with --network none. No internet access, no host access, no secrets exposed.",
-  },
-  {
-    icon: "🛡️",
-    title: "No Data Retention",
-    description:
-      "Vigil reads your PR, runs the analysis, posts the results, and forgets. No code is stored on our servers.",
-  },
-  {
-    icon: "🔐",
-    title: "Fork PR Protection",
-    description:
-      "Fork PRs read configuration from your default branch, not from the fork. Untrusted contributors can\u2019t inject malicious config.",
-  },
-];
+export function SecurityTrust({ dict, locale }: { dict: Dictionary; locale: Locale }) {
+  const t = dict.securityTrust;
 
-export function SecurityTrust() {
+  const badges = [
+    { icon: "\ud83d\udd12", label: t.badges.dockerSandbox },
+    { icon: "\ud83d\udee1\ufe0f", label: t.badges.noDataRetention },
+    { icon: "\ud83d\udcdc", label: t.badges.mitLicensed },
+    { icon: "\ud83c\udf0d", label: t.badges.euServers },
+  ];
+
   return (
     <section className="py-16 sm:py-20">
       <div className="mx-auto max-w-[1200px] px-6">
         <ScrollReveal>
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-4">
-              Your code stays safe.
+              {t.title}
             </h2>
             <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[600px] mx-auto">
-              Security isn&apos;t an afterthought. Vigil was built from the
-              ground up to keep your code and secrets protected.
+              {t.subtitle}
             </p>
           </div>
         </ScrollReveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {TRUST_CARDS.map((card, i) => (
-            <ScrollReveal key={card.title} delay={i * 100}>
+          {t.cards.map((card, i) => (
+            <ScrollReveal key={i} delay={i * 100}>
               <div className="bg-bg-surface border-subtle rounded-[12px] p-6 h-full">
                 <span className="text-2xl block mb-4">{card.icon}</span>
                 <h3 className="text-lg font-semibold text-text-primary mb-2">
@@ -56,12 +45,7 @@ export function SecurityTrust() {
         {/* Security badges */}
         <ScrollReveal delay={400}>
           <div className="flex flex-wrap justify-center gap-3 mt-10">
-            {[
-              { icon: "🔒", label: "Docker Sandbox" },
-              { icon: "🛡️", label: "No Data Retention" },
-              { icon: "📜", label: "MIT Licensed" },
-              { icon: "🌍", label: "EU Servers" },
-            ].map((badge) => (
+            {badges.map((badge) => (
               <span
                 key={badge.label}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-text-muted bg-bg-surface border border-white/[0.06]"
@@ -74,12 +58,12 @@ export function SecurityTrust() {
 
         <ScrollReveal delay={500}>
           <p className="text-center text-sm text-text-muted mt-6">
-            Open source under MIT &middot;{" "}
+            {t.openSourceMit} &middot;{" "}
             <a
-              href="/docs/security"
+              href={`/${locale}/docs/security`}
               className="text-accent hover:underline underline-offset-4 transition-colors"
             >
-              Read our security docs &rarr;
+              {t.securityDocsLink}
             </a>
           </p>
         </ScrollReveal>

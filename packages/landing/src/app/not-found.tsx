@@ -15,7 +15,7 @@ export default function NotFound() {
         The page you&apos;re looking for doesn&apos;t exist or has been moved.
       </p>
       <a
-        href="/"
+        href="/en"
         className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[6px] text-sm font-medium bg-accent text-[#080d1a] hover:bg-accent-hover transition-colors duration-150"
       >
         Back to home

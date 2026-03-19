@@ -2,49 +2,7 @@
 
 import { useState } from "react";
 import { ScrollReveal } from "../scroll-reveal";
-
-const FAQ_ITEMS = [
-  {
-    question: "Is Vigil free for open source?",
-    answer:
-      "Yes. The Free tier includes Claims Verification, Undocumented Change Detection, credential scanning, and coverage mapping \u2014 unlimited PRs, unlimited repos. No credit card required.",
-  },
-  {
-    question: "Does Vigil work with private repos?",
-    answer:
-      "Yes. Both Free and Pro tiers work with private repositories. Install the GitHub App and select which repos to enable.",
-  },
-  {
-    question: "What data does Vigil access?",
-    answer:
-      "Vigil reads the PR title, description, and diff. Optionally clones the repo for deeper file analysis. No code is stored after analysis completes.",
-  },
-  {
-    question: "Do I need to configure anything?",
-    answer:
-      "No. Vigil works out of the box with zero configuration. Optionally add a .vigil.yml file to customize timeouts, shell commands, or enable Pro signals.",
-  },
-  {
-    question: "What does BYOLLM mean?",
-    answer:
-      "Bring Your Own LLM. Pro signals use AI to analyze your code. You provide your own API key (OpenAI, Groq, or Ollama), so you control the cost and data flow.",
-  },
-  {
-    question: "How much does the LLM cost per PR?",
-    answer:
-      "Typically less than $0.01 per PR. Vigil makes 2\u20134 LLM calls per analysis using fast models like Groq\u2019s llama-3.3-70b.",
-  },
-  {
-    question: "Can Vigil block merges?",
-    answer:
-      "Vigil posts a GitHub Check Run. You can configure branch protection rules to require Vigil\u2019s check to pass before merging. Scores below 50 result in a \u2018failure\u2019 check.",
-  },
-  {
-    question: "Is Vigil only for GitHub?",
-    answer:
-      "Currently GitHub only. GitLab and Bitbucket are being considered for the future.",
-  },
-];
+import type { Dictionary } from "@/i18n/get-dictionary";
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -68,8 +26,9 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-export function Faq() {
+export function Faq({ dict }: { dict: Dictionary }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const t = dict.faq;
 
   function toggle(index: number) {
     setOpenIndex((prev) => (prev === index ? null : index));
@@ -81,14 +40,14 @@ export function Faq() {
         <ScrollReveal>
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary">
-              Frequently asked questions
+              {t.title}
             </h2>
           </div>
         </ScrollReveal>
 
         <ScrollReveal delay={100}>
           <div className="divide-y divide-white/[0.06]">
-            {FAQ_ITEMS.map((item, i) => {
+            {t.items.map((item, i) => {
               const isOpen = openIndex === i;
               return (
                 <div key={i}>

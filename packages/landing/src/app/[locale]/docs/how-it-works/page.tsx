@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { DocsLink as Link } from "@/components/docs/docs-link";
 import { CodeBlock } from "@/components/docs/code-block";
 import { PrevNext } from "@/components/docs/prev-next";
 import { getPrevNext } from "@/lib/docs-nav";

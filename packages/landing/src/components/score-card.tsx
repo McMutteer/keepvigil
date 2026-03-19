@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { Dictionary } from "@/i18n/get-dictionary";
 
 const SIGNALS = [
-  { icon: "✅", name: "Claims Verifier", detail: "3/3", status: "success" },
-  { icon: "✅", name: "Undocumented Changes", detail: "92", status: "success" },
-  { icon: "✅", name: "Credential Scan", detail: "100", status: "success" },
-  { icon: "✅", name: "CI Bridge", detail: "100", status: "success" },
-  { icon: "✅", name: "Test Execution", detail: "12/12", status: "success" },
-  { icon: "⚠️", name: "Coverage Mapper", detail: "50", status: "warning" },
-  { icon: "✅", name: "Plan Augmentor", detail: "5/5", status: "success" },
-  { icon: "✅", name: "Diff vs Claims", detail: "Pro", status: "success" },
-  { icon: "✅", name: "Gap Analysis", detail: "96", status: "success" },
-  { icon: "✅", name: "Contract Checker", detail: "100", status: "success" },
+  { icon: "\u2705", name: "Claims Verifier", detail: "3/3", status: "success" },
+  { icon: "\u2705", name: "Undocumented Changes", detail: "92", status: "success" },
+  { icon: "\u2705", name: "Credential Scan", detail: "100", status: "success" },
+  { icon: "\u2705", name: "CI Bridge", detail: "100", status: "success" },
+  { icon: "\u2705", name: "Test Execution", detail: "12/12", status: "success" },
+  { icon: "\u26a0\ufe0f", name: "Coverage Mapper", detail: "50", status: "warning" },
+  { icon: "\u2705", name: "Plan Augmentor", detail: "5/5", status: "success" },
+  { icon: "\u2705", name: "Diff vs Claims", detail: "Pro", status: "success" },
+  { icon: "\u2705", name: "Gap Analysis", detail: "96", status: "success" },
+  { icon: "\u2705", name: "Contract Checker", detail: "100", status: "success" },
 ] as const;
 
 const TARGET_SCORE = 95;
@@ -52,7 +53,7 @@ function useCountUp(target: number, duration: number) {
   return { count, start: () => setStarted(true) };
 }
 
-export function ScoreCard() {
+export function ScoreCard({ dict }: { dict: Dictionary }) {
   const { count, start } = useCountUp(TARGET_SCORE, 1500);
   const [visibleSignals, setVisibleSignals] = useState(0);
   const [showRecommendation, setShowRecommendation] = useState(false);
@@ -101,7 +102,7 @@ export function ScoreCard() {
         {/* Score header */}
         <div className="text-center mb-6">
           <div className="text-xs font-medium uppercase tracking-[0.05em] text-text-muted mb-2">
-            Vigil Confidence Score
+            {dict.scoreCard.confidenceScore}
           </div>
           <div className="flex items-baseline justify-center gap-1">
             <span className="text-6xl sm:text-7xl font-semibold text-accent font-mono tabular-nums">
@@ -118,7 +119,7 @@ export function ScoreCard() {
           }`}
         >
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-success/10 text-success border border-success/20">
-            ✅ Safe to merge
+            \u2705 {dict.scoreCard.safeToMerge}
           </span>
         </div>
 
