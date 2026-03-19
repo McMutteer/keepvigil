@@ -212,13 +212,24 @@ describe("computeScore", () => {
       expect(result.score).toBe(100);
     });
 
-    it("still checks passed on zero-weight signals for failure cap", () => {
+    it("only caps score for critical signal failures (credential-scan)", () => {
       const signals = [
-        makeSignal({ id: "ci-bridge", score: 100, weight: 10 }),
-        makeSignal({ id: "executor", score: 0, weight: 0, passed: false }),
+        makeSignal({ id: "ci-bridge", score: 100, weight: 20 }),
+        makeSignal({ id: "credential-scan", score: 0, weight: 2, passed: false }),
       ];
       const result = computeScore(signals);
+      // Weighted avg: (100*20 + 0*2) / 22 = 91, but capped to 70 because credential-scan failed
       expect(result.score).toBe(FAILURE_CAP);
+    });
+
+    it("does not cap score for non-critical signal failures (coverage-mapper)", () => {
+      const signals = [
+        makeSignal({ id: "ci-bridge", score: 100, weight: 20 }),
+        makeSignal({ id: "coverage-mapper", score: 0, weight: 2, passed: false }),
+      ];
+      const result = computeScore(signals);
+      // Weighted avg: (100*20 + 0*2) / 22 = 91 — no cap because coverage-mapper is non-critical
+      expect(result.score).toBe(91);
     });
   });
 });

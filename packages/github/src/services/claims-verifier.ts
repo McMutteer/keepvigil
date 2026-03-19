@@ -228,10 +228,10 @@ export async function verifyClaims(options: ClaimsVerifierOptions): Promise<Sign
     else contradicted++;
   }
 
-  // Scoring: start at 100, penalize unverified (-10) and contradicted (-25)
-  const score = Math.max(0, 100 - (unverified * 10) - (contradicted * 25));
+  // Scoring: start at 100, penalize unverified (-15) and contradicted (-40)
+  const score = Math.max(0, 100 - (unverified * 15) - (contradicted * 40));
   const total = response.claims.length;
-  const passed = contradicted === 0 && verified >= total * 0.5;
+  const passed = contradicted === 0 && verified >= total * 0.8;
 
   return createSignal({
     id: "claims-verifier",

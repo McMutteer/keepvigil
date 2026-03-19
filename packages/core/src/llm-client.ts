@@ -19,12 +19,19 @@ const PROVIDER_BASE_URLS: Record<LLMProvider, string | undefined> = {
 };
 
 const DEFAULT_TIMEOUT_MS = 15_000;
+const MAX_RETRIES = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * Create an LLM client from a provider configuration.
  *
  * All supported providers use the OpenAI SDK with different base URLs.
  * This keeps the dependency footprint minimal.
+ *
+ * Includes exponential backoff retry for transient failures (rate limits, timeouts).
  */
 export function createLLMClient(config: LLMConfig): LLMClient {
   const baseURL = PROVIDER_BASE_URLS[config.provider];
@@ -39,23 +46,41 @@ export function createLLMClient(config: LLMConfig): LLMClient {
     provider: config.provider,
 
     async chat({ system, user, timeoutMs }) {
-      const response = await client.chat.completions.create(
-        {
-          model: config.model,
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: user },
-          ],
-          temperature: 0,
-        },
-        { timeout: timeoutMs ?? DEFAULT_TIMEOUT_MS },
-      );
+      let lastError: unknown;
 
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error(`LLM returned empty response (provider: ${config.provider}, model: ${config.model})`);
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+          const response = await client.chat.completions.create(
+            {
+              model: config.model,
+              messages: [
+                { role: "system", content: system },
+                { role: "user", content: user },
+              ],
+              temperature: 0,
+            },
+            { timeout: timeoutMs ?? DEFAULT_TIMEOUT_MS },
+          );
+
+          const content = response.choices[0]?.message?.content;
+          if (!content) {
+            throw new Error(`LLM returned empty response (provider: ${config.provider}, model: ${config.model})`);
+          }
+          return content;
+        } catch (err) {
+          lastError = err;
+          const status = (err as { status?: number }).status;
+          const isRetryable = status === 429 || status === 503 || status === 502;
+
+          if (isRetryable && attempt < MAX_RETRIES - 1) {
+            await sleep(Math.pow(2, attempt) * 1000); // 1s, 2s, 4s
+            continue;
+          }
+          break;
+        }
       }
-      return content;
+
+      throw lastError;
     },
   };
 }

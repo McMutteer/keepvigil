@@ -101,8 +101,8 @@ describe("verifyClaims", () => {
         llm,
       });
 
-      expect(signal.score).toBe(80); // 100 - 2*10
-      expect(signal.passed).toBe(false); // only 1/3 verified < 50%
+      expect(signal.score).toBe(70); // 100 - 2*15
+      expect(signal.passed).toBe(false); // only 1/3 verified < 80%
     });
 
     it("heavily penalizes contradicted claims (-25 each)", async () => {
@@ -119,29 +119,31 @@ describe("verifyClaims", () => {
         llm,
       });
 
-      expect(signal.score).toBe(75); // 100 - 25
+      expect(signal.score).toBe(60); // 100 - 40
       expect(signal.passed).toBe(false); // contradictions always fail
     });
   });
 
   describe("scoring", () => {
-    it("passed is true when no contradictions and >= 50% verified", async () => {
+    it("passed is true when no contradictions and >= 80% verified", async () => {
       const llm = makeLLM(JSON.stringify({
         claims: [
           { text: "A", source: "title", verdict: "verified", evidence: "yes" },
           { text: "B", source: "body", verdict: "verified", evidence: "yes" },
-          { text: "C", source: "body", verdict: "unverified", evidence: "no" },
+          { text: "C", source: "body", verdict: "verified", evidence: "yes" },
+          { text: "D", source: "body", verdict: "verified", evidence: "yes" },
+          { text: "E", source: "body", verdict: "unverified", evidence: "no" },
         ],
       }));
 
       const signal = await verifyClaims({
         prTitle: "feat: A",
-        prBody: "Also B and C.",
+        prBody: "Also B, C, D, and E.",
         diff: SAMPLE_DIFF,
         llm,
       });
 
-      expect(signal.passed).toBe(true); // 2/3 verified > 50%, no contradictions
+      expect(signal.passed).toBe(true); // 4/5 verified = 80%, no contradictions
     });
 
     it("passed is false when any contradiction exists", async () => {
