@@ -11,6 +11,8 @@ import { parse as parseYaml } from "yaml";
 import type { VigilConfig } from "@vigil/core/types";
 
 const MAX_NOTIFICATION_URLS = 5;
+const MAX_COVERAGE_EXCLUDES = 20;
+const MAX_EXCLUDE_LENGTH = 200;
 const VALID_NOTIFICATION_ON = new Set(["failure", "always"]);
 
 /** Result of parsing a .vigil.yml file. */
@@ -105,6 +107,32 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult
       }
     } else if (a.threshold !== undefined) {
       warnings.push(`\`auto_approve.threshold\`: must be a number between 80 and 100 — ignored`);
+    }
+  }
+
+  // --- coverage ---
+  if (typeof obj.coverage === "object" && obj.coverage !== null && !Array.isArray(obj.coverage)) {
+    const c = obj.coverage as Record<string, unknown>;
+    if (Array.isArray(c.exclude)) {
+      const validExcludes: string[] = [];
+      for (let i = 0; i < c.exclude.length; i++) {
+        const entry = c.exclude[i];
+        if (typeof entry !== "string" || entry.trim().length === 0) {
+          warnings.push(`\`coverage.exclude[${i}]\`: must be a non-empty string — ignored`);
+          continue;
+        }
+        const trimmed = entry.trim();
+        if (trimmed.length > MAX_EXCLUDE_LENGTH) {
+          warnings.push(`\`coverage.exclude[${i}]\`: exceeds ${MAX_EXCLUDE_LENGTH} chars — ignored`);
+          continue;
+        }
+        if (validExcludes.length >= MAX_COVERAGE_EXCLUDES) {
+          warnings.push(`\`coverage.exclude\`: limited to ${MAX_COVERAGE_EXCLUDES} entries — remaining ignored`);
+          break;
+        }
+        validExcludes.push(trimmed);
+      }
+      if (validExcludes.length > 0) config.coverage = { exclude: validExcludes };
     }
   }
 

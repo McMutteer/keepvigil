@@ -133,7 +133,7 @@ async function _runPipeline(
       // Coverage Mapper (free tier)
       const changedFiles = extractChangedFilesWithStatus(diff);
       const repoFiles = await fetchRepoFileList({ octokit, owner, repo, headSha });
-      const coverageSignal = mapCoverage(changedFiles, repoFiles);
+      const coverageSignal = mapCoverage(changedFiles, repoFiles, undefined, vigiConfig?.coverage?.exclude);
       // If coverage mapper found no test files at all, reduce weight to avoid tanking the score
       const coverageWeight = coverageSignal.score === 0 && coverageSignal.details.every((d) => d.status === "fail")
         ? 2 : weights["coverage-mapper"];

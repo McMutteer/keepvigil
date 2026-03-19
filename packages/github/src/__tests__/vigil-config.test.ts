@@ -106,4 +106,45 @@ notifications:
     expect(warnings).toEqual([]);
     expect(config.autoApprove?.threshold).toBe(92);
   });
+
+  it("parses valid coverage.exclude config", () => {
+    const yaml = `
+coverage:
+  exclude:
+    - packages/landing/
+    - packages/dashboard/
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(warnings).toEqual([]);
+    expect(config.coverage?.exclude).toEqual(["packages/landing/", "packages/dashboard/"]);
+  });
+
+  it("rejects non-string coverage.exclude entries", () => {
+    const yaml = `
+coverage:
+  exclude:
+    - packages/landing/
+    - 123
+    - true
+`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.coverage?.exclude).toEqual(["packages/landing/"]);
+    expect(warnings).toHaveLength(2);
+  });
+
+  it("limits coverage.exclude to 20 entries", () => {
+    const entries = Array.from({ length: 25 }, (_, i) => `    - path${i}/`).join("\n");
+    const yaml = `coverage:\n  exclude:\n${entries}`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.coverage?.exclude).toHaveLength(20);
+    expect(warnings.some((w) => w.includes("limited to 20"))).toBe(true);
+  });
+
+  it("rejects overly long coverage.exclude entries", () => {
+    const longPath = "a".repeat(201) + "/";
+    const yaml = `coverage:\n  exclude:\n    - ${longPath}`;
+    const { config, warnings } = parseVigilConfig(yaml);
+    expect(config.coverage).toBeUndefined();
+    expect(warnings[0]).toContain("exceeds 200");
+  });
 });

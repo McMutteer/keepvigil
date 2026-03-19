@@ -323,4 +323,9 @@ export interface VigilConfig {
     /** Minimum score to auto-approve (80-100). */
     threshold: number;
   };
+  /** Coverage mapper settings */
+  coverage?: {
+    /** Path prefixes to exclude from coverage analysis (e.g., "packages/landing/") */
+    exclude?: string[];
+  };
 }
