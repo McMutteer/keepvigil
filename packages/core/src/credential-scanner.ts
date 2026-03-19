@@ -103,6 +103,11 @@ function isTestPath(filePath: string): boolean {
   return /__tests__\/|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|\/tests?\/|\/fixtures?\//i.test(filePath);
 }
 
+/** Check if a file is an env example/template (not a real env file) */
+function isEnvExample(filePath: string): boolean {
+  return /\.env\.(?:example|template|sample|defaults|test)$/i.test(filePath);
+}
+
 /** Check if a matched value looks like a generic test fixture (not a real secret) */
 function isGenericTestValue(matchedText: string): boolean {
   const lower = matchedText.toLowerCase();
@@ -133,11 +138,14 @@ export function scanCredentials(diff: string): Signal {
   const details: SignalDetail[] = [];
 
   for (const { file, line, content } of addedLines) {
+    // Skip env example/template files entirely — they contain placeholder secrets by design
+    if (isEnvExample(file)) continue;
+
     const inTestFile = isTestPath(file);
     for (const pattern of SECRET_PATTERNS) {
       if (pattern.regex.test(content)) {
-        // In test files, skip generic/fixture-like values for password/secret patterns
-        if (inTestFile && pattern.name === "Hardcoded Password") {
+        // In test files, skip generic/fixture-like values for all secret patterns
+        if (inTestFile) {
           const match = content.match(pattern.regex);
           const value = match ? match[0] : "";
           if (isGenericTestValue(value)) continue;

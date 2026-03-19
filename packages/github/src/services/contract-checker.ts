@@ -43,6 +43,9 @@ const PRODUCER_PATTERNS = [
   /\/handlers?\//i,
   /\/resolvers?\//i,
   /\/services?\//i,
+  /\/entities?\//i,
+  /\/models?\//i,
+  /\/mutations?\//i,
   /\.router\.[jt]sx?$/i,
   /\.controller\.[jt]sx?$/i,
 ];
@@ -54,6 +57,7 @@ const CONSUMER_PATTERNS = [
   /\/components?\//i,
   /\/views?\//i,
   /\/hooks?\//i,
+  /\/queries?\//i,
   /\.tsx$/i,
   /\.vue$/i,
   /\.svelte$/i,

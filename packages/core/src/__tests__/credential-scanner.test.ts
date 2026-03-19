@@ -266,4 +266,40 @@ describe("scanCredentials", () => {
       expect(signal.details[0].label).toContain(":11");
     });
   });
+
+  describe("env example files", () => {
+    it("skips .env.example files entirely", () => {
+      const diff = makeDiff(".env.example", 'AWS_SECRET_KEY="AKIAIOSFODNN7EXAMPLE"');
+      const signal = scanCredentials(diff);
+      expect(signal.score).toBe(100);
+      expect(signal.passed).toBe(true);
+    });
+
+    it("skips .env.template files", () => {
+      const diff = makeDiff(".env.template", 'password = "changeme123"');
+      const signal = scanCredentials(diff);
+      expect(signal.score).toBe(100);
+    });
+
+    it("skips .env.sample files", () => {
+      const diff = makeDiff(".env.sample", 'SLACK_TOKEN=xoxb-fake-token-12345');
+      const signal = scanCredentials(diff);
+      expect(signal.score).toBe(100);
+    });
+
+    it("still flags real .env files", () => {
+      const diff = makeDiff(".env", 'AWS_SECRET_KEY="AKIAIOSFODNN7EXAMPLE"');
+      const signal = scanCredentials(diff);
+      expect(signal.score).toBe(0);
+    });
+  });
+
+  describe("generic test values across all patterns", () => {
+    it("skips generic API key in test files", () => {
+      const diff = makeDiff("src/__tests__/auth.test.ts", 'const key = "secret_key = test-secret-placeholder";');
+      const signal = scanCredentials(diff);
+      // Generic test value in test file should not be a hard fail
+      expect(signal.details.every(d => d.status !== "fail")).toBe(true);
+    });
+  });
 });
