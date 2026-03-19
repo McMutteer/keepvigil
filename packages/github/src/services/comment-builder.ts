@@ -559,36 +559,13 @@ export function buildConfigBlock(vigiConfig?: VigilConfig, configWarnings?: stri
   const rows: string[] = [];
 
   if (hasConfig) {
-    if (vigiConfig!.timeouts?.shell !== undefined) {
-      rows.push(`| Shell timeout | ${vigiConfig!.timeouts.shell}s |`);
-    }
-    if (vigiConfig!.timeouts?.api !== undefined) {
-      rows.push(`| API timeout | ${vigiConfig!.timeouts.api}s |`);
-    }
-    if (vigiConfig!.timeouts?.browser !== undefined) {
-      rows.push(`| Browser timeout | ${vigiConfig!.timeouts.browser}s |`);
-    }
-    if (vigiConfig!.skip?.categories?.length) {
-      const categories = vigiConfig!.skip.categories.map((c) => escapeTableCell(c)).join(", ");
-      rows.push(`| Skip categories | ${categories} |`);
-    }
-    if (vigiConfig!.viewports?.length) {
-      const vpStr = vigiConfig!.viewports
-        .map((vp) => `${escapeTableCell(vp.label)} (${vp.width}×${vp.height})`)
-        .join(", ");
-      rows.push(`| Viewports | ${vpStr} |`);
-    }
-    if (vigiConfig!.shell?.allow?.length) {
-      const count = vigiConfig!.shell.allow.length;
-      rows.push(`| Shell allowlist | +${count} custom prefix${count === 1 ? "" : "es"} |`);
-    }
-    if (vigiConfig!.shell?.image) {
-      rows.push(`| Sandbox image | \`${escapeTableCell(vigiConfig!.shell.image)}\` |`);
-    }
     if (vigiConfig!.notifications?.urls?.length) {
       const urlCount = vigiConfig!.notifications.urls.length;
       const trigger = vigiConfig!.notifications.on ?? "failure";
       rows.push(`| Notifications | ${urlCount} webhook${urlCount === 1 ? "" : "s"} (on: ${trigger}) |`);
+    }
+    if (vigiConfig!.autoApprove?.threshold) {
+      rows.push(`| Auto-approve | score >= ${vigiConfig!.autoApprove.threshold} |`);
     }
   }
 

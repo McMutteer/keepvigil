@@ -704,9 +704,9 @@ describe("buildCommentBody", () => {
   it("includes config block when vigiConfig is provided", () => {
     const items: ReportItem[] = [];
     const summary: ReportSummary = { total: 0, passed: 0, failed: 0, skipped: 0, needsReview: 0 };
-    const body = buildCommentBody(items, summary, undefined, undefined, { timeouts: { shell: 120 } });
+    const body = buildCommentBody(items, summary, undefined, undefined, { autoApprove: { threshold: 90 } });
     expect(body).toContain("⚙️ Config applied");
-    expect(body).toContain("120s");
+    expect(body).toContain("Auto-approve");
   });
 
   it("omits config block when vigiConfig is undefined", () => {
@@ -730,62 +730,23 @@ describe("buildConfigBlock", () => {
     expect(buildConfigBlock({})).toBe("");
   });
 
-  it("renders shell timeout", () => {
-    const block = buildConfigBlock({ timeouts: { shell: 120 } });
-    expect(block).toContain("Shell timeout");
-    expect(block).toContain("120s");
+  it("renders notification settings", () => {
+    const block = buildConfigBlock({ notifications: { urls: ["https://hook.example.com"], on: "always" } });
+    expect(block).toContain("1 webhook");
+    expect(block).toContain("on: always");
   });
 
-  it("renders api and browser timeouts", () => {
-    const block = buildConfigBlock({ timeouts: { api: 15, browser: 90 } });
-    expect(block).toContain("API timeout");
-    expect(block).toContain("15s");
-    expect(block).toContain("Browser timeout");
-    expect(block).toContain("90s");
-  });
-
-  it("renders skip categories", () => {
-    const block = buildConfigBlock({ skip: { categories: ["visual", "metadata"] } });
-    expect(block).toContain("Skip categories");
-    expect(block).toContain("visual, metadata");
-  });
-
-  it("renders viewports with dimensions", () => {
-    const block = buildConfigBlock({
-      viewports: [
-        { label: "mobile", width: 390, height: 844 },
-        { label: "desktop", width: 1440, height: 900 },
-      ],
-    });
-    expect(block).toContain("Viewports");
-    expect(block).toContain("mobile (390×844)");
-    expect(block).toContain("desktop (1440×900)");
-  });
-
-  it("renders shell allowlist with singular label for 1 prefix", () => {
-    const block = buildConfigBlock({ shell: { allow: ["npm test"] } });
-    expect(block).toContain("Shell allowlist");
-    expect(block).toContain("+1 custom prefix");
-    expect(block).not.toContain("prefixes");
-  });
-
-  it("renders shell allowlist with plural label for multiple prefixes", () => {
-    const block = buildConfigBlock({ shell: { allow: ["npm test", "bundle exec rspec"] } });
-    expect(block).toContain("+2 custom prefixes");
+  it("renders auto-approve threshold", () => {
+    const block = buildConfigBlock({ autoApprove: { threshold: 90 } });
+    expect(block).toContain("Auto-approve");
+    expect(block).toContain("score >= 90");
   });
 
   it("wraps output in a collapsible details block", () => {
-    const block = buildConfigBlock({ timeouts: { shell: 60 } });
+    const block = buildConfigBlock({ autoApprove: { threshold: 85 } });
     expect(block).toContain("<details>");
     expect(block).toContain("</details>");
     expect(block).toContain("<summary>");
-  });
-
-  it("escapes pipe characters in viewport labels", () => {
-    const block = buildConfigBlock({
-      viewports: [{ label: "pipe|label", width: 800, height: 600 }],
-    });
-    expect(block).toContain("pipe\\|label");
   });
 
   it("returns empty string when config is undefined and no warnings", () => {
@@ -793,31 +754,17 @@ describe("buildConfigBlock", () => {
     expect(buildConfigBlock(undefined, [])).toBe("");
   });
 
-  it("renders warnings section when config is valid but has warnings", () => {
-    const block = buildConfigBlock(
-      { timeouts: { shell: 120 } },
-      ["`timeouts.api`: 999 is invalid (must be 1–300s) — using default"],
-    );
-    expect(block).toContain("Config warnings");
-    expect(block).toContain("timeouts.api");
-    expect(block).toContain("Shell timeout");
-  });
-
   it("renders warnings-only block when no settings were applied", () => {
-    const block = buildConfigBlock(undefined, ["`timeouts.shell`: 9999 is invalid — using default"]);
+    const block = buildConfigBlock(undefined, ["some field is invalid — using default"]);
     expect(block).toContain("no valid settings applied");
     expect(block).toContain("Config warnings");
-    expect(block).toContain("timeouts.shell");
   });
 
   it("renders multiple warnings as a list", () => {
-    const warnings = [
-      "`timeouts.shell`: 9999 is invalid — using default",
-      "`timeouts.api`: -1 is invalid — using default",
-    ];
+    const warnings = ["field A invalid", "field B invalid"];
     const block = buildConfigBlock(undefined, warnings);
-    expect(block).toContain("timeouts.shell");
-    expect(block).toContain("timeouts.api");
+    expect(block).toContain("field A");
+    expect(block).toContain("field B");
   });
 });
 
@@ -1305,11 +1252,11 @@ describe("buildCommentBody — score-based format", () => {
 
   it("includes config block in score-based format", () => {
     const score = makeConfidenceScore();
-    const config = { timeouts: { shell: 30 } };
+    const config = { autoApprove: { threshold: 90 } };
     const body = buildCommentBody(items, summary, undefined, undefined, config, undefined, undefined, score);
 
     expect(body).toContain("Config applied");
-    expect(body).toContain("Shell timeout");
+    expect(body).toContain("Auto-approve");
   });
 
   it("includes correlation ID in footer", () => {

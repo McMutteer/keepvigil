@@ -311,44 +311,16 @@ export interface ConfidenceScore {
  * All fields are optional — omitted fields use hardcoded defaults.
  */
 export interface VigilConfig {
-  /** Timeout overrides per executor type (values in seconds) */
-  timeouts?: {
-    /** Shell executor timeout in seconds (default: 300) */
-    shell?: number;
-    /** API executor timeout in seconds (default: 30) */
-    api?: number;
-    /** Browser executor timeout in seconds (default: 60) */
-    browser?: number;
-    /** Assertion executor timeout in seconds (default: 30) */
-    assertion?: number;
-  };
-  /** Categories to skip entirely — items are returned as skipped, not executed */
-  skip?: {
-    categories?: CategoryLabel[];
-  };
-  /** Custom viewport list for browser visual checks */
-  viewports?: ViewportSpec[];
-  /** Shell executor overrides */
-  shell?: {
-    /** Additional command prefixes allowed beyond the built-in allowlist */
-    allow?: string[];
-    /** Docker image for the sandbox (default: "node:22-alpine") */
-    image?: string;
-  };
-  /** LLM provider configuration (BYOLLM) */
-  llm?: {
-    /** LLM provider */
-    provider?: LLMProvider;
-    /** Model identifier (provider-specific) */
-    model?: string;
-    /** API key for the LLM provider */
-    apiKey?: string;
-  };
   /** Webhook notification settings */
   notifications?: {
     /** When to send notifications: "failure" (default) or "always" */
     on?: "failure" | "always";
     /** Webhook URLs (Slack, Discord, or generic HTTPS endpoints). Max 5. */
     urls?: string[];
+  };
+  /** Auto-approve PRs when score exceeds threshold (Pro/Team only) */
+  autoApprove?: {
+    /** Minimum score to auto-approve (80-100). */
+    threshold: number;
   };
 }

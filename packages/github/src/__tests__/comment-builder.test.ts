@@ -380,41 +380,22 @@ describe("buildConfigBlock", () => {
 
   it("renders config settings in a collapsible block", () => {
     const config: VigilConfig = {
-      timeouts: { shell: 120, api: 15 },
+      notifications: { urls: ["https://hooks.slack.com/x"], on: "always" },
     };
     const block = buildConfigBlock(config);
     expect(block).toContain("<details>");
     expect(block).toContain("Config applied");
-    expect(block).toContain("Shell timeout");
-    expect(block).toContain("120s");
-    expect(block).toContain("API timeout");
-    expect(block).toContain("15s");
+    expect(block).toContain("1 webhook");
+    expect(block).toContain("on: always");
   });
 
-  it("renders viewport settings", () => {
+  it("renders auto-approve threshold", () => {
     const config: VigilConfig = {
-      viewports: [{ label: "Mobile", width: 375, height: 812 }],
+      autoApprove: { threshold: 90 },
     };
     const block = buildConfigBlock(config);
-    expect(block).toContain("Mobile");
-    expect(block).toContain("375");
-  });
-
-  it("renders shell allowlist count", () => {
-    const config: VigilConfig = {
-      shell: { allow: ["cargo build", "make"] },
-    };
-    const block = buildConfigBlock(config);
-    expect(block).toContain("+2 custom prefixes");
-  });
-
-  it("renders singular prefix count", () => {
-    const config: VigilConfig = {
-      shell: { allow: ["cargo build"] },
-    };
-    const block = buildConfigBlock(config);
-    expect(block).toContain("+1 custom prefix");
-    expect(block).not.toContain("prefixes");
+    expect(block).toContain("Auto-approve");
+    expect(block).toContain("score >= 90");
   });
 
   it("renders notification settings", () => {
@@ -434,13 +415,13 @@ describe("buildConfigBlock", () => {
   });
 
   it("renders both settings and warnings together", () => {
-    const config: VigilConfig = { timeouts: { shell: 60 } };
-    const warnings = ["browser timeout clamped to 120s"];
+    const config: VigilConfig = { autoApprove: { threshold: 95 } };
+    const warnings = ["unknown field ignored"];
     const block = buildConfigBlock(config, warnings);
     expect(block).toContain("Config applied");
-    expect(block).toContain("Shell timeout");
+    expect(block).toContain("Auto-approve");
     expect(block).toContain("Config warnings");
-    expect(block).toContain("browser timeout clamped");
+    expect(block).toContain("unknown field ignored");
   });
 });
 

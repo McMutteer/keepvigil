@@ -93,5 +93,20 @@ export function parseVigilConfig(yamlStr: string | undefined): VigilConfigResult
     if (Object.keys(notifications).length > 0) config.notifications = notifications;
   }
 
+  // --- auto_approve ---
+  if (typeof obj.auto_approve === "object" && obj.auto_approve !== null && !Array.isArray(obj.auto_approve)) {
+    const a = obj.auto_approve as Record<string, unknown>;
+    if (typeof a.threshold === "number" && Number.isFinite(a.threshold)) {
+      const threshold = Math.floor(a.threshold);
+      if (threshold >= 80 && threshold <= 100) {
+        config.autoApprove = { threshold };
+      } else {
+        warnings.push(`\`auto_approve.threshold\`: ${a.threshold} is out of range (must be 80–100) — ignored`);
+      }
+    } else if (a.threshold !== undefined) {
+      warnings.push(`\`auto_approve.threshold\`: must be a number between 80 and 100 — ignored`);
+    }
+  }
+
   return { config, warnings };
 }
