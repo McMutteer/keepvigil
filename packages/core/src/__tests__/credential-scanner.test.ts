@@ -266,4 +266,49 @@ describe("scanCredentials", () => {
       expect(signal.details[0].label).toContain(":11");
     });
   });
+
+  describe("env example files", () => {
+    it("skips .env.example files entirely", () => {
+      const diff = makeDiff(".env.example", 'AWS_SECRET_KEY="AKIAIOSFODNN7EXAMPLE"');
+      const signal = scanCredentials(diff);
+      expect(signal.score).toBe(100);
+      expect(signal.passed).toBe(true);
+    });
+
+    it("skips .env.template files", () => {
+      const diff = makeDiff(".env.template", 'password = "changeme123"');
+      const signal = scanCredentials(diff);
+      expect(signal.score).toBe(100);
+    });
+
+    it("skips .env.sample files", () => {
+      const diff = makeDiff(".env.sample", 'SLACK_TOKEN=xoxb-fake-token-12345');
+      const signal = scanCredentials(diff);
+      expect(signal.score).toBe(100);
+    });
+
+    it("still flags real .env files", () => {
+      const diff = makeDiff(".env", 'AWS_SECRET_KEY="AKIAIOSFODNN7EXAMPLE"');
+      const signal = scanCredentials(diff);
+      expect(signal.score).toBe(0);
+    });
+  });
+
+  describe("generic test values across all patterns", () => {
+    it("suppresses generic password in test files completely", () => {
+      const diff = makeDiff("src/__tests__/auth.test.ts", 'password = "test-password"');
+      const signal = scanCredentials(diff);
+      // Generic test value in test file should be completely suppressed
+      expect(signal.passed).toBe(true);
+      expect(signal.score).toBe(100);
+    });
+
+    it("still warns for realistic secrets in test files", () => {
+      const diff = makeDiff("src/__tests__/auth.test.ts", 'const token = "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij";');
+      const signal = scanCredentials(diff);
+      // Real-looking token in test file → warn, not suppressed
+      expect(signal.score).toBe(70);
+      expect(signal.details.some(d => d.status === "warn")).toBe(true);
+    });
+  });
 });
