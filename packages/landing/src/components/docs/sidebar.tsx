@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { docsNav, type NavItem } from "@/lib/docs-nav";
+import { getDocsNav, type NavItem } from "@/lib/docs-nav";
 
 function NavLink({ item, depth = 0 }: { item: NavItem; depth?: number }) {
   const pathname = usePathname();
@@ -57,10 +57,15 @@ function NavLink({ item, depth = 0 }: { item: NavItem; depth?: number }) {
 }
 
 export function Sidebar() {
+  const pathname = usePathname();
+  const localeMatch = pathname.match(/^\/([a-z]{2})\//);
+  const locale = localeMatch ? localeMatch[1] : "en";
+  const nav = getDocsNav(locale);
+
   return (
     <nav className="flex flex-col h-full" aria-label="Documentation">
       <div className="p-4 border-b border-white/[0.06]">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={`/${locale}`} className="flex items-center gap-2">
           <Image
             src="/brand/icon.svg"
             alt="Vigil"
@@ -74,7 +79,7 @@ export function Sidebar() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-1">
-        {docsNav.map((item) => (
+        {nav.map((item) => (
           <NavLink key={item.href} item={item} />
         ))}
       </div>

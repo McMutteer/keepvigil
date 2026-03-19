@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DocsLink } from "@/components/docs/docs-link";
 import { Callout } from "@/components/docs/callout";
 import { PrevNext } from "@/components/docs/prev-next";
 import { getPrevNext } from "@/lib/docs-nav";
@@ -56,9 +57,9 @@ export default function SecurityPage() {
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Vigil does not execute arbitrary commands. Every command must match the{" "}
-        <a href="/docs/shell-allowlist" className="text-accent hover:underline">
+        <DocsLink href="/docs/shell-allowlist" className="text-accent hover:underline">
           shell allowlist
-        </a>{" "}
+        </DocsLink>{" "}
         — a curated set of safe patterns (npm, pnpm, yarn, pytest, cargo,
         etc.). Dangerous shell metacharacters are blocked:{" "}
         <code className="font-mono text-sm bg-code-bg px-1.5 py-0.5 rounded text-code-text">
@@ -185,12 +186,12 @@ export default function SecurityPage() {
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
         Vigil never stores, logs, or displays actual credential values. When the{" "}
-        <a
+        <DocsLink
           href="/docs/signals/credential-scan"
           className="text-accent hover:underline"
         >
           Credential Scan
-        </a>{" "}
+        </DocsLink>{" "}
         detects a secret, the match is immediately redacted in all output —
         including PR comments, check run details, and server logs. The only
         information preserved is the type of credential detected and the line

@@ -3,21 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-
-const productLinks = [
-  { label: "Signals Overview", href: "/docs/signals" },
-  { label: "How It Works", href: "/docs/how-it-works" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Changelog", href: "/docs/changelog" },
-];
-
-const docsLinks = [
-  { label: "Getting Started", href: "/docs/getting-started" },
-  { label: "Configuration", href: "/docs/configuration" },
-  { label: "BYOLLM", href: "/docs/byollm" },
-  { label: "Shell Allowlist", href: "/docs/shell-allowlist" },
-  { label: "Security", href: "/docs/security" },
-];
+import type { Dictionary } from "@/i18n/get-dictionary";
+import type { Locale } from "@/i18n/config";
+import { usePathname } from "next/navigation";
 
 function ChevronDown({ className }: { className?: string }) {
   return (
@@ -50,6 +38,27 @@ function GitHubIcon() {
     >
       <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
     </svg>
+  );
+}
+
+function LanguageSwitcher({ locale }: { locale: Locale }) {
+  const pathname = usePathname();
+
+  function getAlternateHref(): string {
+    const otherLocale = locale === "en" ? "es" : "en";
+    // Replace /en/ or /es/ at the start of the path
+    const newPath = pathname.replace(`/${locale}`, `/${otherLocale}`);
+    return newPath || `/${otherLocale}`;
+  }
+
+  return (
+    <Link
+      href={getAlternateHref()}
+      className="px-2 py-1 text-xs font-medium text-text-muted hover:text-text-primary transition-colors duration-150 border border-white/[0.06] rounded-[4px]"
+      aria-label={locale === "en" ? "Cambiar a espa\u00f1ol" : "Switch to English"}
+    >
+      {locale === "en" ? "ES" : "EN"}
+    </Link>
   );
 }
 
@@ -114,9 +123,25 @@ function Dropdown({
   );
 }
 
-export function Navbar() {
+export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = dict.nav;
+
+  const productLinks = [
+    { label: t.productLinks.signalsOverview, href: `/${locale}/docs/signals` },
+    { label: t.productLinks.howItWorks, href: `/${locale}/docs/how-it-works` },
+    { label: t.productLinks.pricing, href: `/${locale}/pricing` },
+    { label: t.productLinks.changelog, href: `/${locale}/docs/changelog` },
+  ];
+
+  const docsLinks = [
+    { label: t.docsLinks.gettingStarted, href: `/${locale}/docs/getting-started` },
+    { label: t.docsLinks.configuration, href: `/${locale}/docs/configuration` },
+    { label: t.docsLinks.byollm, href: `/${locale}/docs/byollm` },
+    { label: t.docsLinks.shellAllowlist, href: `/${locale}/docs/shell-allowlist` },
+    { label: t.docsLinks.security, href: `/${locale}/docs/security` },
+  ];
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -148,7 +173,7 @@ export function Navbar() {
       >
         <div className="mx-auto max-w-[1200px] px-6 h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href={`/${locale}`} className="flex items-center gap-2.5">
             <Image
               src="/brand/icon.svg"
               alt="Vigil"
@@ -163,23 +188,24 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-1">
-            <Dropdown label="Product" items={productLinks} />
-            <Dropdown label="Docs" items={docsLinks} />
+            <Dropdown label={t.product} items={productLinks} />
+            <Dropdown label={t.docs} items={docsLinks} />
             <Link
-              href="/about"
+              href={`/${locale}/about`}
               className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
             >
-              About
+              {t.about}
             </Link>
           </div>
 
           {/* Desktop right */}
           <div className="hidden sm:flex items-center gap-3">
+            <LanguageSwitcher locale={locale} />
             <a
               href="/dashboard"
               className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
             >
-              Dashboard
+              {t.dashboard}
             </a>
             <a
               href="https://github.com/McMutteer/keepvigil"
@@ -194,17 +220,18 @@ export function Navbar() {
               href="https://github.com/apps/keepvigil"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-[6px] text-sm font-medium bg-accent text-[#080d1a] hover:bg-accent-hover transition-colors duration-150 active:scale-[0.98]"
             >
-              Install on GitHub
+              {t.installOnGithub}
             </a>
           </div>
 
           {/* Mobile: CTA + hamburger */}
           <div className="flex sm:hidden items-center gap-3">
+            <LanguageSwitcher locale={locale} />
             <a
               href="https://github.com/apps/keepvigil"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-[6px] text-sm font-medium bg-accent text-[#080d1a] hover:bg-accent-hover transition-colors duration-150 active:scale-[0.98]"
             >
-              Install on GitHub
+              {t.installOnGithub}
             </a>
             <button
               type="button"
@@ -269,7 +296,7 @@ export function Navbar() {
               {/* Product group */}
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-text-muted mb-2 px-2">
-                  Product
+                  {t.product}
                 </p>
                 <div className="space-y-0.5">
                   {productLinks.map((item) => (
@@ -288,7 +315,7 @@ export function Navbar() {
               {/* Documentation group */}
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-text-muted mb-2 px-2">
-                  Documentation
+                  {t.documentation}
                 </p>
                 <div className="space-y-0.5">
                   {docsLinks.map((item) => (
@@ -307,18 +334,18 @@ export function Navbar() {
               {/* Standalone links */}
               <div className="space-y-0.5">
                 <Link
-                  href="/about"
+                  href={`/${locale}/about`}
                   onClick={() => setMobileOpen(false)}
                   className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
                 >
-                  About
+                  {t.about}
                 </Link>
                 <a
                   href="/dashboard"
                   onClick={() => setMobileOpen(false)}
                   className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
                 >
-                  Dashboard
+                  {t.dashboard}
                 </a>
                 <a
                   href="https://github.com/McMutteer/keepvigil"
@@ -337,7 +364,7 @@ export function Navbar() {
                 href="https://github.com/apps/keepvigil"
                 className="block text-center px-4 py-2.5 rounded-[6px] text-sm font-medium bg-accent text-[#080d1a] hover:bg-accent-hover transition-colors duration-150 active:scale-[0.98]"
               >
-                Install on GitHub
+                {t.installOnGithub}
               </a>
             </div>
           </div>

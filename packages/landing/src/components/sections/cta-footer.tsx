@@ -1,7 +1,11 @@
 import Image from "next/image";
 import { ScrollReveal } from "../scroll-reveal";
+import type { Dictionary } from "@/i18n/get-dictionary";
+import type { Locale } from "@/i18n/config";
 
-export function CtaFooter() {
+export function CtaFooter({ dict, locale }: { dict: Dictionary; locale: Locale }) {
+  const t = dict.ctaFooter;
+
   return (
     <>
       {/* Final CTA band */}
@@ -9,16 +13,16 @@ export function CtaFooter() {
         <ScrollReveal>
           <div className="mx-auto max-w-[600px] px-6 text-center">
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-4">
-              Merge with confidence.
+              {t.title}
             </h2>
             <p className="text-base sm:text-lg leading-relaxed text-text-secondary mb-8">
-              Install Vigil in 30 seconds. Free forever. No credit card required.
+              {t.subtitle}
             </p>
             <a
               href="https://github.com/apps/keepvigil"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-[6px] text-[15px] font-medium bg-accent text-[#080d1a] hover:bg-accent-hover transition-colors duration-150 active:scale-[0.98]"
             >
-              Install on GitHub
+              {t.installOnGithub}
             </a>
 
           </div>
@@ -31,7 +35,7 @@ export function CtaFooter() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12">
             {/* Logo column */}
             <div className="col-span-2 sm:col-span-1">
-              <a href="/" className="flex items-center gap-2 mb-4">
+              <a href={`/${locale}`} className="flex items-center gap-2 mb-4">
                 <Image
                   src="/brand/icon.svg"
                   alt="Vigil"
@@ -46,27 +50,27 @@ export function CtaFooter() {
             {/* Product */}
             <div>
               <h3 className="text-xs font-medium uppercase tracking-wider text-text-primary mb-4">
-                Product
+                {t.footerProduct}
               </h3>
               <ul className="space-y-2.5 text-sm">
                 <li>
-                  <a href="/#signals" className="text-text-muted hover:text-text-secondary transition-colors">
-                    Signals
+                  <a href={`/${locale}#signals`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.signals}
                   </a>
                 </li>
                 <li>
-                  <a href="/pricing" className="text-text-muted hover:text-text-secondary transition-colors">
-                    Pricing
+                  <a href={`/${locale}/pricing`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.pricing}
                   </a>
                 </li>
                 <li>
-                  <a href="/docs/byollm" className="text-text-muted hover:text-text-secondary transition-colors">
-                    BYOLLM
+                  <a href={`/${locale}/docs/byollm`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.byollm}
                   </a>
                 </li>
                 <li>
-                  <a href="/docs/security" className="text-text-muted hover:text-text-secondary transition-colors">
-                    Security
+                  <a href={`/${locale}/docs/security`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.security}
                   </a>
                 </li>
               </ul>
@@ -75,12 +79,12 @@ export function CtaFooter() {
             {/* Resources */}
             <div>
               <h3 className="text-xs font-medium uppercase tracking-wider text-text-primary mb-4">
-                Resources
+                {t.footerResources}
               </h3>
               <ul className="space-y-2.5 text-sm">
                 <li>
-                  <a href="/docs/getting-started" className="text-text-muted hover:text-text-secondary transition-colors">
-                    Documentation
+                  <a href={`/${locale}/docs/getting-started`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.documentation}
                   </a>
                 </li>
                 <li>
@@ -90,22 +94,22 @@ export function CtaFooter() {
                     rel="noopener noreferrer"
                     className="text-text-muted hover:text-text-secondary transition-colors"
                   >
-                    GitHub
+                    {t.github}
                   </a>
                 </li>
                 <li>
-                  <a href="/docs/writing-test-plans" className="text-text-muted hover:text-text-secondary transition-colors">
-                    Writing Test Plans
+                  <a href={`/${locale}/docs/writing-test-plans`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.writingTestPlans}
                   </a>
                 </li>
                 <li>
-                  <a href="/about" className="text-text-muted hover:text-text-secondary transition-colors">
-                    About
+                  <a href={`/${locale}/about`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.about}
                   </a>
                 </li>
                 <li>
-                  <a href="/docs/changelog" className="text-text-muted hover:text-text-secondary transition-colors">
-                    Changelog
+                  <a href={`/${locale}/docs/changelog`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.changelog}
                   </a>
                 </li>
                 <li>
@@ -115,7 +119,7 @@ export function CtaFooter() {
                     rel="noopener noreferrer"
                     className="text-text-muted hover:text-text-secondary transition-colors"
                   >
-                    Status
+                    {t.status}
                   </a>
                 </li>
               </ul>
@@ -124,17 +128,17 @@ export function CtaFooter() {
             {/* Legal */}
             <div>
               <h3 className="text-xs font-medium uppercase tracking-wider text-text-primary mb-4">
-                Legal
+                {t.footerLegal}
               </h3>
               <ul className="space-y-2.5 text-sm">
                 <li>
-                  <a href="/privacy" className="text-text-muted hover:text-text-secondary transition-colors">
-                    Privacy Policy
+                  <a href={`/${locale}/privacy`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.privacyPolicy}
                   </a>
                 </li>
                 <li>
-                  <a href="/terms" className="text-text-muted hover:text-text-secondary transition-colors">
-                    Terms of Service
+                  <a href={`/${locale}/terms`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    {t.termsOfService}
                   </a>
                 </li>
               </ul>
@@ -143,7 +147,7 @@ export function CtaFooter() {
 
           <div className="mt-12 pt-6 border-t border-white/[0.06]">
             <p className="text-xs text-text-muted">
-              &copy; 2026 Vigil. Open source under MIT.
+              {t.copyright}
             </p>
           </div>
         </div>

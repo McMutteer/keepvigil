@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { ScrollReveal } from "../scroll-reveal";
+import type { Dictionary } from "@/i18n/get-dictionary";
 
 function SignalIcon({ children }: { children: ReactNode }) {
   return (
@@ -33,86 +34,6 @@ function IconImpactAnalysis() {
   return <SignalIcon><path d="M12 3l8 4v5c0 5.25-3.5 9.74-8 11-4.5-1.26-8-5.75-8-11V7l8-4z" /></SignalIcon>;
 }
 
-const LAYERS = [
-  {
-    icon: <IconClaimsVerification />,
-    name: "Claims Verification",
-    tier: "Free",
-    description:
-      "Reads your PR title and description. Extracts every claim — 'adds auth middleware,' 'fixes timeout,' 'no breaking changes.' Verifies each one against the actual diff. Confirmed, unverified, or contradicted.",
-    signals: [
-      {
-        name: "Claims Verifier",
-        description:
-          "LLM extracts and verifies each claim from your PR body against the actual diff. Confirmed, unverified, or contradicted.",
-      },
-      {
-        name: "Plan Augmentor",
-        description:
-          "Automatically generates 3-5 verification items your test plan missed — logic checks, contracts, edge cases — then verifies each one.",
-      },
-      {
-        name: "CI Bridge",
-        description:
-          "Maps test plan items to your GitHub Actions results. If CI already verified it, Vigil knows.",
-      },
-    ],
-  },
-  {
-    icon: <IconUndocumentedChanges />,
-    name: "Undocumented Changes",
-    tier: "Free",
-    description:
-      "Reads the full diff. Finds significant changes you didn't mention — new dependencies, environment variables, schema changes, API modifications. The things reviewers need to know but the PR description doesn't surface.",
-    signals: [
-      {
-        name: "Undocumented Changes",
-        description:
-          "LLM scans the full diff for significant changes not mentioned in the PR description. New deps, env vars, schema changes.",
-      },
-      {
-        name: "Credential Scan",
-        description:
-          "Scans the diff for hardcoded secrets, API keys, and passwords. Catches what code review misses.",
-      },
-      {
-        name: "Coverage Mapper",
-        description:
-          "Checks if changed files have corresponding test files. Files referenced by the test plan count as covered.",
-      },
-      {
-        name: "Test Execution",
-        description:
-          "Runs shell commands from the test plan in a sandboxed Docker container. Real verification, not just static analysis.",
-      },
-    ],
-  },
-  {
-    icon: <IconImpactAnalysis />,
-    name: "Impact Analysis",
-    tier: "Pro",
-    description:
-      "Goes deeper. LLM-powered deep analysis — comparing actual changes against test plan promises, finding untested areas, and verifying API/frontend contracts still match.",
-    signals: [
-      {
-        name: "Diff vs Claims",
-        description:
-          "LLM compares what the PR actually changed against what the test plan promises. Finds the gaps between words and code.",
-      },
-      {
-        name: "Gap Analysis",
-        description:
-          "LLM identifies areas of the code that changed but aren't covered by any test plan item. The unknown unknowns.",
-      },
-      {
-        name: "Contract Checker",
-        description:
-          "Detects when a PR touches both API and frontend. Compares response shapes to ensure they still match.",
-      },
-    ],
-  },
-];
-
 function LayerCard({
   icon,
   name,
@@ -125,7 +46,7 @@ function LayerCard({
   name: string;
   tier: string;
   description: string;
-  signals: { name: string; description: string }[];
+  signals: readonly { readonly name: string; readonly description: string }[];
   index: number;
 }) {
   const isPro = tier === "Pro";
@@ -175,33 +96,38 @@ function LayerCard({
   );
 }
 
-export function Signals() {
+export function Signals({ dict }: { dict: Dictionary }) {
+  const t = dict.signals;
+  const layers = [
+    { icon: <IconClaimsVerification />, ...t.layers.claimsVerification },
+    { icon: <IconUndocumentedChanges />, ...t.layers.undocumentedChanges },
+    { icon: <IconImpactAnalysis />, ...t.layers.impactAnalysis },
+  ];
+
   return (
     <section id="signals" className="py-16 sm:py-20">
       <div className="mx-auto max-w-[1200px] px-6">
         <ScrollReveal>
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-4">
-              Three layers. Full verification.
+              {t.title}
             </h2>
             <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[720px] mx-auto">
-              Vigil reads your PR description, verifies every claim against the
-              actual diff, and surfaces what you missed.
+              {t.subtitle}
             </p>
           </div>
         </ScrollReveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {LAYERS.map((layer, i) => (
-            <LayerCard key={layer.name} {...layer} index={i} />
+          {layers.map((layer, i) => (
+            <LayerCard key={i} {...layer} index={i} />
           ))}
         </div>
 
         {/* Score formula note */}
         <ScrollReveal delay={600}>
           <p className="text-center text-xs text-text-muted mt-8 max-w-[600px] mx-auto">
-            10 signals across three layers contribute to the verification score.
-            7 are free — the core value. 3 unlock with Pro for deeper analysis.
+            {t.scoreNote}
           </p>
         </ScrollReveal>
       </div>

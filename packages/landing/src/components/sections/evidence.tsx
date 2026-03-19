@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ScrollReveal } from "../scroll-reveal";
+import type { Dictionary } from "@/i18n/get-dictionary";
 
 interface ResultItem {
   icon: string;
@@ -10,12 +11,10 @@ interface ResultItem {
   color: string;
 }
 
-const TABS = [
+const TABS_DATA = [
   {
     id: "review",
-    label: "Review needed",
     score: 82,
-    recommendation: "Review recommended",
     recClass: "bg-warning/10 text-warning border-warning/20",
     claims: [
       {
@@ -74,9 +73,7 @@ const TABS = [
   },
   {
     id: "caution",
-    label: "Credential leak",
     score: 38,
-    recommendation: "Do not merge",
     recClass: "bg-failure/10 text-failure border-failure/20",
     claims: [
       {
@@ -102,7 +99,7 @@ const TABS = [
       {
         icon: "\uD83D\uDED1",
         text: "Hardcoded credential: REDIS_PASSWORD",
-        detail: "secret exposed in config.ts — credential scan failed",
+        detail: "secret exposed in config.ts \u2014 credential scan failed",
         color: "text-failure",
       },
       {
@@ -139,14 +136,18 @@ function ResultRow({ icon, text, detail, color }: ResultItem) {
   return (
     <p className={`text-[13px] ${color}`}>
       {icon} {text}
-      {detail && <span className="text-text-muted"> — {detail}</span>}
+      {detail && <span className="text-text-muted"> &mdash; {detail}</span>}
     </p>
   );
 }
 
-export function Evidence() {
+export function Evidence({ dict }: { dict: Dictionary }) {
   const [activeTab, setActiveTab] = useState(0);
-  const tab = TABS[activeTab];
+  const tab = TABS_DATA[activeTab];
+  const t = dict.evidence;
+
+  const tabLabels = [t.tabs.reviewNeeded, t.tabs.credentialLeak];
+  const recommendations = [t.reviewRecommended, t.doNotMerge];
 
   return (
     <section className="py-16 sm:py-20">
@@ -154,14 +155,13 @@ export function Evidence() {
         <ScrollReveal>
           <div className="text-center mb-4">
             <p className="text-xs font-medium uppercase tracking-[0.05em] text-accent mb-3">
-              Example verification result
+              {t.badge}
             </p>
             <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary mb-4">
-              This appears on every PR.
+              {t.title}
             </h2>
             <p className="text-base sm:text-lg leading-relaxed text-text-secondary max-w-[600px] mx-auto">
-              No dashboard. No separate tool. The results live where you already
-              work — right on the pull request.
+              {t.subtitle}
             </p>
           </div>
         </ScrollReveal>
@@ -169,9 +169,9 @@ export function Evidence() {
         <ScrollReveal delay={200}>
           {/* Tab toggle */}
           <div className="flex justify-center gap-1 mb-6">
-            {TABS.map((t, i) => (
+            {TABS_DATA.map((td, i) => (
               <button
-                key={t.id}
+                key={td.id}
                 type="button"
                 onClick={() => setActiveTab(i)}
                 className={`px-4 py-2 rounded-full text-xs font-medium transition-colors ${
@@ -180,7 +180,7 @@ export function Evidence() {
                     : "text-text-muted hover:text-text-secondary bg-bg-surface"
                 }`}
               >
-                {t.label}
+                {tabLabels[i]}
               </button>
             ))}
           </div>
@@ -189,7 +189,7 @@ export function Evidence() {
             {/* Comment header */}
             <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/[0.06]">
               <div className="w-8 h-8 rounded-full bg-bg-elevated flex items-center justify-center text-sm">
-                🛡️
+                \ud83d\udee1\ufe0f
               </div>
               <span className="font-medium text-sm text-text-primary">
                 vigil
@@ -200,7 +200,7 @@ export function Evidence() {
             {/* Score header */}
             <div className="mb-4">
               <p className="text-lg sm:text-xl font-semibold text-text-primary">
-                🛡️ Vigil — PR Verification:{" "}
+                \ud83d\udee1\ufe0f Vigil &mdash; PR Verification:{" "}
                 <span className={tab.score >= 50 ? "text-accent" : "text-failure"}>
                   {tab.score}/100
                 </span>
@@ -208,14 +208,14 @@ export function Evidence() {
               <span
                 className={`inline-flex items-center mt-2 px-2.5 py-1 rounded-full text-[11px] font-medium border ${tab.recClass}`}
               >
-                {tab.recommendation}
+                {recommendations[activeTab]}
               </span>
             </div>
 
             {/* Claims section */}
             <div className="mb-5">
               <p className="text-sm font-semibold text-text-primary mb-2">
-                Claims
+                {t.claims}
               </p>
               <div className="space-y-1.5 pl-1">
                 {tab.claims.map((row) => (
@@ -227,7 +227,7 @@ export function Evidence() {
             {/* Undocumented Changes section */}
             <div className="mb-5">
               <p className="text-sm font-semibold text-text-primary mb-2">
-                Undocumented Changes
+                {t.undocumentedChanges}
               </p>
               <div className="space-y-1.5 pl-1">
                 {tab.undocumented.map((row) => (
@@ -239,7 +239,7 @@ export function Evidence() {
             {/* Impact section */}
             <div className="mb-5">
               <p className="text-sm font-semibold text-text-primary mb-2">
-                Impact
+                {t.impact}
               </p>
               <div className="space-y-1.5 pl-1">
                 {tab.impact.map((row) => (
@@ -257,7 +257,7 @@ export function Evidence() {
                 >
                   {tab.score}/100
                 </span>{" "}
-                — {tab.recommendation}
+                &mdash; {recommendations[activeTab]}
               </p>
             </div>
           </div>
@@ -271,7 +271,7 @@ export function Evidence() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[6px] text-sm font-medium text-accent border border-accent/30 hover:bg-accent/10 transition-colors"
             >
-              See a real result on GitHub →
+              {t.seeRealResult}
             </a>
           </div>
         </ScrollReveal>

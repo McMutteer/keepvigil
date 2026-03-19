@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import type { Dictionary } from "@/i18n/get-dictionary";
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -11,164 +12,31 @@ type Plan = {
   name: string;
   monthly: number;
   annual: number;
-  period: string;
   description: string;
   badge?: string;
-  features: string[];
+  features: readonly string[];
   cta: string;
   ctaHref: (annual: boolean) => string;
   highlighted: boolean;
 };
 
-const PLANS: Plan[] = [
-  {
-    name: "Free",
-    monthly: 0,
-    annual: 0,
-    period: "forever",
-    description: "Immediate value, zero config.",
-    features: [
-      "CI Bridge — verify GitHub Actions results",
-      "Credential Scan — catch hardcoded secrets",
-      "Coverage Mapper — find untested files",
-      "Test Execution — sandbox verification",
-      "Assertion Verifier — file content checks",
-      "Plan Augmentor — auto-generate missing checks",
-      "Unlimited public repos",
-      "10 PRs/hour, 50 PRs/day",
-    ],
-    cta: "Install Free",
-    ctaHref: () => "https://github.com/apps/keepvigil",
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    monthly: 19,
-    annual: 190,
-    period: "/month",
-    description: "Full verification with impact analysis.",
-    badge: "Recommended",
-    features: [
-      "Everything in Free, plus:",
-      "Diff vs Claims — LLM gap detection",
-      "Gap Analysis — find untested changes",
-      "Contract Checker — API/frontend compatibility",
-      "BYOLLM — use your own API key",
-      "Webhook notifications (Slack/Discord)",
-      "50 PRs/hour, 500 PRs/day",
-      "Priority support",
-    ],
-    cta: "Start Pro Trial",
-    ctaHref: (annual) =>
-      annual
-        ? "/api/checkout?plan=pro&interval=annual"
-        : "/api/checkout?plan=pro",
-    highlighted: true,
-  },
-  {
-    name: "Team",
-    monthly: 49,
-    annual: 490,
-    period: "/month",
-    description: "For teams managing agents at scale.",
-    features: [
-      "Everything in Pro, plus:",
-      "Shared dashboard",
-      "Custom scoring rules",
-      "SSO / SAML",
-      "Org-wide configuration",
-      "200 PRs/hour, 2000 PRs/day",
-      "Dedicated support",
-    ],
-    cta: "Start Team Trial",
-    ctaHref: (annual) =>
-      annual
-        ? "/api/checkout?plan=team&interval=annual"
-        : "/api/checkout?plan=team",
-    highlighted: false,
-  },
-];
-
-const COMPARISON_FEATURES: {
-  name: string;
-  free: string;
-  pro: string;
-  team: string;
-}[] = [
-  { name: "CI Bridge", free: "\u2705", pro: "\u2705", team: "\u2705" },
-  { name: "Credential Scan", free: "\u2705", pro: "\u2705", team: "\u2705" },
-  { name: "Test Execution", free: "\u2705", pro: "\u2705", team: "\u2705" },
-  { name: "Coverage Mapper", free: "\u2705", pro: "\u2705", team: "\u2705" },
-  {
-    name: "Assertion Verifier",
-    free: "\u2705",
-    pro: "\u2705",
-    team: "\u2705",
-  },
-  { name: "Plan Augmentor", free: "\u2705", pro: "\u2705", team: "\u2705" },
-  { name: "Diff vs Claims", free: "\u2014", pro: "\u2705", team: "\u2705" },
-  { name: "Gap Analysis", free: "\u2014", pro: "\u2705", team: "\u2705" },
-  { name: "Contract Checker", free: "\u2014", pro: "\u2705", team: "\u2705" },
-  { name: "BYOLLM", free: "\u2014", pro: "\u2705", team: "\u2705" },
-  {
-    name: "Webhook notifications",
-    free: "\u2014",
-    pro: "\u2705",
-    team: "\u2705",
-  },
-  {
-    name: "Custom scoring rules",
-    free: "\u2014",
-    pro: "\u2014",
-    team: "\u2705",
-  },
-  { name: "SSO / SAML", free: "\u2014", pro: "\u2014", team: "\u2705" },
-  { name: "Org-wide config", free: "\u2014", pro: "\u2014", team: "\u2705" },
-  { name: "PRs per hour", free: "10", pro: "50", team: "200" },
-  { name: "PRs per day", free: "50", pro: "500", team: "2,000" },
-];
-
-const FAQ_ITEMS = [
-  {
-    question: "How does billing work?",
-    answer:
-      "You're billed at the start of each billing cycle — monthly or annually. All charges go through Stripe. You'll receive an invoice by email for every payment.",
-  },
-  {
-    question: "Can I cancel anytime?",
-    answer:
-      "Yes. Cancel from your Stripe customer portal at any time. Your plan stays active until the end of the current billing period — no partial-month charges.",
-  },
-  {
-    question: "What happens when I cancel?",
-    answer:
-      "Your account reverts to the Free tier at the end of your billing period. Pro-only signals (Diff, Gap, Contract Checker) stop running, but your repos stay connected and Free signals continue working.",
-  },
-  {
-    question: "Do I get a refund?",
-    answer:
-      "We don't offer prorated refunds for unused time. If you cancel mid-cycle, you keep access until the period ends. If there's an issue, reach out — we'll work with you.",
-  },
-  {
-    question: "How does BYOLLM billing work?",
-    answer:
-      "Vigil doesn't charge for LLM usage — you bring your own API key (OpenAI, Groq, or Ollama). LLM costs are typically less than $0.01 per PR using fast models like Groq's llama-3.3-70b.",
-  },
-  {
-    question: "Can I change plans?",
-    answer:
-      "Yes. Upgrade or downgrade anytime from your Stripe portal. Upgrades take effect immediately with prorated billing. Downgrades apply at the next billing cycle.",
-  },
-  {
-    question: "Is there an annual discount?",
-    answer:
-      "Yes. Annual billing saves you two months: Pro is $190/year (vs. $228 monthly) and Team is $490/year (vs. $588 monthly).",
-  },
-  {
-    question: "Do I need a credit card for Free?",
-    answer:
-      "No. Install the GitHub App and start using Vigil immediately. No credit card, no trial expiration, no catch.",
-  },
+const COMPARISON_VALUES: { free: string; pro: string; team: string }[] = [
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  { free: "\u2014", pro: "\u2705", team: "\u2705" },
+  { free: "\u2014", pro: "\u2705", team: "\u2705" },
+  { free: "\u2014", pro: "\u2705", team: "\u2705" },
+  { free: "\u2014", pro: "\u2705", team: "\u2705" },
+  { free: "\u2014", pro: "\u2705", team: "\u2705" },
+  { free: "\u2014", pro: "\u2014", team: "\u2705" },
+  { free: "\u2014", pro: "\u2014", team: "\u2705" },
+  { free: "\u2014", pro: "\u2014", team: "\u2705" },
+  { free: "10", pro: "50", team: "200" },
+  { free: "50", pro: "500", team: "2,000" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -178,10 +46,13 @@ const FAQ_ITEMS = [
 function BillingToggle({
   annual,
   onToggle,
+  dict,
 }: {
   annual: boolean;
   onToggle: () => void;
+  dict: Dictionary;
 }) {
+  const t = dict.pricing;
   return (
     <div className="flex items-center justify-center gap-3 mb-12 sm:mb-16">
       <span
@@ -189,7 +60,7 @@ function BillingToggle({
           !annual ? "text-text-primary" : "text-text-muted"
         }`}
       >
-        Monthly
+        {t.monthly}
       </span>
       <button
         type="button"
@@ -210,11 +81,11 @@ function BillingToggle({
           annual ? "text-text-primary" : "text-text-muted"
         }`}
       >
-        Annual
+        {t.annual}
       </span>
       {annual && (
         <span className="text-[11px] font-medium text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full">
-          Save up to $98
+          {t.saveUpTo}
         </span>
       )}
     </div>
@@ -224,14 +95,17 @@ function BillingToggle({
 function PricingCard({
   plan,
   annual,
+  dict,
 }: {
   plan: Plan;
   annual: boolean;
+  dict: Dictionary;
 }) {
+  const t = dict.pricing;
   const price = plan.monthly === 0 ? 0 : annual ? plan.annual : plan.monthly;
   const displayPrice = price === 0 ? "$0" : `$${price}`;
   const period =
-    price === 0 ? "forever" : annual ? "/year" : "/month";
+    price === 0 ? t.forever : annual ? t.perYear : t.perMonth;
   const savings =
     annual && plan.monthly > 0
       ? `Save $${plan.monthly * 12 - plan.annual}`
@@ -271,9 +145,9 @@ function PricingCard({
       </div>
 
       <ul className="space-y-3 mb-8 flex-1">
-        {plan.features.map((feature) => (
+        {plan.features.map((feature, i) => (
           <li
-            key={feature}
+            key={i}
             className="flex items-start gap-2.5 text-sm text-text-secondary"
           >
             <span className="text-text-muted mt-0.5 shrink-0">&#10003;</span>
@@ -296,14 +170,16 @@ function PricingCard({
   );
 }
 
-function ComparisonTable() {
+function ComparisonTable({ dict }: { dict: Dictionary }) {
+  const t = dict.pricing;
+
   return (
     <div className="overflow-x-auto -mx-6 px-6">
       <table className="w-full min-w-[600px] bg-bg-surface rounded-[12px] overflow-hidden">
         <thead>
           <tr className="border-b border-white/[0.06]">
             <th className="text-left text-sm font-medium text-text-primary px-6 py-4 w-[40%]">
-              Feature
+              {t.feature}
             </th>
             <th className="text-center text-sm font-medium text-text-primary px-4 py-4 w-[20%]">
               Free
@@ -317,21 +193,24 @@ function ComparisonTable() {
           </tr>
         </thead>
         <tbody>
-          {COMPARISON_FEATURES.map((row, i) => (
-            <tr
-              key={row.name}
-              className={`border-b border-white/[0.06] last:border-b-0 ${
-                i % 2 === 1 ? "bg-white/[0.015]" : ""
-              }`}
-            >
-              <td className="text-sm text-text-secondary px-6 py-3.5">
-                {row.name}
-              </td>
-              <td className="text-center text-sm px-4 py-3.5">{row.free}</td>
-              <td className="text-center text-sm px-4 py-3.5">{row.pro}</td>
-              <td className="text-center text-sm px-4 py-3.5">{row.team}</td>
-            </tr>
-          ))}
+          {t.comparisonFeatures.map((featureName, i) => {
+            const row = COMPARISON_VALUES[i];
+            return (
+              <tr
+                key={i}
+                className={`border-b border-white/[0.06] last:border-b-0 ${
+                  i % 2 === 1 ? "bg-white/[0.015]" : ""
+                }`}
+              >
+                <td className="text-sm text-text-secondary px-6 py-3.5">
+                  {featureName}
+                </td>
+                <td className="text-center text-sm px-4 py-3.5">{row.free}</td>
+                <td className="text-center text-sm px-4 py-3.5">{row.pro}</td>
+                <td className="text-center text-sm px-4 py-3.5">{row.team}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -361,8 +240,9 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-function PricingFaq() {
+function PricingFaq({ dict }: { dict: Dictionary }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const t = dict.pricing;
 
   function toggle(index: number) {
     setOpenIndex((prev) => (prev === index ? null : index));
@@ -372,13 +252,13 @@ function PricingFaq() {
     <div className="mx-auto max-w-[800px]">
       <ScrollReveal>
         <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary text-center mb-12 sm:mb-16">
-          Billing questions
+          {t.billingQuestions}
         </h2>
       </ScrollReveal>
 
       <ScrollReveal delay={100}>
         <div className="divide-y divide-white/[0.06]">
-          {FAQ_ITEMS.map((item, i) => {
+          {t.faq.map((item, i) => {
             const isOpen = openIndex === i;
             return (
               <div key={i}>
@@ -416,8 +296,53 @@ function PricingFaq() {
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export function PricingPageClient() {
+export function PricingPageClient({
+  dict,
+}: {
+  dict: Dictionary;
+}) {
   const [annual, setAnnual] = useState(false);
+  const t = dict.pricing;
+
+  const plans: Plan[] = [
+    {
+      name: t.plans.free.name,
+      monthly: 0,
+      annual: 0,
+      description: t.plans.free.description,
+      features: t.plans.free.features,
+      cta: t.plans.free.cta,
+      ctaHref: () => "https://github.com/apps/keepvigil",
+      highlighted: false,
+    },
+    {
+      name: t.plans.pro.name,
+      monthly: 19,
+      annual: 190,
+      description: t.plans.pro.description,
+      badge: t.plans.pro.badge,
+      features: t.plans.pro.features,
+      cta: t.plans.pro.cta,
+      ctaHref: (ann) =>
+        ann
+          ? "/api/checkout?plan=pro&interval=annual"
+          : "/api/checkout?plan=pro",
+      highlighted: true,
+    },
+    {
+      name: t.plans.team.name,
+      monthly: 49,
+      annual: 490,
+      description: t.plans.team.description,
+      features: t.plans.team.features,
+      cta: t.plans.team.cta,
+      ctaHref: (ann) =>
+        ann
+          ? "/api/checkout?plan=team&interval=annual"
+          : "/api/checkout?plan=team",
+      highlighted: false,
+    },
+  ];
 
   return (
     <div className="py-24 sm:py-32">
@@ -425,31 +350,30 @@ export function PricingPageClient() {
       <div className="mx-auto max-w-[1200px] px-6">
         <ScrollReveal>
           <h1 className="text-3xl sm:text-5xl font-semibold leading-[1.15] text-text-primary text-center mb-4">
-            Start free. Scale when you&apos;re ready.
+            {t.title}
           </h1>
           <p className="text-center text-text-secondary text-lg max-w-[560px] mx-auto mb-12 sm:mb-16">
-            Every plan includes unlimited repos and unlimited PRs. Upgrade for deeper analysis.
+            {t.subtitle}
           </p>
         </ScrollReveal>
 
         {/* Billing toggle */}
         <ScrollReveal delay={100}>
-          <BillingToggle annual={annual} onToggle={() => setAnnual((a) => !a)} />
+          <BillingToggle annual={annual} onToggle={() => setAnnual((a) => !a)} dict={dict} />
         </ScrollReveal>
 
         {/* Plan cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-[1000px] mx-auto">
-          {PLANS.map((plan, i) => (
+          {plans.map((plan, i) => (
             <ScrollReveal key={plan.name} delay={150 + i * 100}>
-              <PricingCard plan={plan} annual={annual} />
+              <PricingCard plan={plan} annual={annual} dict={dict} />
             </ScrollReveal>
           ))}
         </div>
 
         <ScrollReveal delay={500}>
           <p className="text-center text-xs text-text-muted mt-8 mb-0">
-            All plans include unlimited PRs. BYOLLM means you control LLM costs
-            &mdash; typically &lt; $0.01 per PR.
+            {t.allPlansNote}
           </p>
         </ScrollReveal>
       </div>
@@ -458,12 +382,12 @@ export function PricingPageClient() {
       <div className="mx-auto max-w-[1200px] px-6 py-24 sm:py-32">
         <ScrollReveal>
           <h2 className="text-2xl sm:text-4xl font-semibold leading-[1.2] text-text-primary text-center mb-12 sm:mb-16">
-            Compare plans
+            {t.comparePlans}
           </h2>
         </ScrollReveal>
 
         <ScrollReveal delay={100}>
-          <ComparisonTable />
+          <ComparisonTable dict={dict} />
         </ScrollReveal>
       </div>
 
@@ -472,16 +396,16 @@ export function PricingPageClient() {
         <ScrollReveal delay={200}>
           <div className="bg-bg-surface border border-white/[0.06] rounded-[12px] p-8 text-center max-w-[600px] mx-auto">
             <h3 className="text-lg font-medium text-text-primary mb-2">
-              Already using Vigil?
+              {t.alreadyUsingVigil}
             </h3>
             <p className="text-sm text-text-secondary mb-5">
-              View your PR verification history, scores, and team metrics in the dashboard.
+              {t.alreadyUsingVigilDescription}
             </p>
             <a
               href="/dashboard"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[6px] text-sm font-medium border border-white/[0.06] text-text-primary hover:bg-bg-elevated transition-colors duration-150"
             >
-              Open Dashboard
+              {t.openDashboard}
             </a>
           </div>
         </ScrollReveal>
@@ -489,7 +413,7 @@ export function PricingPageClient() {
 
       {/* FAQ */}
       <div className="mx-auto max-w-[1200px] px-6">
-        <PricingFaq />
+        <PricingFaq dict={dict} />
       </div>
     </div>
   );
