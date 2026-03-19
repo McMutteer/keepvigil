@@ -11,12 +11,23 @@
  */
 
 import { createLogger } from "@vigil/core";
-import { validateBaseUrl } from "@vigil/executors";
 import type { ReportSummary, ReportItem, CheckConclusion } from "./reporter.js";
 
 const log = createLogger("webhook-notifier");
 
 const WEBHOOK_TIMEOUT_MS = 5_000;
+
+const BLOCKED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]", "169.254.169.254"];
+const PRIVATE_IPV4 = /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/;
+const PRIVATE_IPV6 = /^\[?(fc|fd|fe80)/i;
+
+/** SSRF protection: reject localhost, private IPs, cloud metadata endpoints */
+function validateWebhookUrl(url: string): void {
+  const parsed = new URL(url);
+  if (BLOCKED_HOSTS.includes(parsed.hostname)) throw new Error("blocked host");
+  if (PRIVATE_IPV4.test(parsed.hostname)) throw new Error("private IP");
+  if (PRIVATE_IPV6.test(parsed.hostname)) throw new Error("private IPv6");
+}
 
 export type WebhookProvider = "slack" | "discord" | "generic";
 
@@ -157,7 +168,7 @@ export async function notifyWebhooks(params: WebhookNotifyParams): Promise<void>
     params.urls.map(async (url) => {
       // SSRF protection: block localhost, private IPs, cloud metadata endpoints
       try {
-        validateBaseUrl(url);
+        validateWebhookUrl(url);
       } catch {
         log.warn({ url: redactUrl(url) }, "Webhook URL blocked by SSRF validation");
         return;

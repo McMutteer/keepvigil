@@ -5,15 +5,12 @@
       "@vigil/core": ["./packages/core/src"],
       "@vigil/core/*": ["./packages/core/src/*"],
       "@vigil/github": ["./packages/github/src"],
-      "@vigil/github/*": ["./packages/github/src/*"],
-      "@vigil/executors": ["./packages/executors/src"],
-      "@vigil/executors/*": ["./packages/executors/src/*"]
+      "@vigil/github/*": ["./packages/github/src/*"]
     }
   },
   "include": [],
   "references": [
     { "path": "./packages/core" },
-    { "path": "./packages/github" },
-    { "path": "./packages/executors" }
+    { "path": "./packages/github" }
   ]
 }

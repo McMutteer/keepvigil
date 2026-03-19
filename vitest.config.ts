@@ -20,14 +20,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@vigil/core/classifier": path.resolve(import.meta.dirname, "packages/core/src/classifier"),
       "@vigil/core/db": path.resolve(import.meta.dirname, "packages/core/src/db"),
-      "@vigil/core/parser": path.resolve(import.meta.dirname, "packages/core/src/parser"),
       "@vigil/core/queue": path.resolve(import.meta.dirname, "packages/core/src/queue"),
       "@vigil/core/types": path.resolve(import.meta.dirname, "packages/core/src/types"),
       "@vigil/core": path.resolve(import.meta.dirname, "packages/core/src"),
       "@vigil/github": path.resolve(import.meta.dirname, "packages/github/src"),
-      "@vigil/executors": path.resolve(import.meta.dirname, "packages/executors/src"),
     },
   },
 });
