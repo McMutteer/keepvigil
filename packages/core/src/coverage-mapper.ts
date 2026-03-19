@@ -225,6 +225,7 @@ export function mapCoverage(
   changedFiles: (string | ChangedFile)[],
   repoFiles: string[],
   classifiedItems?: ClassifiedItem[],
+  excludePaths?: string[],
 ): Signal {
   if (changedFiles.length === 0) {
     return createSignal({
@@ -250,6 +251,15 @@ export function mapCoverage(
     if (isNonSource(file)) continue;
     // Skip test files themselves (they don't need coverage)
     if (isTestFile(file)) continue;
+    // Skip files matching user-configured exclude paths
+    if (excludePaths && excludePaths.some((prefix) => file.startsWith(prefix))) {
+      details.push({
+        label: file,
+        status: "skip",
+        message: "Excluded via .vigil.yml coverage.exclude",
+      });
+      continue;
+    }
 
     // New files are expected to not have tests yet — skip with an informational detail
     if (isNew) {

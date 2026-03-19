@@ -348,4 +348,45 @@ describe("mapCoverage", () => {
       expect(signal.score).toBe(0);
     });
   });
+
+  describe("excludePaths", () => {
+    it("excludes files matching prefix", () => {
+      const changed = ["packages/landing/src/components/hero.tsx", "packages/core/src/foo.ts"];
+      const repo = [...changed, "packages/core/src/__tests__/foo.test.ts"];
+      const signal = mapCoverage(changed, repo, undefined, ["packages/landing/"]);
+      expect(signal.score).toBe(100);
+      expect(signal.details.some(d => d.status === "skip" && d.label.includes("hero.tsx"))).toBe(true);
+    });
+
+    it("all files excluded → score 100", () => {
+      const changed = ["packages/landing/src/hero.tsx", "packages/landing/src/navbar.tsx"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo, undefined, ["packages/landing/"]);
+      expect(signal.score).toBe(100);
+      expect(signal.passed).toBe(true);
+    });
+
+    it("multiple exclude prefixes", () => {
+      const changed = ["packages/landing/src/hero.tsx", "packages/dashboard/src/App.tsx", "packages/core/src/foo.ts"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo, undefined, ["packages/landing/", "packages/dashboard/"]);
+      // Only foo.ts counts, no test file → 0
+      expect(signal.score).toBe(0);
+      expect(signal.details.filter(d => d.status === "skip")).toHaveLength(2);
+    });
+
+    it("empty excludePaths has no effect", () => {
+      const changed = ["src/foo.ts"];
+      const repo = ["src/foo.ts"];
+      const signal = mapCoverage(changed, repo, undefined, []);
+      expect(signal.score).toBe(0);
+    });
+
+    it("undefined excludePaths has no effect", () => {
+      const changed = ["src/foo.ts"];
+      const repo = ["src/foo.ts"];
+      const signal = mapCoverage(changed, repo, undefined, undefined);
+      expect(signal.score).toBe(0);
+    });
+  });
 });
