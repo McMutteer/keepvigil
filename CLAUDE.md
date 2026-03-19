@@ -3,27 +3,33 @@
 ## Project Identity
 
 **Name:** Vigil
-**Tagline:** "Verifies that your PR does what it says it does."
+**Tagline:** "Merge with confidence."
+**Sub-tagline:** "The verification layer for AI-assisted development."
 **Domain:** keepvigil.dev
 **Repo:** McMutteer/keepvigil
 
 ### Who We Are
-We are the silent verifier. When a developer opens a PR — any PR — we read the title and description, verify every claim against the actual diff, and surface changes the author didn't mention. We close the loop between "what a PR says" and "what the code does." We don't brag, we don't interrupt, we don't ask permission. We verify, we report, we disappear.
+We are the trust layer between AI-generated code and your main branch. When a developer or AI agent opens a PR, we read the title and description, verify every claim against the actual diff, and surface changes the author didn't mention. We close the loop between "what a PR says" and "what the code does."
 
 ### Who We Serve
-Any developer who opens pull requests. AI agents, teammates, yourself — it doesn't matter who wrote the code. If the PR says "adds auth middleware," we check. If it doesn't mention a new Redis dependency, we flag it. Zero config, zero friction. Install and forget.
+1. **Founders/CTOs using AI coding agents** — can't manually audit every PR from Cursor, Claude Code, or Devin
+2. **Tech leads of 5-15 dev teams** — not enough time to review every PR thoroughly
+3. **Open source maintainers** — receive PRs from strangers, need to verify claims
 
 ### How We Feel
 Silent. Reliable. Nocturnal. Precise. Trustworthy.
 
 ### What We Are Not
-We are not a code reviewer (that's CodeRabbit). We are not CI (that's GitHub Actions). We are not a coverage tool (that's Codecov). We verify that what your PR claims matches what the code actually does. No one else does this.
+We are not a code reviewer — we complement code review tools. We are not CI. We are not a coverage tool. We verify that what your PR claims matches what the code actually does. CodeRabbit reviews quality; Vigil verifies truthfulness. They're complementary.
+
+### Strategic Direction (March 2026)
+Code is becoming commodity (AI agents write it). Trust is becoming scarce. Vigil is the verification layer for the AI coding age. See `memory/strategy_pivot_2026_03.md` for full analysis.
 
 ## Architecture
 
-- **Dual-mode pipeline:** `v1+v2` (PR has test plan) runs all 10 signals. `v2-only` (no test plan) runs 6 signals.
-- **Three verification layers:** Claims Verification (free), Undocumented Changes (free), Impact Analysis (pro)
-- **10 signals:** claims-verifier, undocumented-changes, ci-bridge, credential-scan, executor, plan-augmentor, contract-checker, diff-analyzer, coverage-mapper, gap-analyzer
+- **v2-only pipeline:** All PRs run the same 6 signals (v1 deprecated in PR #91)
+- **Two verification layers:** Trust Verification (free: claims, undocumented, credential, coverage) + Deep Analysis (pro: contract, diff)
+- **6 signals:** claims-verifier, undocumented-changes, credential-scan, coverage-mapper, contract-checker, diff-analyzer
 - **Score:** 0-100 weighted average, failure cap at 70 for deterministic failures
 
 ## Visual Identity
