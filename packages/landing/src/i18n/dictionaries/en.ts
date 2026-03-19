@@ -21,10 +21,10 @@ const en = {
     },
   },
   hero: {
-    badge: "Every PR gets verified. Every claim gets checked.",
-    title: "Verifies that your PR does what it says\u00a0it\u00a0does",
+    badge: "Built for the age of AI-assisted development",
+    title: "Merge with confidence.",
     description:
-      "Install the GitHub App. Open a PR. Vigil reads your title and description, verifies each claim against the actual diff, and surfaces changes you didn't mention \u2014 so reviewers know exactly what's real.",
+      "AI agents and teammates write PRs fast. Vigil reads every claim, verifies it against the actual diff, and surfaces changes nobody mentioned. So you know exactly what you\u2019re merging.",
     installOnGithub: "Install on GitHub",
     viewOnGithub: "View on GitHub",
     zeroConfig: "\u2713 Zero config",
@@ -71,7 +71,7 @@ const en = {
     title1: "Your PR says one thing.",
     title2: "The code says another.",
     description:
-      'AI agents write PRs with confident descriptions \u2014 "adds auth middleware," "fixes the timeout bug," "no breaking changes." But who actually checks? The PR says it adds auth \u2014 did it? The PR says no breaking changes \u2014 are there any? The gap between what a PR claims and what the code actually does grows with every merge.',
+      "Your team merges 50 PRs a week. How many did someone actually read line by line? AI agents write code in minutes \u2014 complete with confident descriptions. \u201CAdds auth middleware.\u201D \u201CFixes the timeout bug.\u201D \u201CNo breaking changes.\u201D But who checks? Not CI \u2014 it tests if code runs, not if the PR is truthful. Not code review \u2014 your reviewer skimmed the diff in 30 seconds. The gap between what a PR claims and what the code does is the gap where bugs reach production.",
   },
   howItWorks: {
     title: "How it works",
@@ -94,41 +94,23 @@ const en = {
     ],
   },
   signals: {
-    title: "Three layers. Full verification.",
+    title: "Two layers. Full verification.",
     subtitle:
       "Vigil reads your PR description, verifies every claim against the actual diff, and surfaces what you missed.",
     scoreNote:
-      "10 signals across three layers contribute to the verification score. 7 are free \u2014 the core value. 3 unlock with Pro for deeper analysis.",
+      "6 signals across two layers contribute to the confidence score. 4 are free \u2014 the core value. 2 unlock with Pro for deeper structural analysis.",
     layers: {
-      claimsVerification: {
-        name: "Claims Verification",
+      trustVerification: {
+        name: "Trust Verification",
         tier: "Free",
         description:
-          "Reads your PR title and description. Extracts every claim \u2014 'adds auth middleware,' 'fixes timeout,' 'no breaking changes.' Verifies each one against the actual diff. Confirmed, unverified, or contradicted.",
+          "Reads your PR title and description. Extracts every claim \u2014 \u2018adds auth middleware,\u2019 \u2018fixes timeout,\u2019 \u2018no breaking changes.\u2019 Verifies each one against the actual diff. Then scans for everything the description didn\u2019t mention: new dependencies, credentials, untested files.",
         signals: [
           {
             name: "Claims Verifier",
             description:
               "LLM extracts and verifies each claim from your PR body against the actual diff. Confirmed, unverified, or contradicted.",
           },
-          {
-            name: "Plan Augmentor",
-            description:
-              "Automatically generates 3-5 verification items your test plan missed \u2014 logic checks, contracts, edge cases \u2014 then verifies each one.",
-          },
-          {
-            name: "CI Bridge",
-            description:
-              "Maps test plan items to your GitHub Actions results. If CI already verified it, Vigil knows.",
-          },
-        ],
-      },
-      undocumentedChanges: {
-        name: "Undocumented Changes",
-        tier: "Free",
-        description:
-          "Reads the full diff. Finds significant changes you didn't mention \u2014 new dependencies, environment variables, schema changes, API modifications. The things reviewers need to know but the PR description doesn't surface.",
-        signals: [
           {
             name: "Undocumented Changes",
             description:
@@ -142,35 +124,25 @@ const en = {
           {
             name: "Coverage Mapper",
             description:
-              "Checks if changed files have corresponding test files. Files referenced by the test plan count as covered.",
-          },
-          {
-            name: "Test Execution",
-            description:
-              "Runs shell commands from the test plan in a sandboxed Docker container. Real verification, not just static analysis.",
+              "Checks if changed files have corresponding test files. Surfaces untested code before it ships.",
           },
         ],
       },
-      impactAnalysis: {
-        name: "Impact Analysis",
+      deepAnalysis: {
+        name: "Deep Analysis",
         tier: "Pro",
         description:
-          "Goes deeper. LLM-powered deep analysis \u2014 comparing actual changes against test plan promises, finding untested areas, and verifying API/frontend contracts still match.",
+          "Goes deeper into structural impact. Detects when a PR touches both API and frontend, compares response shapes to ensure contracts still match, and performs granular diff analysis to find the gaps between what changed and what was documented.",
         signals: [
-          {
-            name: "Diff vs Claims",
-            description:
-              "LLM compares what the PR actually changed against what the test plan promises. Finds the gaps between words and code.",
-          },
-          {
-            name: "Gap Analysis",
-            description:
-              "LLM identifies areas of the code that changed but aren't covered by any test plan item. The unknown unknowns.",
-          },
           {
             name: "Contract Checker",
             description:
               "Detects when a PR touches both API and frontend. Compares response shapes to ensure they still match.",
+          },
+          {
+            name: "Diff Analyzer",
+            description:
+              "Granular diff analysis comparing what the PR actually changed against what was documented. Finds the gaps between words and code.",
           },
         ],
       },
@@ -199,9 +171,9 @@ const en = {
     cards: [
       {
         icon: "\ud83d\udd12",
-        title: "Sandboxed Execution",
+        title: "Read-Only Analysis",
         description:
-          "All commands run in Docker containers with --network none. No internet access, no host access, no secrets exposed.",
+          "Vigil reads your diff and PR description. It never modifies your code, never clones your repo to disk, never executes commands.",
       },
       {
         icon: "\ud83d\udee1\ufe0f",
@@ -217,7 +189,7 @@ const en = {
       },
     ],
     badges: {
-      dockerSandbox: "Docker Sandbox",
+      dockerSandbox: "Read-Only",
       noDataRetention: "No Data Retention",
       mitLicensed: "MIT Licensed",
       euServers: "EU Servers",
@@ -231,7 +203,17 @@ const en = {
       {
         question: "Is Vigil free for open source?",
         answer:
-          "Yes. The Free tier includes Claims Verification, Undocumented Change Detection, credential scanning, and coverage mapping \u2014 unlimited PRs, unlimited repos. No credit card required.",
+          "Yes. The Free tier includes Claims Verification, Undocumented Change Detection, credential scanning, and coverage mapping \u2014 unlimited repos. No credit card required.",
+      },
+      {
+        question: "Does Vigil work with AI-generated PRs?",
+        answer:
+          "That\u2019s exactly what it\u2019s built for. Whether the PR comes from Claude Code, Cursor, Devin, or a teammate \u2014 Vigil verifies the claims against the actual diff. The faster code gets written, the more you need an independent verifier.",
+      },
+      {
+        question: "How is Vigil different from CodeRabbit?",
+        answer:
+          "CodeRabbit reviews code quality \u2014 style, bugs, best practices. Vigil verifies truthfulness \u2014 does the PR actually do what it says? They\u2019re complementary. Many teams use both.",
       },
       {
         question: "Does Vigil work with private repos?",
@@ -241,22 +223,12 @@ const en = {
       {
         question: "What data does Vigil access?",
         answer:
-          "Vigil reads the PR title, description, and diff. Optionally clones the repo for deeper file analysis. No code is stored after analysis completes.",
+          "Vigil reads the PR title, description, and diff. No code is stored after analysis completes. Vigil never clones your repo or executes any code.",
       },
       {
         question: "Do I need to configure anything?",
         answer:
-          "No. Vigil works out of the box with zero configuration. Optionally add a .vigil.yml file to customize timeouts, shell commands, or enable Pro signals.",
-      },
-      {
-        question: "What does BYOLLM mean?",
-        answer:
-          "Bring Your Own LLM. Pro signals use AI to analyze your code. You provide your own API key (OpenAI, Groq, or Ollama), so you control the cost and data flow.",
-      },
-      {
-        question: "How much does the LLM cost per PR?",
-        answer:
-          "Typically less than $0.01 per PR. Vigil makes 2\u20134 LLM calls per analysis using fast models like Groq\u2019s llama-3.3-70b.",
+          "No. Vigil works out of the box with zero configuration. Optionally add a .vigil.yml file to customize scoring weights or enable Pro signals.",
       },
       {
         question: "Can Vigil block merges?",
@@ -280,7 +252,7 @@ const en = {
     footerLegal: "Legal",
     signals: "Signals",
     pricing: "Pricing",
-    byollm: "BYOLLM",
+    byollm: "Dashboard",
     security: "Security",
     documentation: "Documentation",
     github: "GitHub",
@@ -295,7 +267,7 @@ const en = {
   pricing: {
     title: "Start free. Scale when you're ready.",
     subtitle:
-      "Every plan includes unlimited repos and unlimited PRs. Upgrade for deeper analysis.",
+      "Every plan includes unlimited repos. Upgrade for deeper analysis and team features.",
     monthly: "Monthly",
     annual: "Annual",
     saveUpTo: "Save up to $98",
@@ -310,36 +282,33 @@ const en = {
       "View your PR verification history, scores, and team metrics in the dashboard.",
     openDashboard: "Open Dashboard",
     allPlansNote:
-      "All plans include unlimited PRs. BYOLLM means you control LLM costs \u2014 typically < $0.01 per PR.",
+      "All plans include unlimited repos. Free tier covers the 4 core signals \u2014 no credit card, no catch.",
     plans: {
       free: {
         name: "Free",
         description: "Immediate value, zero config.",
         features: [
-          "CI Bridge \u2014 verify GitHub Actions results",
+          "Claims Verifier \u2014 verify PR claims against the diff",
+          "Undocumented Changes \u2014 surface what the PR didn\u2019t mention",
           "Credential Scan \u2014 catch hardcoded secrets",
           "Coverage Mapper \u2014 find untested files",
-          "Test Execution \u2014 sandbox verification",
-          "Assertion Verifier \u2014 file content checks",
-          "Plan Augmentor \u2014 auto-generate missing checks",
-          "Unlimited public repos",
+          "Unlimited repos",
           "10 PRs/hour, 50 PRs/day",
         ],
         cta: "Install Free",
       },
       pro: {
         name: "Pro",
-        description: "Full verification with impact analysis.",
+        description: "Deep analysis for AI-heavy workflows.",
         badge: "Recommended",
         features: [
           "Everything in Free, plus:",
-          "Diff vs Claims \u2014 LLM gap detection",
-          "Gap Analysis \u2014 find untested changes",
           "Contract Checker \u2014 API/frontend compatibility",
-          "BYOLLM \u2014 use your own API key",
+          "Diff Analyzer \u2014 granular diff gap detection",
+          "Inline review comments on diff lines",
+          "Auto-approve for high-confidence PRs",
           "Webhook notifications (Slack/Discord)",
           "50 PRs/hour, 500 PRs/day",
-          "Priority support",
         ],
         cta: "Start Pro Trial",
       },
@@ -348,10 +317,10 @@ const en = {
         description: "For teams managing agents at scale.",
         features: [
           "Everything in Pro, plus:",
-          "Shared dashboard",
+          "Dashboard \u2014 PR history, scores, team metrics",
+          "@vigil commands \u2014 explain, verify, recheck, ignore",
+          "Repo memory \u2014 persistent ignore rules",
           "Custom scoring rules",
-          "SSO / SAML",
-          "Org-wide configuration",
           "200 PRs/hour, 2000 PRs/day",
           "Dedicated support",
         ],
@@ -372,17 +341,12 @@ const en = {
       {
         question: "What happens when I cancel?",
         answer:
-          "Your account reverts to the Free tier at the end of your billing period. Pro-only signals (Diff, Gap, Contract Checker) stop running, but your repos stay connected and Free signals continue working.",
+          "Your account reverts to the Free tier at the end of your billing period. Pro-only signals (Contract Checker, Diff Analyzer) stop running, but your repos stay connected and Free signals continue working.",
       },
       {
         question: "Do I get a refund?",
         answer:
           "We don't offer prorated refunds for unused time. If you cancel mid-cycle, you keep access until the period ends. If there's an issue, reach out \u2014 we'll work with you.",
-      },
-      {
-        question: "How does BYOLLM billing work?",
-        answer:
-          "Vigil doesn't charge for LLM usage \u2014 you bring your own API key (OpenAI, Groq, or Ollama). LLM costs are typically less than $0.01 per PR using fast models like Groq's llama-3.3-70b.",
       },
       {
         question: "Can I change plans?",
@@ -401,20 +365,17 @@ const en = {
       },
     ],
     comparisonFeatures: [
-      "CI Bridge",
+      "Claims Verifier",
+      "Undocumented Changes",
       "Credential Scan",
-      "Test Execution",
       "Coverage Mapper",
-      "Assertion Verifier",
-      "Plan Augmentor",
-      "Diff vs Claims",
-      "Gap Analysis",
       "Contract Checker",
-      "BYOLLM",
+      "Diff Analyzer",
+      "Inline review comments",
       "Webhook notifications",
+      "@vigil commands",
+      "Repo memory",
       "Custom scoring rules",
-      "SSO / SAML",
-      "Org-wide config",
       "PRs per hour",
       "PRs per day",
     ],
@@ -422,18 +383,18 @@ const en = {
   about: {
     title: "About Vigil",
     description:
-      "Vigil verifies that pull requests do what they claim. The silent verifier for any PR.",
+      "The verification layer for AI-assisted development. Vigil ensures every PR does what it claims.",
     intro:
-      "AI agents and developers write PRs with confident descriptions. But nobody checks if the description matches the code. Vigil does. We read the PR description, extract every claim, verify each one against the actual diff, and surface changes the author didn't mention.",
+      "AI agents write code faster than any team can review. Claude Code, Cursor, Devin \u2014 they ship PRs in minutes, complete with confident descriptions. But who verifies that the description matches the diff? Vigil does. We read every claim, check it against the actual code changes, and surface what nobody mentioned. The verification layer between AI-generated code and your main branch.",
     whatWeDoTitle: "What we do",
     whatWeDo:
-      "Vigil gives every pull request a verification report \u2014 claims checked against the diff, undocumented changes surfaced, and impact analyzed. Three layers of verification: Claims Verification confirms the PR does what it says. Undocumented Change Detection finds what the description missed. Impact Analysis catches breaking changes, coverage gaps, and contract violations. Results appear directly on the PR.",
+      "Vigil gives every pull request a verification report \u2014 claims checked against the diff, undocumented changes surfaced, and structural impact analyzed. Two layers of verification: Trust Verification confirms the PR does what it says and catches what the description missed. Deep Analysis detects contract violations and performs granular diff gap detection. Results appear directly on the PR as inline comments.",
     howWereDifferentTitle: "How we're different",
     howWereDifferent:
-      "We don't review code (that's CodeRabbit). We don't run CI (that's GitHub Actions). We don't measure coverage (that's Codecov). We verify that what your PR claims matches what the code actually does. When your PR says \"adds rate limiting\" \u2014 we check the diff. When it doesn't mention a new Redis dependency \u2014 we flag it.",
+      "We complement code review tools, not replace them. CodeRabbit reviews code quality. GitHub Actions runs CI. Codecov measures coverage. Vigil verifies that what your PR claims matches what the code actually does. When your PR says \"adds rate limiting\" \u2014 we check the diff. When it doesn't mention a new Redis dependency \u2014 we flag it. Different job, same pull request.",
     openSourceTitle: "Open source",
     openSource:
-      "Vigil is open source under the MIT License. The entire codebase \u2014 990+ tests, 9 signals, the score engine \u2014 is public on GitHub. You can self-host, audit, contribute, or fork it.",
+      "Vigil is open source under the MIT License. The entire codebase \u2014 768 tests, 6 signals, the score engine \u2014 is public on GitHub. You can self-host, audit, contribute, or fork it.",
     installOnGithub: "Install on GitHub",
     viewOnGithub: "View on GitHub",
   },
