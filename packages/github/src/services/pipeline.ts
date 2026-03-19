@@ -59,9 +59,9 @@ const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 /** OpenAI nano model — primary when OPENAI_API_KEY is set */
 const OPENAI_MODEL = "gpt-5.4-nano";
 
-/** Reasoning effort by subscription tier */
+/** Reasoning effort by subscription tier — all "low" for quality testing */
 const TIER_REASONING: Record<string, ReasoningEffort> = {
-  free: "none",
+  free: "low",
   pro: "low",
   team: "low",
 };
