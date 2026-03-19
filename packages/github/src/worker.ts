@@ -6,7 +6,7 @@
 import { Worker, UnrecoverableError, type Job } from "bullmq";
 import type { Probot } from "probot";
 import { QUEUE_NAMES, type VerifyTestPlanJob, createLogger, isPermanentError } from "@vigil/core";
-import { runPipeline } from "./services/pipeline.js";
+import { runPipeline, type PipelineLLMConfig } from "./services/pipeline.js";
 
 const log = createLogger("worker");
 
@@ -16,12 +16,12 @@ const log = createLogger("worker");
  *
  * @param redisUrl - Redis connection URL (e.g., "redis://localhost:6379")
  * @param probot   - Probot instance used to authenticate as a GitHub App installation
- * @param groqApiKey - Groq API key passed to executors that use Claude
+ * @param llmConfig - LLM provider configuration (OpenAI primary, Groq fallback)
  */
 export function createWorker(
   redisUrl: string,
   probot: Probot,
-  groqApiKey: string,
+  llmConfig: PipelineLLMConfig,
 ): Worker<VerifyTestPlanJob> {
   const url = new URL(redisUrl);
 
@@ -29,7 +29,7 @@ export function createWorker(
     QUEUE_NAMES.VERIFY_TEST_PLAN,
     async (job: Job<VerifyTestPlanJob>) => {
       try {
-        await runPipeline(job.data, probot, groqApiKey);
+        await runPipeline(job.data, probot, llmConfig);
       } catch (err) {
         if (isPermanentError(err)) {
           // Throw UnrecoverableError so BullMQ marks the job as failed (not completed) without retry
