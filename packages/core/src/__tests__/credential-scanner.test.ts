@@ -295,11 +295,20 @@ describe("scanCredentials", () => {
   });
 
   describe("generic test values across all patterns", () => {
-    it("skips generic API key in test files", () => {
-      const diff = makeDiff("src/__tests__/auth.test.ts", 'const key = "secret_key = test-secret-placeholder";');
+    it("suppresses generic password in test files completely", () => {
+      const diff = makeDiff("src/__tests__/auth.test.ts", 'password = "test-password"');
       const signal = scanCredentials(diff);
-      // Generic test value in test file should not be a hard fail
-      expect(signal.details.every(d => d.status !== "fail")).toBe(true);
+      // Generic test value in test file should be completely suppressed
+      expect(signal.passed).toBe(true);
+      expect(signal.score).toBe(100);
+    });
+
+    it("still warns for realistic secrets in test files", () => {
+      const diff = makeDiff("src/__tests__/auth.test.ts", 'const token = "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij";');
+      const signal = scanCredentials(diff);
+      // Real-looking token in test file → warn, not suppressed
+      expect(signal.score).toBe(70);
+      expect(signal.details.some(d => d.status === "warn")).toBe(true);
     });
   });
 });
