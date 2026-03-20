@@ -62,21 +62,21 @@ export function createLLMClient(config: LLMConfig): LLMClient {
 
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
+          const useReasoning = effort && effort !== "none" && supportsReasoning(config.model);
           const params: OpenAI.ChatCompletionCreateParamsNonStreaming = {
             model: config.model,
             messages: [
               { role: "system", content: system },
               { role: "user", content: user },
             ],
-            temperature: 0,
+            // Reasoning models require temperature=1 (default); non-reasoning use 0 for determinism
+            ...(useReasoning ? {} : { temperature: 0 }),
           };
 
           const response = await client.chat.completions.create({
             ...params,
-            // Reasoning effort for GPT-5.4 models that support it
-            ...(effort && effort !== "none" && supportsReasoning(config.model)
-              ? { reasoning_effort: effort }
-              : {}),
+            // Reasoning effort for models that support it
+            ...(useReasoning ? { reasoning_effort: effort } : {}),
           } as typeof params, { timeout: timeoutMs ?? DEFAULT_TIMEOUT_MS });
 
           const content = response.choices[0]?.message?.content;
