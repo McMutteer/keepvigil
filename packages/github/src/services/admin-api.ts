@@ -160,7 +160,9 @@ async function handleCosts(
   const from = parseDateParam(url, "from") ?? new Date(Date.now() - 30 * 86400_000);
   const to = parseDateParam(url, "to") ?? new Date();
 
-  const [dailyCosts, byRepo, byModel, tokenTotals] = await Promise.all([
+  const dateFilter = and(gte(schema.llmUsage.createdAt, from), lte(schema.llmUsage.createdAt, to));
+
+  const [dailyCosts, byRepo, byModel, bySignal, byInstallation, tokenTotals, prCount] = await Promise.all([
     // Daily cost aggregation
     db.select({
       date: sql<string>`DATE(${schema.llmUsage.createdAt})`.as("date"),
@@ -168,31 +170,57 @@ async function handleCosts(
       calls: count(),
     })
       .from(schema.llmUsage)
-      .where(and(gte(schema.llmUsage.createdAt, from), lte(schema.llmUsage.createdAt, to)))
+      .where(dateFilter)
       .groupBy(sql`DATE(${schema.llmUsage.createdAt})`)
       .orderBy(sql`DATE(${schema.llmUsage.createdAt})`),
-    // By repo (top 10)
+    // By repo (top 10) with avg per PR
     db.select({
       owner: schema.llmUsage.owner,
       repo: schema.llmUsage.repo,
       total: sql<number>`SUM(${schema.llmUsage.estimatedCostUsd})`,
       calls: count(),
+      avgPerPR: sql<number>`SUM(${schema.llmUsage.estimatedCostUsd}) / NULLIF(COUNT(DISTINCT ${schema.llmUsage.correlationId}), 0)`,
+      prs: sql<number>`COUNT(DISTINCT ${schema.llmUsage.correlationId})`,
     })
       .from(schema.llmUsage)
-      .where(and(gte(schema.llmUsage.createdAt, from), lte(schema.llmUsage.createdAt, to)))
+      .where(dateFilter)
       .groupBy(schema.llmUsage.owner, schema.llmUsage.repo)
       .orderBy(desc(sql`SUM(${schema.llmUsage.estimatedCostUsd})`))
       .limit(10),
-    // By model
+    // By model with token breakdown
     db.select({
       provider: schema.llmUsage.provider,
       model: schema.llmUsage.model,
       total: sql<number>`SUM(${schema.llmUsage.estimatedCostUsd})`,
       calls: count(),
+      promptTokens: sql<number>`SUM(${schema.llmUsage.promptTokens})`,
+      completionTokens: sql<number>`SUM(${schema.llmUsage.completionTokens})`,
     })
       .from(schema.llmUsage)
-      .where(and(gte(schema.llmUsage.createdAt, from), lte(schema.llmUsage.createdAt, to)))
+      .where(dateFilter)
       .groupBy(schema.llmUsage.provider, schema.llmUsage.model)
+      .orderBy(desc(sql`SUM(${schema.llmUsage.estimatedCostUsd})`)),
+    // By signal
+    db.select({
+      signalId: schema.llmUsage.signalId,
+      total: sql<number>`SUM(${schema.llmUsage.estimatedCostUsd})`,
+      calls: count(),
+      avgTokens: sql<number>`AVG(${schema.llmUsage.totalTokens})`,
+    })
+      .from(schema.llmUsage)
+      .where(dateFilter)
+      .groupBy(schema.llmUsage.signalId)
+      .orderBy(desc(sql`SUM(${schema.llmUsage.estimatedCostUsd})`)),
+    // By installation
+    db.select({
+      installationId: schema.llmUsage.installationId,
+      total: sql<number>`SUM(${schema.llmUsage.estimatedCostUsd})`,
+      calls: count(),
+      prs: sql<number>`COUNT(DISTINCT ${schema.llmUsage.correlationId})`,
+    })
+      .from(schema.llmUsage)
+      .where(dateFilter)
+      .groupBy(schema.llmUsage.installationId)
       .orderBy(desc(sql`SUM(${schema.llmUsage.estimatedCostUsd})`)),
     // Token totals
     db.select({
@@ -202,15 +230,38 @@ async function handleCosts(
       totalCost: sql<number>`COALESCE(SUM(${schema.llmUsage.estimatedCostUsd}), 0)`,
     })
       .from(schema.llmUsage)
-      .where(and(gte(schema.llmUsage.createdAt, from), lte(schema.llmUsage.createdAt, to))),
+      .where(dateFilter),
+    // Distinct PR count
+    db.select({
+      total: sql<number>`COUNT(DISTINCT ${schema.llmUsage.correlationId})`,
+    })
+      .from(schema.llmUsage)
+      .where(dateFilter),
   ]);
+
+  const totals = tokenTotals[0] ?? { promptTokens: 0, completionTokens: 0, totalTokens: 0, totalCost: 0 };
+  const totalPRs = prCount[0]?.total ?? 0;
+
+  // Enrich byInstallation with account login
+  const installationLogins = await db.select({
+    githubInstallationId: schema.installations.githubInstallationId,
+    accountLogin: schema.installations.accountLogin,
+  }).from(schema.installations);
+  const loginMap = new Map(installationLogins.map((i) => [i.githubInstallationId, i.accountLogin]));
 
   json(res, 200, {
     period: { from: from.toISOString(), to: to.toISOString() },
     daily: dailyCosts,
     byRepo,
     byModel,
-    totals: tokenTotals[0] ?? { promptTokens: 0, completionTokens: 0, totalTokens: 0, totalCost: 0 },
+    bySignal,
+    byInstallation: byInstallation.map((i) => ({
+      ...i,
+      accountLogin: loginMap.get(i.installationId) ?? i.installationId,
+    })),
+    totals,
+    avgCostPerPR: totalPRs > 0 ? totals.totalCost / totalPRs : 0,
+    totalPRs,
   });
 }
 
@@ -237,30 +288,56 @@ async function handleInstallations(
     .from(schema.installations)
     .orderBy(desc(schema.installations.createdAt));
 
-  // Enrich with execution stats per installation
+  // Enrich with execution stats, subscription, repos, and LLM cost per installation
   const enriched = await Promise.all(installations.map(async (inst) => {
-    const [stats] = await db.select({
-      totalPRs: count(),
-      lastPRAt: sql<string>`MAX(${schema.executions.startedAt})`.as("last_pr"),
-    })
-      .from(schema.executions)
-      .where(eq(schema.executions.installationId, inst.githubInstallationId));
+    const instId = inst.githubInstallationId;
 
-    // Get subscription info
-    const [sub] = await db.select({
-      plan: schema.subscriptions.plan,
-      status: schema.subscriptions.status,
-    })
-      .from(schema.subscriptions)
-      .where(eq(schema.subscriptions.installationId, inst.githubInstallationId))
-      .limit(1);
+    const [stats, sub, repos, llmCost] = await Promise.all([
+      db.select({
+        totalPRs: count(),
+        avgScore: sql<number>`ROUND(AVG(${schema.executions.score}))`.as("avg_score"),
+        lastPRAt: sql<string>`MAX(${schema.executions.startedAt})`.as("last_pr"),
+        completedCount: sql<number>`COUNT(*) FILTER (WHERE ${schema.executions.status} = 'completed')`.as("completed"),
+        failedCount: sql<number>`COUNT(*) FILTER (WHERE ${schema.executions.status} = 'failed')`.as("failed"),
+      })
+        .from(schema.executions)
+        .where(eq(schema.executions.installationId, instId)),
+      db.select({ plan: schema.subscriptions.plan, status: schema.subscriptions.status })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.installationId, instId))
+        .limit(1),
+      db.select({
+        owner: schema.executions.owner,
+        repo: schema.executions.repo,
+        prCount: count(),
+        avgScore: sql<number>`ROUND(AVG(${schema.executions.score}))`.as("avg_score"),
+        latestAt: sql<string>`MAX(${schema.executions.startedAt})`.as("latest"),
+      })
+        .from(schema.executions)
+        .where(eq(schema.executions.installationId, instId))
+        .groupBy(schema.executions.owner, schema.executions.repo)
+        .orderBy(desc(sql`MAX(${schema.executions.startedAt})`)),
+      db.select({
+        total: sql<number>`COALESCE(SUM(${schema.llmUsage.estimatedCostUsd}), 0)`,
+        calls: count(),
+      })
+        .from(schema.llmUsage)
+        .where(eq(schema.llmUsage.installationId, instId)),
+    ]);
 
+    const s = stats[0];
     return {
       ...inst,
-      plan: sub?.plan ?? "free",
-      subscriptionStatus: sub?.status ?? "none",
-      totalPRs: stats?.totalPRs ?? 0,
-      lastPRAt: stats?.lastPRAt ?? null,
+      plan: sub[0]?.plan ?? "free",
+      subscriptionStatus: sub[0]?.status ?? "none",
+      totalPRs: s?.totalPRs ?? 0,
+      avgScore: s?.avgScore ?? null,
+      completedPRs: s?.completedCount ?? 0,
+      failedPRs: s?.failedCount ?? 0,
+      lastPRAt: s?.lastPRAt ?? null,
+      llmCost: llmCost[0]?.total ?? 0,
+      llmCalls: llmCost[0]?.calls ?? 0,
+      repos,
     };
   }));
 
