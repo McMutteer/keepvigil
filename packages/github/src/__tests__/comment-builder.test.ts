@@ -501,7 +501,7 @@ describe("buildCommentBody (V1)", () => {
       [makeReportItem("test", "passed")],
       makeSummary(),
     );
-    expect(body).toContain("Vigil v0.1.0");
+    expect(body).toContain("Vigil v0.2.0");
     expect(body).toContain("keepvigil.dev");
   });
 });
