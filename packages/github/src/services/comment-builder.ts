@@ -55,8 +55,8 @@ function buildV1CommentBody(items: ReportItem[], summary: ReportSummary, pipelin
   }
 
   const footer = correlationId
-    ? `<sub>Vigil v0.1.0 | keepvigil.dev | run: ${correlationId}</sub>`
-    : `<sub>Vigil v0.1.0 | keepvigil.dev</sub>`;
+    ? `<sub>Vigil v0.2.0 | keepvigil.dev | run: ${correlationId}</sub>`
+    : `<sub>Vigil v0.2.0 | keepvigil.dev</sub>`;
   parts.push("", "---", footer);
 
   let body = parts.join("\n");
@@ -199,8 +199,8 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   }
 
   const footer = correlationId
-    ? `<sub>Vigil v0.1.0 | keepvigil.dev | run: ${correlationId}</sub>`
-    : `<sub>Vigil v0.1.0 | keepvigil.dev</sub>`;
+    ? `<sub>Vigil v0.2.0 | keepvigil.dev | run: ${correlationId}</sub>`
+    : `<sub>Vigil v0.2.0 | keepvigil.dev</sub>`;
   parts.push("", "---", footer);
 
   let body = parts.join("\n");
