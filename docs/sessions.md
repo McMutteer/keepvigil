@@ -74,3 +74,33 @@ Dos agentes en paralelo reescribieron todo el landing (hero, signals, FAQ, prici
 **Resultado:** PRs #94-#95. Deploy completo. 2 bugs de dogfooding cerrados. 29 archivos cambiados en landing/docs (-2727 lineas de features deprecadas). 4 documentos estrategicos nuevos en memory (strategy, plan-landing, plan-docs, plan-content). CLAUDE.md y MEMORY.md actualizados.
 
 **Aprendido:** (1) Construir el producto es la parte facil — entender para quien es, es lo dificil. Puedes tener 768 tests y un deploy limpio y aun asi no saber si alguien pagaria. (2) El angulo de "AI agent verification" no es un pivot — es una lente. El producto no cambia; la forma de contarlo si. El mismo `claims-verifier` que verifica PRs humanos verifica PRs de Devin. (3) "Merge with confidence" transmite urgencia emocional. "Verifies that your PR does what it says it does" transmite precision tecnica. Para vender, la emocion gana. (4) Worktrees aislados para agentes paralelos funcionan perfecto para landing+docs (archivos distintos), pero hay que copiar manualmente los cambios del worktree al repo principal antes de commitear — `git add` no ve archivos de otro worktree. (5) Los contenedores Docker cambian de nombre cuando cambias el `COMPOSE_PROJECT_NAME` (o el directorio). Traefik apunta a nombres de contenedor, no a servicios — siempre verificar despues de un rebuild.
+
+---
+id: 2026-03-20-el-motor-nuevo
+type: feat
+project: vigil
+branch: main
+pr: 96, 98, 99, 100, 101
+date: 2026-03-20
+tags: [openai-nano, llm-integration, signal-quality, per-seat, rate-limiter, token-usage, cost-tracking, coderabbit-review]
+summary: "Signal quality hardening, OpenAI GPT-5.4 nano integration ($0.0005/PR), per-seat rate limiting, and the discovery that nano doesn't support reasoning."
+related: [2026-03-19-full-circle]
+---
+
+### El Motor Nuevo
+
+**Hilo:** La sesion anterior termino con la identidad resuelta — "Merge with confidence", AI-first, per-seat pricing. Esta sesion fue la ejecucion: mejorar los signals, cambiar el motor LLM, y preparar la infraestructura para per-seat.
+
+**Lo que paso:** Empezamos con 4 fixes de signal quality que impactan directamente lo que el usuario ve: (1) LLM retry con backoff — Groq rate-limitea en picos, ahora reintenta 3 veces, (2) claims verifier demasiado generoso — subia el threshold de 50% a 80%, (3) failure cap indiscriminado — un credential leak deberia bloquear pero no tener tests no, separamos los signals criticos de los informativos, (4) undocumented changes con ejemplos concretos en el prompt para reducir false positives. PR #96.
+
+Luego CodeRabbit reviso el PR #98 y encontro algo que Vigil no: un test que no validaba lo que pretendia. `expect(signal.details.every(d => d.status !== "fail")).toBe(true)` siempre pasa en test files porque el status ya es "warn". Buen catch — lo corregimos. Esto confirmo la tesis de complementariedad: Vigil verifica truthfulness, CodeRabbit verifica correctness.
+
+El cambio grande fue la integracion de OpenAI GPT-5.4 nano. Tres intentos hasta que funciono: (1) nano con `reasoning: { effort: "low" }` → "400 Unknown parameter: reasoning" — nano NO soporta reasoning, solo mini/full, (2) OPENAI_API_KEY en `.env` del servidor pero no en docker-compose → el container no la veia, siempre caia a Groq, (3) quitamos nano de REASONING_MODELS, agregamos la key al docker-compose, rebuild → funciono. Costo medido: **$0.0005 por PR** (1,636 tokens totales). A 1000 PRs/mes = $0.50.
+
+Per-seat rate limiter: cambiamos la key de `installationId` a `installationId:userId`. CodeRabbit encontro que `pr.user.login` es mutable (username changes) — mejor usar `pr.user.id` (numerico, inmutable). Otro buen catch. Limites nuevos: free 3/hr 10/day, pro 10/hr unlimited, team 50/hr unlimited.
+
+Tambien agregamos token logging — cada LLM call ahora loggea `promptTokens`, `completionTokens`, `totalTokens`. Esto nos da visibilidad real de costos en produccion.
+
+**Resultado:** PRs #96-#101, 5 deploys. 776 tests. GPT-5.4 nano live como LLM primario. Per-seat rate limiter implementado. Token usage logging activo. 21 ramas remotas eliminadas (de sesiones anteriores). Costo real medido: $0.0005/PR.
+
+**Aprendido:** (1) GPT-5.4 nano NO soporta `reasoning` — solo mini y full. La documentacion de OpenAI no es clara sobre esto; la comunidad lo confirma en foros. (2) Docker-compose no hereda automaticamente del `.env` del host a las variables del container — hay que declarar cada variable explicitamente en `environment:`. (3) `pr.user.login` cambia si el usuario renombra su cuenta de GitHub; `pr.user.id` es inmutable. CodeRabbit lo detecto, Vigil no — porque son herramientas complementarias. (4) A $0.0005/PR, el costo de LLM es irrelevante para el negocio. El servidor ($10/mo) cuesta mas que 20,000 PRs de LLM. (5) Siempre log el error del provider primario antes de caer al fallback — sin el log, el fallback silencioso hace imposible debuggear por que no se usa OpenAI.
