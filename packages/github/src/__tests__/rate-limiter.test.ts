@@ -51,16 +51,18 @@ describe("checkRateLimit", () => {
   });
 
   it("denies request that exceeds the daily limit for free plan (10/day)", () => {
-    // Spread across hours to avoid hourly limit
-    for (let hour = 0; hour < 4; hour++) {
+    // 9 allowed requests across 3 hours (3 per hour = hourly limit)
+    for (let hour = 0; hour < 3; hour++) {
       vi.setSystemTime(new Date(`2026-01-01T${String(hour).padStart(2, "0")}:00:00Z`));
       for (let i = 0; i < 3; i++) {
-        checkRateLimit(300, "free", "dev1");
+        expect(checkRateLimit(300, "free", "dev1").allowed).toBe(true);
       }
     }
-    // 12 hourly calls but daily counter = 12 > 10
-    // Actually: at hour 3, 3rd call = 10th total, so 4th hour 1st call = 11th
-    vi.setSystemTime(new Date("2026-01-01T04:00:00Z"));
+    // 10th request in new hour — should be allowed (boundary)
+    vi.setSystemTime(new Date("2026-01-01T03:00:00Z"));
+    expect(checkRateLimit(300, "free", "dev1").allowed).toBe(true); // 10th
+
+    // 11th request — should be denied by daily limit
     const result = checkRateLimit(300, "free", "dev1");
     expect(result.allowed).toBe(false);
     expect(result.message).toContain("10 PRs/day");
