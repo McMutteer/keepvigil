@@ -167,34 +167,51 @@ function detectNewDependencies(diff: string): string[] {
   const lines = diff.split("\n");
   let currentFile = "unknown";
   let inDepsSection = false;
+  let braceDepth = 0;
 
   for (const line of lines) {
     if (line.startsWith("+++ b/")) {
       currentFile = line.slice(6);
       inDepsSection = false;
+      braceDepth = 0;
       continue;
     }
 
     // Only check package.json files
     if (!currentFile.endsWith("package.json")) continue;
 
+    // Strip the leading +/- for content analysis
+    const content = line.startsWith("+") || line.startsWith("-") ? line.slice(1) : line;
+
     // Track if we're in a dependencies section
-    if (/"(?:dependencies|devDependencies|peerDependencies)"/.test(line)) {
+    if (!inDepsSection && /"(?:dependencies|devDependencies|peerDependencies)"/.test(line)) {
       inDepsSection = true;
+      braceDepth = 0;
+      // Count opening brace on the same line (e.g., "dependencies": {)
+      if (content.includes("{")) braceDepth++;
       continue;
     }
 
-    // Detect new dependency additions
-    if (inDepsSection && line.startsWith("+") && !line.startsWith("+++")) {
-      const match = line.match(/^\+\s*"([^"]+)"\s*:\s*"/);
-      if (match) {
-        deps.push(match[1]);
+    if (inDepsSection) {
+      // Track brace depth to handle nested objects correctly
+      for (const ch of content) {
+        if (ch === "{") braceDepth++;
+        else if (ch === "}") braceDepth--;
       }
-    }
 
-    // End of section
-    if (inDepsSection && /^\s*\}/.test(line)) {
-      inDepsSection = false;
+      // Detect new dependency additions
+      if (line.startsWith("+") && !line.startsWith("+++")) {
+        const match = line.match(/^\+\s*"([^"]+)"\s*:\s*"/);
+        if (match) {
+          deps.push(match[1]);
+        }
+      }
+
+      // End of section when all braces are closed
+      if (braceDepth <= 0) {
+        inDepsSection = false;
+        braceDepth = 0;
+      }
     }
   }
 
@@ -351,7 +368,6 @@ export function assessRisk(
     const untestedFiles: string[] = [];
 
     for (const f of sourceFiles) {
-      if (isNonSource(f.path) || isTestFile(f.path)) continue;
       // Simple check: does a test file exist for this source file?
       const base = f.path.replace(/\.[^.]+$/, "");
       const ext = f.path.match(/\.[^.]+$/)?.[0] ?? ".ts";
