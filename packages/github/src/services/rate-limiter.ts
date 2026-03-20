@@ -3,10 +3,16 @@ import type { Plan } from "./subscription.js";
 
 const log = createLogger("rate-limiter");
 
-const LIMITS: Record<Plan, { perHour: number; perDay: number }> = {
-  free: { perHour: 10, perDay: 50 },
-  pro: { perHour: 50, perDay: 500 },
-  team: { perHour: 200, perDay: 2000 },
+interface RateConfig {
+  perHour: number;
+  /** null = unlimited daily */
+  perDay: number | null;
+}
+
+const LIMITS: Record<Plan, RateConfig> = {
+  free: { perHour: 3, perDay: 10 },
+  pro: { perHour: 10, perDay: null },
+  team: { perHour: 50, perDay: null },
 };
 
 // In-memory fixed-window counters (reset on restart — acceptable for v1)
@@ -37,21 +43,42 @@ setInterval(() => {
   }
 }, 600_000).unref();
 
-export function checkRateLimit(installationId: number, plan: Plan): { allowed: boolean; message?: string } {
+/**
+ * Check rate limit for a specific developer within an installation.
+ *
+ * Rate limiting is per-developer (by GitHub login), not per-installation.
+ * This aligns with per-seat pricing: each developer's usage is tracked independently.
+ *
+ * Falls back to installation-level limiting when prAuthor is not available.
+ */
+export function checkRateLimit(
+  installationId: number,
+  plan: Plan,
+  prAuthor?: string,
+): { allowed: boolean; message?: string } {
   const limits = LIMITS[plan];
-  const hourKey = `rate:${installationId}:hour`;
-  const dayKey = `rate:${installationId}:day`;
+  const identity = prAuthor ?? String(installationId);
 
+  const hourKey = `rate:${installationId}:${identity}:hour`;
   const hourCount = checkAndIncrement(hourKey, 3_600_000);
   if (hourCount > limits.perHour) {
-    log.warn({ installationId, plan, hourCount, limit: limits.perHour }, "Hourly rate limit exceeded");
-    return { allowed: false, message: `Rate limit exceeded (${limits.perHour} PRs/hour). ${plan === "free" ? "Upgrade to Pro for higher limits." : "Try again later."}` };
+    log.warn({ installationId, plan, prAuthor, hourCount, limit: limits.perHour }, "Hourly rate limit exceeded");
+    return {
+      allowed: false,
+      message: `Rate limit exceeded (${limits.perHour} PRs/hour). ${plan === "free" ? "Upgrade to Pro for higher limits." : "Try again later."}`,
+    };
   }
 
-  const dayCount = checkAndIncrement(dayKey, 86_400_000);
-  if (dayCount > limits.perDay) {
-    log.warn({ installationId, plan, dayCount, limit: limits.perDay }, "Daily rate limit exceeded");
-    return { allowed: false, message: `Rate limit exceeded (${limits.perDay} PRs/day). ${plan === "free" ? "Upgrade to Pro for higher limits." : "Try again later."}` };
+  if (limits.perDay !== null) {
+    const dayKey = `rate:${installationId}:${identity}:day`;
+    const dayCount = checkAndIncrement(dayKey, 86_400_000);
+    if (dayCount > limits.perDay) {
+      log.warn({ installationId, plan, prAuthor, dayCount, limit: limits.perDay }, "Daily rate limit exceeded");
+      return {
+        allowed: false,
+        message: `Rate limit exceeded (${limits.perDay} PRs/day). Upgrade to Pro for unlimited daily PRs.`,
+      };
+    }
   }
 
   return { allowed: true };

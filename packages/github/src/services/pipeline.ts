@@ -99,7 +99,7 @@ async function _runPipeline(
   const proEnabled = isPro(tier);
   log.info({ installationId, tier, proEnabled }, "Subscription plan resolved");
 
-  const rateCheck = checkRateLimit(Number(installationId), tier);
+  const rateCheck = checkRateLimit(Number(installationId), tier, job.prAuthorId != null ? String(job.prAuthorId) : job.prAuthor);
   if (!rateCheck.allowed) {
     log.warn({ installationId, message: rateCheck.message }, "Rate limited");
     const octokit = await probot.auth(Number(installationId));

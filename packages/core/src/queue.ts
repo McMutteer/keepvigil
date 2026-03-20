@@ -26,4 +26,8 @@ export interface VerifyTestPlanJob {
    * as "not retried" in the PR comment. Undefined means run everything.
    */
   retryItemIds?: string[];
+  /** GitHub login of the PR author — used for logging */
+  prAuthor?: string;
+  /** Stable GitHub user ID of the PR author — used for per-seat rate limiting */
+  prAuthorId?: number;
 }

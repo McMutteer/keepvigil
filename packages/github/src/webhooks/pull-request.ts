@@ -87,6 +87,8 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
       prBody,
       vigiConfig,
       configWarnings,
+      prAuthor: pr.user?.login,
+      prAuthorId: pr.user?.id,
     });
 
     context.log.info(
