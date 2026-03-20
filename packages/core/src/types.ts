@@ -257,7 +257,8 @@ export type SignalId =
   | "plan-augmentor"
   | "contract-checker"
   | "claims-verifier"
-  | "undocumented-changes";
+  | "undocumented-changes"
+  | "risk-score";
 
 /** Pipeline mode — determines which weight profile to use */
 export type PipelineMode = "v1+v2" | "v2-only";

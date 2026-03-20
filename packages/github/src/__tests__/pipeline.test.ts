@@ -14,10 +14,11 @@ vi.mock("@vigil/core", () => ({
   scanCredentials: vi.fn().mockReturnValue({ id: "credential-scan", name: "Credential Scan", score: 100, weight: 20, passed: true, details: [], requiresLLM: false }),
   extractChangedFilesWithStatus: vi.fn().mockReturnValue([]),
   mapCoverage: vi.fn().mockReturnValue({ id: "coverage-mapper", name: "Coverage Mapper", score: 100, weight: 10, passed: true, details: [], requiresLLM: false }),
+  assessRisk: vi.fn().mockReturnValue({ id: "risk-score", name: "Risk Assessment", score: 100, weight: 0, passed: true, details: [], requiresLLM: false }),
   getWeights: vi.fn().mockReturnValue({
     "ci-bridge": 0, "credential-scan": 20, "executor": 0, "plan-augmentor": 0,
     "contract-checker": 10, "diff-analyzer": 5, "coverage-mapper": 10, "gap-analyzer": 0,
-    "claims-verifier": 30, "undocumented-changes": 25,
+    "claims-verifier": 30, "undocumented-changes": 25, "risk-score": 0,
   }),
 }));
 
@@ -112,7 +113,7 @@ describe("runPipeline (v2-only)", () => {
     const ctx = mockReportResults.mock.calls[0][0];
     expect(ctx.pipelineMode).toBe("v2-only");
     expect(ctx.signals).toBeDefined();
-    expect(ctx.signals.length).toBeGreaterThanOrEqual(4); // claims, undocumented, cred, coverage
+    expect(ctx.signals.length).toBeGreaterThanOrEqual(5); // claims, undocumented, cred, coverage, risk
   });
 
   it("reports pipeline error when diff is null", async () => {
