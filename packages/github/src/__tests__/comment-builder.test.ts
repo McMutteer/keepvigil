@@ -807,4 +807,28 @@ describe("buildReviewSummary", () => {
     const result = buildReviewSummary([], tinyDiff);
     expect(result).toContain("~2 min review");
   });
+
+  it("increases estimated review time when HIGH risk is present", () => {
+    const highRiskSignals = [
+      makeSignal({
+        id: "risk-score" as any,
+        name: "Risk Assessment",
+        details: [
+          { label: "\uD83D\uDD34 HIGH: Touches authentication", status: "fail" as const, message: "Modifies auth files" },
+        ],
+      }),
+    ];
+    // Large enough diff to see the multiplier effect
+    const largeDiff = `diff --git a/src/big.ts b/src/big.ts
+--- a/src/big.ts
++++ b/src/big.ts
+@@ -1,1 +1,200 @@
+${Array.from({ length: 200 }, (_, i) => `+const line${i} = ${i};`).join("\n")}`;
+    const baseline = buildReviewSummary([], largeDiff);
+    const highRisk = buildReviewSummary(highRiskSignals, largeDiff);
+
+    const baseMin = Number(baseline.match(/~(\d+) min/)?.[1] ?? 0);
+    const riskMin = Number(highRisk.match(/~(\d+) min/)?.[1] ?? 0);
+    expect(riskMin).toBeGreaterThan(baseMin);
+  });
 });

@@ -699,15 +699,16 @@ export function buildReviewSummary(signals: Signal[], diff?: string): string {
   // Categories from risk-score signal
   const riskSignal = signals.find((s) => s.id === "risk-score");
   if (riskSignal) {
-    const categories: string[] = [];
+    const categories = new Set<string>();
     for (const detail of riskSignal.details) {
-      if (detail.label.includes("authentication")) categories.push("auth");
-      if (detail.label.includes("Database")) categories.push("database");
-      if (detail.label.includes("Infrastructure")) categories.push("infra");
-      if (detail.label.includes("Cross-boundary")) categories.push("API+frontend");
+      const label = detail.label.toLowerCase();
+      if (label.includes("authentication")) categories.add("auth");
+      if (label.includes("database")) categories.add("database");
+      if (label.includes("infrastructure")) categories.add("infra");
+      if (label.includes("cross-boundary")) categories.add("API+frontend");
     }
-    if (categories.length > 0) {
-      segments.push(`\uD83D\uDD11 ${categories.join(", ")}`);
+    if (categories.size > 0) {
+      segments.push(`\uD83D\uDD11 ${Array.from(categories).join(", ")}`);
     }
   }
 
