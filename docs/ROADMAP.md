@@ -151,3 +151,4 @@ Found by running Vigil on its own dashboard PRs (#81-#87). All fixed and verifie
 - **LLM:** GPT-5.4 nano (primary) + Groq gpt-oss-120b (fallback)
 - Marketplace review pending — GitHub will notify via email
 - v1 modules removed: parser, classifier, executors, Chromium, BYOLLM
+
