@@ -1,6 +1,14 @@
-import type { VigilConfig, ConfidenceScore, Signal, PipelineMode } from "@vigil/core";
+import type { VigilConfig, ConfidenceScore, Signal, SignalId, PipelineMode } from "@vigil/core";
+import { extractChangedFilesWithStatus } from "@vigil/core";
 import type { ReportItem, ReportSummary } from "./reporter.js";
 import { truncateToBytes } from "./check-run-updater.js";
+
+/** Signals that are Pro-only — shown as locked in the signal table and trigger upsell */
+const PRO_GATED_SIGNALS: Set<SignalId> = new Set(["contract-checker", "diff-analyzer"]);
+
+function isProGatedSignal(id: SignalId): boolean {
+  return PRO_GATED_SIGNALS.has(id);
+}
 
 const COMMENT_MARKER = "<!-- vigil-results -->";
 /** GitHub PR comment body limit is ~262,144 bytes. We target 60,000 bytes to stay safe. */
@@ -9,9 +17,9 @@ const MAX_EVIDENCE_BLOCK_BYTES = 2000;
 const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
 /** Build the full PR comment markdown body. Pure function — no I/O. */
-export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], confidenceScore?: ConfidenceScore, isFirstRun?: boolean, pipelineMode?: PipelineMode): string {
+export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], confidenceScore?: ConfidenceScore, isFirstRun?: boolean, pipelineMode?: PipelineMode, diff?: string): string {
   if (confidenceScore) {
-    return buildScoreCommentBody(items, summary, confidenceScore, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds, isFirstRun, pipelineMode);
+    return buildScoreCommentBody(items, summary, confidenceScore, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds, isFirstRun, pipelineMode, diff);
   }
   return buildV1CommentBody(items, summary, pipelineError, correlationId, vigiConfig, configWarnings, retryItemIds);
 }
@@ -87,7 +95,7 @@ function buildContextualRecommendation(score: ConfidenceScore, summary: ReportSu
 }
 
 /** Score-based comment format — shows confidence score, signal table, and test plan results in a details block. */
-function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], isFirstRun?: boolean, _pipelineMode?: PipelineMode): string {
+function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], isFirstRun?: boolean, _pipelineMode?: PipelineMode, diff?: string): string {
   const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
   const recommendationEmoji: Record<string, string> = { safe: "\u2705", review: "\u26A0\uFE0F", caution: "\uD83D\uDD34" };
   const emoji = recommendationEmoji[confidenceScore.recommendation] ?? "";
@@ -120,6 +128,12 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     parts.push(`> **Note:** ${pipelineError}`, "");
   }
 
+  // Review summary — aggregated "at a glance" from existing signal data
+  const glanceSection = buildReviewSummary(confidenceScore.signals, diff);
+  if (glanceSection) {
+    parts.push(glanceSection, "");
+  }
+
   // v2 sections: Claims + Undocumented Changes (when those signals are present)
   const claimsSection = buildClaimsSection(confidenceScore.signals);
   if (claimsSection) {
@@ -142,8 +156,8 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     "|--------|-------|--------|",
   );
   for (const signal of confidenceScore.signals) {
-    // Pro-gated signals (weight 0 + requiresLLM) show lock badge instead of score
-    if (signal.requiresLLM && signal.weight === 0) {
+    // Pro-gated signals show lock badge instead of score
+    if (isProGatedSignal(signal.id)) {
       parts.push(`| ${escapeTableCell(signal.name)} | — | \uD83D\uDD12 Pro |`);
     } else {
       const statusSummary = buildSignalStatusSummary(signal);
@@ -153,7 +167,7 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   parts.push("");
 
   // Pro upsell — show when signals are gated (Free tier)
-  const hasGatedSignals = confidenceScore.signals.some((s) => s.requiresLLM && s.weight === 0);
+  const hasGatedSignals = confidenceScore.signals.some((s) => isProGatedSignal(s.id));
   if (hasGatedSignals && !isRetry) {
     parts.push(
       "---",
@@ -685,6 +699,81 @@ function buildUndocumentedSection(signals: Signal[]): string {
   }
 
   return lines.join("\n");
+}
+
+/**
+ * Build a "PR at a Glance" section from existing signal data + diff.
+ * Aggregates file counts, categories, deps, coverage, and review time estimate.
+ * Zero LLM calls — pure computation.
+ */
+export function buildReviewSummary(signals: Signal[], diff?: string): string {
+  if (!diff) return "";
+
+  const parts: string[] = [];
+
+  // File counts
+  const changedFiles = extractChangedFilesWithStatus(diff);
+  if (changedFiles.length > 0) {
+    const newFiles = changedFiles.filter((f) => f.isNew).length;
+    const modifiedFiles = changedFiles.length - newFiles;
+    const fileParts: string[] = [];
+    if (newFiles > 0) fileParts.push(`${newFiles} new`);
+    if (modifiedFiles > 0) fileParts.push(`${modifiedFiles} modified`);
+    const fileWord = changedFiles.length === 1 ? "file" : "files";
+    parts.push(`\uD83D\uDCC1 ${changedFiles.length} ${fileWord} changed (${fileParts.join(", ")})`);
+  }
+
+  // Categories from risk-score signal
+  const riskSignal = signals.find((s) => s.id === "risk-score");
+  if (riskSignal) {
+    const categories: string[] = [];
+    for (const detail of riskSignal.details) {
+      if (detail.label.includes("authentication")) categories.push("authentication");
+      if (detail.label.includes("Database")) categories.push("database");
+      if (detail.label.includes("Infrastructure")) categories.push("infrastructure");
+      if (detail.label.includes("Cross-boundary")) categories.push("API + frontend");
+    }
+    if (categories.length > 0) {
+      parts.push(`\uD83D\uDD11 Touches: ${categories.join(", ")}`);
+    }
+  }
+
+  // New dependencies from risk-score signal
+  if (riskSignal) {
+    const depDetail = riskSignal.details.find((d) => d.label.includes("New dependencies"));
+    if (depDetail) {
+      // Extract package names from message like "Added 2 new packages: ioredis, @types/ioredis"
+      const match = depDetail.message.match(/:\s*(.+)$/);
+      if (match) {
+        parts.push(`\uD83D\uDCE6 New deps: ${match[1]}`);
+      }
+    }
+  }
+
+  // Test coverage from coverage-mapper signal
+  const coverageSignal = signals.find((s) => s.id === "coverage-mapper");
+  if (coverageSignal && coverageSignal.details.length > 0) {
+    const passCount = coverageSignal.details.filter((d) => d.status === "pass").length;
+    const failCount = coverageSignal.details.filter((d) => d.status === "fail").length;
+    const totalTestable = passCount + failCount;
+    if (totalTestable > 0) {
+      parts.push(`\uD83E\uDDEA Test coverage: ${passCount}/${totalTestable} source files have tests`);
+    }
+  }
+
+  // Estimated review time: ~1 min per 50 changed lines, ×1.5 if high risk
+  const addedLines = diff.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++")).length;
+  const removedLines = diff.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---")).length;
+  const totalChangedLines = addedLines + removedLines;
+  let reviewMinutes = Math.ceil(totalChangedLines / 50);
+  const isHighRisk = riskSignal?.details.some((d) => d.label.includes("HIGH"));
+  if (isHighRisk) reviewMinutes = Math.ceil(reviewMinutes * 1.5);
+  reviewMinutes = Math.max(2, Math.min(60, reviewMinutes));
+  parts.push(`\u26A1 Estimated review time: ~${reviewMinutes} min`);
+
+  if (parts.length === 0) return "";
+
+  return `### PR at a Glance\n${parts.join("\n")}`;
 }
 
 /** Build a "Risk Assessment" section from the risk-score signal details. */
