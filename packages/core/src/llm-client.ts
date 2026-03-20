@@ -73,9 +73,9 @@ export function createLLMClient(config: LLMConfig): LLMClient {
 
           const response = await client.chat.completions.create({
             ...params,
-            // Reasoning effort for GPT-5.4 models — undocumented param, SDK passes it through
+            // Reasoning effort for GPT-5.4 models that support it
             ...(effort && effort !== "none" && supportsReasoning(config.model)
-              ? { reasoning: { effort } }
+              ? { reasoning_effort: effort }
               : {}),
           } as typeof params, { timeout: timeoutMs ?? DEFAULT_TIMEOUT_MS });
 
