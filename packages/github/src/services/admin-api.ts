@@ -4,7 +4,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { desc, eq, sql, and, gte, lte, count, sum } from "drizzle-orm";
+import { desc, eq, sql, and, gte, lte, count } from "drizzle-orm";
 import type { Database } from "@vigil/core/db";
 import { schema } from "@vigil/core/db";
 import type { AppConfig } from "../config.js";
@@ -64,8 +64,7 @@ async function handleOverview(
   const weekStart = new Date(todayStart);
   weekStart.setDate(weekStart.getDate() - 7);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const yesterday = new Date(todayStart);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   const [
     costToday, costWeek, costMonth,
@@ -106,7 +105,7 @@ async function handleOverview(
       .from(schema.executions)
       .where(and(
         eq(schema.executions.status, "failed"),
-        gte(schema.executions.startedAt, yesterday),
+        gte(schema.executions.startedAt, last24h),
       )),
     // Recent 20 executions
     db.select({
@@ -384,28 +383,35 @@ async function handleErrors(
   const from = parseDateParam(url, "from") ?? new Date(Date.now() - 7 * 86400_000);
   const to = parseDateParam(url, "to") ?? new Date();
 
-  const errors = await db.select({
-    id: schema.executions.id,
-    owner: schema.executions.owner,
-    repo: schema.executions.repo,
-    pullNumber: schema.executions.pullNumber,
-    error: schema.executions.error,
-    jobId: schema.executions.jobId,
-    startedAt: schema.executions.startedAt,
-  })
-    .from(schema.executions)
-    .where(and(
-      eq(schema.executions.status, "failed"),
-      gte(schema.executions.startedAt, from),
-      lte(schema.executions.startedAt, to),
-    ))
-    .orderBy(desc(schema.executions.startedAt))
-    .limit(100);
+  const where = and(
+    eq(schema.executions.status, "failed"),
+    gte(schema.executions.startedAt, from),
+    lte(schema.executions.startedAt, to),
+  );
+
+  const [errors, countResult] = await Promise.all([
+    db.select({
+      id: schema.executions.id,
+      owner: schema.executions.owner,
+      repo: schema.executions.repo,
+      pullNumber: schema.executions.pullNumber,
+      error: schema.executions.error,
+      jobId: schema.executions.jobId,
+      startedAt: schema.executions.startedAt,
+    })
+      .from(schema.executions)
+      .where(where)
+      .orderBy(desc(schema.executions.startedAt))
+      .limit(100),
+    db.select({ total: count() })
+      .from(schema.executions)
+      .where(where),
+  ]);
 
   json(res, 200, {
     period: { from: from.toISOString(), to: to.toISOString() },
     errors,
-    total: errors.length,
+    total: countResult[0]?.total ?? 0,
   });
 }
 

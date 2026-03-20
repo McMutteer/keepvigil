@@ -32,6 +32,7 @@ export function Executions() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     api<ExecutionsData>(`/admin/executions?page=${page}&limit=25`)
       .then(setData)
       .catch((err) => setError(err.message));

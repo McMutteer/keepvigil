@@ -109,14 +109,18 @@ export function createLLMClient(config: LLMConfig): LLMClient {
               costUsd,
             }, "LLM call completed");
             if (config.onUsage) {
-              config.onUsage({
-                provider: config.provider,
-                model: config.model,
-                promptTokens: usage.prompt_tokens,
-                completionTokens: usage.completion_tokens,
-                totalTokens: usage.total_tokens,
-                estimatedCostUsd: costUsd,
-              });
+              try {
+                config.onUsage({
+                  provider: config.provider,
+                  model: config.model,
+                  promptTokens: usage.prompt_tokens,
+                  completionTokens: usage.completion_tokens,
+                  totalTokens: usage.total_tokens,
+                  estimatedCostUsd: costUsd,
+                });
+              } catch (usageErr) {
+                log.warn({ error: String(usageErr) }, "onUsage callback failed");
+              }
             }
           }
 
