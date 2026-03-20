@@ -1,7 +1,14 @@
-import type { VigilConfig, ConfidenceScore, Signal, PipelineMode } from "@vigil/core";
+import type { VigilConfig, ConfidenceScore, Signal, SignalId, PipelineMode } from "@vigil/core";
 import { extractChangedFilesWithStatus } from "@vigil/core";
 import type { ReportItem, ReportSummary } from "./reporter.js";
 import { truncateToBytes } from "./check-run-updater.js";
+
+/** Signals that are Pro-only — shown as locked in the signal table and trigger upsell */
+const PRO_GATED_SIGNALS: Set<SignalId> = new Set(["contract-checker", "diff-analyzer"]);
+
+function isProGatedSignal(id: SignalId): boolean {
+  return PRO_GATED_SIGNALS.has(id);
+}
 
 const COMMENT_MARKER = "<!-- vigil-results -->";
 /** GitHub PR comment body limit is ~262,144 bytes. We target 60,000 bytes to stay safe. */
@@ -149,8 +156,8 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     "|--------|-------|--------|",
   );
   for (const signal of confidenceScore.signals) {
-    // Pro-gated signals (weight 0 + requiresLLM) show lock badge instead of score
-    if (signal.requiresLLM && signal.weight === 0) {
+    // Pro-gated signals show lock badge instead of score
+    if (isProGatedSignal(signal.id)) {
       parts.push(`| ${escapeTableCell(signal.name)} | — | \uD83D\uDD12 Pro |`);
     } else {
       const statusSummary = buildSignalStatusSummary(signal);
@@ -160,7 +167,7 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   parts.push("");
 
   // Pro upsell — show when signals are gated (Free tier)
-  const hasGatedSignals = confidenceScore.signals.some((s) => s.requiresLLM && s.weight === 0);
+  const hasGatedSignals = confidenceScore.signals.some((s) => isProGatedSignal(s.id));
   if (hasGatedSignals && !isRetry) {
     parts.push(
       "---",
@@ -712,7 +719,8 @@ export function buildReviewSummary(signals: Signal[], diff?: string): string {
     const fileParts: string[] = [];
     if (newFiles > 0) fileParts.push(`${newFiles} new`);
     if (modifiedFiles > 0) fileParts.push(`${modifiedFiles} modified`);
-    parts.push(`\uD83D\uDCC1 ${changedFiles.length} files changed (${fileParts.join(", ")})`);
+    const fileWord = changedFiles.length === 1 ? "file" : "files";
+    parts.push(`\uD83D\uDCC1 ${changedFiles.length} ${fileWord} changed (${fileParts.join(", ")})`);
   }
 
   // Categories from risk-score signal

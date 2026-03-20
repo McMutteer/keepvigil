@@ -774,7 +774,7 @@ describe("buildReviewSummary", () => {
   it("shows file count with new/modified breakdown", () => {
     const result = buildReviewSummary([], simpleDiff);
     expect(result).toContain("PR at a Glance");
-    expect(result).toContain("1 files changed");
+    expect(result).toContain("1 file changed");
     expect(result).toContain("1 modified");
   });
 
