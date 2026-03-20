@@ -59,11 +59,11 @@ const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 /** OpenAI mini model — primary when OPENAI_API_KEY is set (supports reasoning) */
 const OPENAI_MODEL = "gpt-5.4-mini";
 
-/** Reasoning effort by subscription tier */
+/** Reasoning effort by subscription tier — disabled until OpenAI SDK supports it for mini */
 const TIER_REASONING: Record<string, ReasoningEffort> = {
-  free: "medium",
-  pro: "medium",
-  team: "medium",
+  free: "none",
+  pro: "none",
+  team: "none",
 };
 
 // ---------------------------------------------------------------------------
