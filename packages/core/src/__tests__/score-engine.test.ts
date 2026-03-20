@@ -44,8 +44,8 @@ describe("computeScore", () => {
       expect(result.score).toBe(96);
       expect(result.recommendation).toBe("safe");
       expect(result.signals).toEqual(signals);
-      // 7 signals not provided → listed as skipped
-      expect(result.skippedSignals).toHaveLength(7);
+      // 8 signals not provided → listed as skipped (risk-score is informational weight 0)
+      expect(result.skippedSignals).toHaveLength(8);
       expect(result.skippedSignals).toContain("plan-augmentor");
       expect(result.skippedSignals).toContain("contract-checker");
       expect(result.skippedSignals).toContain("claims-verifier");
@@ -113,8 +113,8 @@ describe("computeScore", () => {
       expect(result.score).toBe(0);
       expect(result.recommendation).toBe("caution");
       expect(result.signals).toEqual([]);
-      // All 10 signals are skipped when none are provided
-      expect(result.skippedSignals).toHaveLength(10);
+      // All 11 signals are skipped when none are provided
+      expect(result.skippedSignals).toHaveLength(11);
     });
 
     it("returns score 0 and caution when all signals have weight 0", () => {
@@ -400,10 +400,14 @@ describe("getWeights", () => {
     expect(weights["undocumented-changes"]).toBe(25);
   });
 
-  it("v1+v2 weights include all signals", () => {
+  it("v1+v2 weights include all signals (risk-score is informational weight 0)", () => {
     const weights = getWeights("v1+v2");
-    for (const w of Object.values(weights)) {
-      expect(w).toBeGreaterThan(0);
+    for (const [key, w] of Object.entries(weights)) {
+      if (key === "risk-score") {
+        expect(w).toBe(0);
+      } else {
+        expect(w).toBeGreaterThan(0);
+      }
     }
   });
 });
@@ -413,7 +417,7 @@ describe("getWeights", () => {
 // ---------------------------------------------------------------------------
 
 describe("constants", () => {
-  it("SIGNAL_WEIGHTS has all 10 signal IDs", () => {
+  it("SIGNAL_WEIGHTS has all 11 signal IDs", () => {
     expect(Object.keys(SIGNAL_WEIGHTS).sort()).toEqual([
       "ci-bridge",
       "claims-verifier",
@@ -424,16 +428,17 @@ describe("constants", () => {
       "executor",
       "gap-analyzer",
       "plan-augmentor",
+      "risk-score",
       "undocumented-changes",
     ]);
   });
 
-  it("SIGNAL_WEIGHTS v1+v2 sum to 100", () => {
+  it("SIGNAL_WEIGHTS v1+v2 sum to 100 (risk-score is informational weight 0)", () => {
     const sum = Object.values(SIGNAL_WEIGHTS).reduce((a, b) => a + b, 0);
     expect(sum).toBe(100);
   });
 
-  it("SIGNAL_WEIGHTS_V2 non-zero values sum to 100", () => {
+  it("SIGNAL_WEIGHTS_V2 non-zero values sum to 100 (risk-score is informational weight 0)", () => {
     const sum = Object.values(SIGNAL_WEIGHTS_V2).reduce((a, b) => a + b, 0);
     expect(sum).toBe(100);
   });

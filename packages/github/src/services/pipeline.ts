@@ -9,7 +9,7 @@
 import { randomUUID } from "node:crypto";
 import type { Probot } from "probot";
 import type { Signal, VerifyTestPlanJob } from "@vigil/core";
-import { createLLMClient, createLLMClientWithFallback, scanCredentials, extractChangedFilesWithStatus, mapCoverage, createLogger, runWithCorrelationId, getWeights } from "@vigil/core";
+import { createLLMClient, createLLMClientWithFallback, scanCredentials, extractChangedFilesWithStatus, mapCoverage, assessRisk, createLogger, runWithCorrelationId, getWeights } from "@vigil/core";
 import type { ReasoningEffort } from "@vigil/core";
 import type { Database } from "@vigil/core/db";
 import { reportResults } from "./reporter.js";
@@ -166,6 +166,11 @@ async function _runPipeline(
         ? 2 : weights["coverage-mapper"];
       pushSignal(signals, coverageSignal, coverageWeight);
       log.info({ signalId: coverageSignal.id, score: coverageSignal.score, passed: coverageSignal.passed, weight: coverageWeight }, "Coverage mapper complete");
+
+      // Risk Assessment (free tier, informational — weight 0)
+      const riskSignal = assessRisk(diff, changedFiles, repoFiles);
+      pushSignal(signals, riskSignal, weights["risk-score"]);
+      log.info({ signalId: riskSignal.id, score: riskSignal.score, passed: riskSignal.passed, factors: riskSignal.details.length }, "Risk assessment complete");
 
       // Contract Checker (Pro only)
       if (proEnabled) {

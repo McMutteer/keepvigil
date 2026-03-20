@@ -131,6 +131,11 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     parts.push(undocSection, "");
   }
 
+  const riskSection = buildRiskSection(confidenceScore.signals);
+  if (riskSection) {
+    parts.push(riskSection, "");
+  }
+
   // Signal table
   parts.push(
     "| Signal | Score | Status |",
@@ -677,6 +682,27 @@ function buildUndocumentedSection(signals: Signal[]): string {
   for (const detail of undocSignal.details) {
     const icon = detail.status === "fail" ? "\u274C" : "\u26A0\uFE0F";
     lines.push(`- ${icon} **${escapeTableCell(detail.label)}:** ${detail.message}`);
+  }
+
+  return lines.join("\n");
+}
+
+/** Build a "Risk Assessment" section from the risk-score signal details. */
+function buildRiskSection(signals: Signal[]): string {
+  const riskSignal = signals.find((s) => s.id === "risk-score");
+  if (!riskSignal || riskSignal.details.length === 0) return "";
+
+  // Skip if only detail is a pass (no risk factors)
+  if (riskSignal.details.length === 1 && riskSignal.details[0].status === "pass") return "";
+
+  const lines: string[] = ["### Risk Assessment"];
+  for (const detail of riskSignal.details) {
+    // The "Risk Level" summary detail is rendered differently
+    if (detail.label.startsWith("Risk Level:")) {
+      lines.push(`**${detail.label}**`);
+      continue;
+    }
+    lines.push(`${escapeTableCell(detail.label)} — ${detail.message}`);
   }
 
   return lines.join("\n");
