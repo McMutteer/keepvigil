@@ -56,14 +56,14 @@ export async function runPipeline(
 /** Default Groq model — fallback when OpenAI is not configured */
 const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 
-/** OpenAI nano model — primary when OPENAI_API_KEY is set */
-const OPENAI_MODEL = "gpt-5.4-nano";
+/** OpenAI mini model — primary when OPENAI_API_KEY is set (supports reasoning) */
+const OPENAI_MODEL = "gpt-5.4-mini";
 
-/** Reasoning effort by subscription tier — all "low" for quality testing */
+/** Reasoning effort by subscription tier */
 const TIER_REASONING: Record<string, ReasoningEffort> = {
-  free: "low",
-  pro: "low",
-  team: "low",
+  free: "medium",
+  pro: "medium",
+  team: "medium",
 };
 
 // ---------------------------------------------------------------------------
