@@ -21,9 +21,8 @@ const PROVIDER_BASE_URLS: Record<LLMProvider, string | undefined> = {
   ollama: "http://localhost:11434/v1",
 };
 
-/** Models known to support the reasoning.effort parameter */
+/** Models known to support the reasoning.effort parameter (nano does NOT support it) */
 const REASONING_MODELS = new Set([
-  "gpt-5.4-nano",
   "gpt-5.4-mini",
   "gpt-5.4",
 ]);
