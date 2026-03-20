@@ -216,6 +216,16 @@ export type LLMProvider = "openai" | "groq" | "ollama";
 /** Reasoning effort levels for models that support chain-of-thought */
 export type ReasoningEffort = "none" | "low" | "medium" | "high";
 
+/** Token usage data emitted after each LLM call */
+export interface LLMUsageEvent {
+  provider: LLMProvider;
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  estimatedCostUsd: number;
+}
+
 /** Configuration for creating an LLM client */
 export interface LLMConfig {
   provider: LLMProvider;
@@ -223,6 +233,8 @@ export interface LLMConfig {
   apiKey: string;
   /** Default reasoning effort for all calls from this client */
   reasoningEffort?: ReasoningEffort;
+  /** Callback fired after each LLM call with token usage data */
+  onUsage?: (event: LLMUsageEvent) => void;
 }
 
 /** Unified LLM client interface — all consumers use this */

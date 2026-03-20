@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, varchar, timestamp, text, boolean, integer, json, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, uuid, varchar, timestamp, text, boolean, integer, real, json, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 /** Rule types for per-repo memory */
 export const ruleTypeEnum = pgEnum("rule_type_enum", ["ignore", "convention"]);
@@ -67,6 +67,28 @@ export const repoRules = pgTable("repo_rules", {
 }, (table) => [
   index("repo_rules_owner_repo_idx").on(table.owner, table.repo),
   uniqueIndex("repo_rules_owner_repo_pattern_idx").on(table.owner, table.repo, table.pattern),
+]);
+
+/** Tracks LLM token usage and estimated costs per pipeline run */
+export const llmUsage = pgTable("llm_usage", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  correlationId: text("correlation_id").notNull(),
+  installationId: text("installation_id").notNull(),
+  owner: varchar("owner", { length: 255 }).notNull(),
+  repo: varchar("repo", { length: 255 }).notNull(),
+  pullNumber: integer("pull_number").notNull(),
+  signalId: varchar("signal_id", { length: 100 }).notNull(),
+  provider: varchar("provider", { length: 50 }).notNull(),
+  model: varchar("model", { length: 100 }).notNull(),
+  promptTokens: integer("prompt_tokens").notNull(),
+  completionTokens: integer("completion_tokens").notNull(),
+  totalTokens: integer("total_tokens").notNull(),
+  estimatedCostUsd: real("estimated_cost_usd").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("llm_usage_installation_id_idx").on(table.installationId),
+  index("llm_usage_created_at_idx").on(table.createdAt),
+  index("llm_usage_owner_repo_idx").on(table.owner, table.repo),
 ]);
 
 /** Tracks Stripe subscriptions per GitHub App installation */

@@ -30,6 +30,18 @@ const REASONING_MODELS = new Set([
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_RETRIES = 3;
 
+/** Per-million-token costs for supported models */
+const MODEL_COSTS: Record<string, { input: number; output: number }> = {
+  "gpt-5.4-nano": { input: 0.10, output: 0.40 },
+  "gpt-5.4-mini": { input: 0.40, output: 1.60 },
+  "gpt-5.4": { input: 2.00, output: 8.00 },
+};
+
+function estimateCost(model: string, promptTokens: number, completionTokens: number): number {
+  const costs = MODEL_COSTS[model] ?? { input: 0, output: 0 };
+  return (promptTokens * costs.input + completionTokens * costs.output) / 1_000_000;
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -84,16 +96,32 @@ export function createLLMClient(config: LLMConfig): LLMClient {
             throw new Error(`LLM returned empty response (provider: ${config.provider}, model: ${config.model})`);
           }
 
-          // Log token usage for cost tracking
+          // Log token usage and fire onUsage callback for cost tracking
           const usage = response.usage;
           if (usage) {
+            const costUsd = estimateCost(config.model, usage.prompt_tokens, usage.completion_tokens);
             log.info({
               provider: config.provider,
               model: config.model,
               promptTokens: usage.prompt_tokens,
               completionTokens: usage.completion_tokens,
               totalTokens: usage.total_tokens,
+              costUsd,
             }, "LLM call completed");
+            if (config.onUsage) {
+              try {
+                config.onUsage({
+                  provider: config.provider,
+                  model: config.model,
+                  promptTokens: usage.prompt_tokens,
+                  completionTokens: usage.completion_tokens,
+                  totalTokens: usage.total_tokens,
+                  estimatedCostUsd: costUsd,
+                });
+              } catch (usageErr) {
+                log.warn({ error: String(usageErr) }, "onUsage callback failed");
+              }
+            }
           }
 
           return content;

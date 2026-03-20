@@ -17,6 +17,7 @@ import { createWorker } from "./worker.js";
 import { handleMetrics } from "./metrics.js";
 import { handleLogin, handleCallback, handleSession, handleLogout } from "./services/auth.js";
 import { handleDashboardApi } from "./services/dashboard-api.js";
+import { handleAdminApi } from "./services/admin-api.js";
 
 const log = createLogger("server");
 const HEALTH_TIMEOUT_MS = 5_000;
@@ -286,6 +287,18 @@ async function main(): Promise<void> {
     if (req.url?.startsWith("/api/dashboard/") && req.method === "GET") {
       handleDashboardApi(req, res, config, db).catch((err) => {
         log.error({ err }, "Unhandled error in dashboard API");
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Internal error" }));
+        }
+      });
+      return;
+    }
+
+    // Admin API routes
+    if (req.url?.startsWith("/api/admin/")) {
+      handleAdminApi(req, res, config, db).catch((err) => {
+        log.error({ err }, "Unhandled error in admin API");
         if (!res.headersSent) {
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Internal error" }));
