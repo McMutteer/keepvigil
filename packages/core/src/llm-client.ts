@@ -136,7 +136,10 @@ export function createLLMClientWithFallback(
     async chat(params) {
       try {
         return await primaryClient.chat(params);
-      } catch {
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const status = (err as { status?: number }).status;
+        log.warn({ provider: primary.provider, model: primary.model, error: msg, status }, "Primary LLM failed — falling back");
         // Primary failed — try fallback without reasoning (Groq doesn't support it)
         return await fallbackClient.chat({
           ...params,
