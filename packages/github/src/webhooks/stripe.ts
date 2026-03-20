@@ -64,6 +64,7 @@ export async function handleStripeWebhook(req: IncomingMessage, res: ServerRespo
         const installationId = metadata?.installationId || null;
         const accountLogin = metadata?.accountLogin ?? "unknown";
         const plan = (metadata?.plan as Plan) ?? "pro";
+        const seats = metadata?.seats ? parseInt(metadata.seats, 10) || 1 : 1;
 
         if (!installationId) {
           log.warn({ session }, "checkout.session.completed missing installationId in metadata");
@@ -76,6 +77,7 @@ export async function handleStripeWebhook(req: IncomingMessage, res: ServerRespo
           stripeCustomerId: session.customer as string,
           stripeSubscriptionId: session.subscription as string,
           plan,
+          seats,
           status: "active",
         });
         break;
@@ -88,12 +90,17 @@ export async function handleStripeWebhook(req: IncomingMessage, res: ServerRespo
 
         if (!installationId) break;
 
+        // Extract seat count from subscription items quantity
+        const items = sub.items as { data?: Array<{ quantity?: number }> } | undefined;
+        const seats = items?.data?.[0]?.quantity ?? (metadata?.seats ? parseInt(metadata.seats, 10) || 1 : 1);
+
         await upsertSubscription(db, {
           installationId,
           accountLogin: metadata?.accountLogin ?? "unknown",
           stripeCustomerId: sub.customer as string,
           stripeSubscriptionId: sub.id as string,
           plan: (metadata?.plan as Plan) ?? "pro",
+          seats,
           status: sub.status as string,
           currentPeriodEnd: sub.current_period_end ? new Date((sub.current_period_end as number) * 1000) : undefined,
         });
