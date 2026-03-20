@@ -8,10 +8,11 @@
 
 import { randomUUID } from "node:crypto";
 import type { Probot } from "probot";
-import type { Signal, VerifyTestPlanJob } from "@vigil/core";
+import type { Signal, VerifyTestPlanJob, LLMUsageEvent } from "@vigil/core";
 import { createLLMClient, createLLMClientWithFallback, scanCredentials, extractChangedFilesWithStatus, mapCoverage, assessRisk, createLogger, runWithCorrelationId, getWeights } from "@vigil/core";
 import type { ReasoningEffort } from "@vigil/core";
 import type { Database } from "@vigil/core/db";
+import { schema } from "@vigil/core/db";
 import { reportResults } from "./reporter.js";
 import { fetchPRDiff, fetchRepoFileList } from "./diff-fetcher.js";
 import { analyzeDiff } from "./diff-analyzer.js";
@@ -121,6 +122,26 @@ async function _runPipeline(
   let diff: string | null = null;
   const signals: Signal[] = [];
 
+  // LLM usage tracking — fire-and-forget DB inserts
+  let currentSignal = "unknown";
+  const onUsage = (event: LLMUsageEvent) => {
+    if (!pipelineDb) return;
+    pipelineDb.insert(schema.llmUsage).values({
+      correlationId,
+      installationId,
+      owner,
+      repo,
+      pullNumber,
+      signalId: currentSignal,
+      provider: event.provider,
+      model: event.model,
+      promptTokens: event.promptTokens,
+      completionTokens: event.completionTokens,
+      totalTokens: event.totalTokens,
+      estimatedCostUsd: event.estimatedCostUsd,
+    }).catch((err) => log.warn({ error: String(err) }, "Failed to persist LLM usage"));
+  };
+
   try {
     // Stage 1: Create LLM client (OpenAI mini primary, Groq fallback)
     const reasoningEffort = TIER_REASONING[tier] ?? "none";
@@ -128,13 +149,14 @@ async function _runPipeline(
 
     const llm = llmConfig.openaiApiKey
       ? createLLMClientWithFallback(
-          { provider: "openai", model: OPENAI_MODEL, apiKey: llmConfig.openaiApiKey, reasoningEffort },
-          { provider: "groq", model: groqModel, apiKey: llmConfig.groqApiKey },
+          { provider: "openai", model: OPENAI_MODEL, apiKey: llmConfig.openaiApiKey, reasoningEffort, onUsage },
+          { provider: "groq", model: groqModel, apiKey: llmConfig.groqApiKey, onUsage },
         )
       : createLLMClient({
           provider: "groq",
           model: groqModel,
           apiKey: llmConfig.groqApiKey,
+          onUsage,
         });
 
     log.info({ provider: llmConfig.openaiApiKey ? "openai" : "groq", model: llmConfig.openaiApiKey ? OPENAI_MODEL : groqModel, reasoningEffort }, "LLM client created");
@@ -144,6 +166,7 @@ async function _runPipeline(
 
     if (diff) {
       // Claims Verifier (free tier)
+      currentSignal = "claims-verifier";
       const claimsSignal = await verifyClaims({ prTitle, prBody, diff, llm });
       pushSignal(signals, claimsSignal, weights["claims-verifier"]);
       log.info({ signalId: claimsSignal.id, score: claimsSignal.score, passed: claimsSignal.passed }, "Claims verifier complete");
@@ -157,6 +180,7 @@ async function _runPipeline(
       }
 
       // Undocumented Changes (free tier)
+      currentSignal = "undocumented-changes";
       const undocSignal = await detectUndocumentedChanges({ prTitle, prBody, diff, llm });
       pushSignal(signals, undocSignal, weights["undocumented-changes"]);
       log.info({ signalId: undocSignal.id, score: undocSignal.score, passed: undocSignal.passed, findings: undocSignal.details.length }, "Undocumented changes complete");
@@ -181,19 +205,17 @@ async function _runPipeline(
       pushSignal(signals, riskSignal, weights["risk-score"]);
       log.info({ signalId: riskSignal.id, score: riskSignal.score, passed: riskSignal.passed, factors: riskSignal.details.length }, "Risk assessment complete");
 
-      // Contract Checker (Pro only)
-      if (proEnabled) {
-        const { signal: contractSignal } = await checkContracts({ diff, llm });
-        pushSignal(signals, contractSignal, weights["contract-checker"]);
-        log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed }, "Contract checker complete");
-      }
+      // Contract Checker (all tiers during testing)
+      currentSignal = "contract-checker";
+      const { signal: contractSignal } = await checkContracts({ diff, llm });
+      pushSignal(signals, contractSignal, weights["contract-checker"]);
+      log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed }, "Contract checker complete");
 
-      // Diff Analyzer (Pro only)
-      if (proEnabled) {
-        const diffSignal = await analyzeDiff({ diff, classifiedItems: [], llm });
-        pushSignal(signals, diffSignal, weights["diff-analyzer"]);
-        log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");
-      }
+      // Diff Analyzer (all tiers during testing)
+      currentSignal = "diff-analyzer";
+      const diffSignal = await analyzeDiff({ diff, classifiedItems: [], llm });
+      pushSignal(signals, diffSignal, weights["diff-analyzer"]);
+      log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");
     } else {
       pipelineError = "Could not fetch PR diff";
     }

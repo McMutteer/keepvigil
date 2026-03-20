@@ -556,11 +556,11 @@ describe("buildCommentBody (score-based)", () => {
     expect(body).toContain("100/100");
   });
 
-  it("shows lock badge for gated signals", () => {
+  it("shows all signals with scores (no Pro gating during testing)", () => {
     const score = makeConfidenceScore({
       signals: [
         makeSignal({ id: "ci-bridge", name: "CI Bridge", score: 100, weight: 25, passed: true }),
-        makeSignal({ id: "diff-analyzer", name: "Diff Analyzer", score: 0, weight: 0, passed: false, requiresLLM: true }),
+        makeSignal({ id: "diff-analyzer", name: "Diff Analyzer", score: 80, weight: 5, passed: true, requiresLLM: true }),
       ],
     });
     const body = buildCommentBody(
@@ -573,47 +573,10 @@ describe("buildCommentBody (score-based)", () => {
       undefined,
       score,
     );
-    expect(body).toContain("Pro");
     expect(body).toContain("Diff Analyzer");
-  });
-
-  it("shows pro upsell when gated signals exist (not on retry)", () => {
-    const score = makeConfidenceScore({
-      signals: [
-        makeSignal({ id: "diff-analyzer", name: "Diff Analyzer", score: 0, weight: 0, passed: false, requiresLLM: true }),
-      ],
-    });
-    const body = buildCommentBody(
-      [makeReportItem("test", "passed")],
-      makeSummary({ passed: 1, failed: 0 }),
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      score,
-    );
-    expect(body).toContain("Unlock the full confidence score");
-    expect(body).toContain("Upgrade to Pro");
-  });
-
-  it("suppresses pro upsell on retry", () => {
-    const score = makeConfidenceScore({
-      signals: [
-        makeSignal({ id: "diff-analyzer", name: "Diff Analyzer", score: 0, weight: 0, passed: false, requiresLLM: true }),
-      ],
-    });
-    const body = buildCommentBody(
-      [makeReportItem("test", "passed", { id: "tp-1" })],
-      makeSummary({ passed: 1, failed: 0 }),
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      ["tp-1"],
-      score,
-    );
-    expect(body).not.toContain("Unlock the full confidence score");
+    expect(body).toContain("80/100");
+    expect(body).not.toContain("Pro");
+    expect(body).not.toContain("Unlock");
   });
 
   it("shows action items for failures", () => {

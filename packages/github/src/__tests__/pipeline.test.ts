@@ -118,7 +118,7 @@ describe("runPipeline (v2-only)", () => {
     const ctx = mockReportResults.mock.calls[0][0];
     expect(ctx.pipelineMode).toBe("v2-only");
     expect(ctx.signals).toBeDefined();
-    expect(ctx.signals.length).toBeGreaterThanOrEqual(5); // claims, undocumented, cred, coverage, risk
+    expect(ctx.signals.length).toBeGreaterThanOrEqual(7); // claims, undocumented, cred, coverage, risk, contract, diff
   });
 
   it("reports pipeline error when diff is null", async () => {

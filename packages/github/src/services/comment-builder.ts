@@ -1,14 +1,10 @@
-import type { VigilConfig, ConfidenceScore, Signal, SignalId, PipelineMode } from "@vigil/core";
+import type { VigilConfig, ConfidenceScore, Signal, PipelineMode } from "@vigil/core";
 import { extractChangedFilesWithStatus } from "@vigil/core";
 import type { ReportItem, ReportSummary } from "./reporter.js";
 import { truncateToBytes } from "./check-run-updater.js";
 
-/** Signals that are Pro-only — shown as locked in the signal table and trigger upsell */
-const PRO_GATED_SIGNALS: Set<SignalId> = new Set(["contract-checker", "diff-analyzer"]);
-
-function isProGatedSignal(id: SignalId): boolean {
-  return PRO_GATED_SIGNALS.has(id);
-}
+// Pro gating disabled during testing — all signals run for all users
+// const PRO_GATED_SIGNALS: Set<SignalId> = new Set(["contract-checker", "diff-analyzer"]);
 
 const COMMENT_MARKER = "<!-- vigil-results -->";
 /** GitHub PR comment body limit is ~262,144 bytes. We target 60,000 bytes to stay safe. */
@@ -162,26 +158,10 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     "|--------|-------|--------|",
   );
   for (const signal of confidenceScore.signals) {
-    // Pro-gated signals show lock badge instead of score
-    if (isProGatedSignal(signal.id)) {
-      parts.push(`| ${escapeTableCell(signal.name)} | — | \uD83D\uDD12 Pro |`);
-    } else {
-      const statusSummary = buildSignalStatusSummary(signal);
-      parts.push(`| ${escapeTableCell(signal.name)} | ${signal.score}/100 | ${statusSummary} |`);
-    }
+    const statusSummary = buildSignalStatusSummary(signal);
+    parts.push(`| ${escapeTableCell(signal.name)} | ${signal.score}/100 | ${statusSummary} |`);
   }
   parts.push("");
-
-  // Pro upsell — show when signals are gated (Free tier)
-  const hasGatedSignals = confidenceScore.signals.some((s) => isProGatedSignal(s.id));
-  if (hasGatedSignals && !isRetry) {
-    parts.push(
-      "---",
-      "",
-      "\uD83D\uDCA1 **Unlock the full confidence score** — Diff Analysis, Gap Analysis, and Contract Checking detect issues your test plan missed. [Upgrade to Pro \u2192](https://keepvigil.dev/#pricing)",
-      "",
-    );
-  }
 
   // Action items — highlight failures and warnings
   const actionItems = buildActionItems(confidenceScore, items);
