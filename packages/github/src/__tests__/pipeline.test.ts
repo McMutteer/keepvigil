@@ -18,7 +18,7 @@ vi.mock("@vigil/core", () => ({
   getWeights: vi.fn().mockReturnValue({
     "ci-bridge": 0, "credential-scan": 20, "executor": 0, "plan-augmentor": 0,
     "contract-checker": 10, "diff-analyzer": 5, "coverage-mapper": 10, "gap-analyzer": 0,
-    "claims-verifier": 30, "undocumented-changes": 25, "risk-score": 0,
+    "claims-verifier": 30, "undocumented-changes": 25, "risk-score": 0, "description-generator": 0,
   }),
 }));
 
@@ -56,6 +56,11 @@ vi.mock("../services/diff-analyzer.js", () => ({
 
 vi.mock("../services/contract-checker.js", () => ({
   checkContracts: vi.fn().mockResolvedValue({ signal: { id: "contract-checker", name: "Contract Checker", score: 100, weight: 10, passed: true, details: [], requiresLLM: true }, verifiedFiles: new Set() }),
+}));
+
+vi.mock("../services/description-generator.js", () => ({
+  generateDescription: vi.fn().mockResolvedValue({ id: "description-generator", name: "Description Generator", score: 100, weight: 0, passed: true, details: [{ label: "Skipped", status: "skip", message: "PR description is adequate" }], requiresLLM: true }),
+  shouldGenerate: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("../services/repo-memory.js", () => ({

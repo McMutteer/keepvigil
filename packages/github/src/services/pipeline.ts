@@ -20,6 +20,7 @@ import { checkPlan, isPro } from "./subscription.js";
 import { checkRateLimit } from "./rate-limiter.js";
 import { verifyClaims } from "./claims-verifier.js";
 import { detectUndocumentedChanges } from "./undocumented-changes.js";
+import { generateDescription, shouldGenerate } from "./description-generator.js";
 import { loadRepoRules, applyIgnoreRules } from "./repo-memory.js";
 
 const log = createLogger("pipeline");
@@ -146,6 +147,14 @@ async function _runPipeline(
       const claimsSignal = await verifyClaims({ prTitle, prBody, diff, llm });
       pushSignal(signals, claimsSignal, weights["claims-verifier"]);
       log.info({ signalId: claimsSignal.id, score: claimsSignal.score, passed: claimsSignal.passed }, "Claims verifier complete");
+
+      // Description Generator (free tier, only when body is empty/generic or no claims found)
+      const claimsFound = claimsSignal.details.filter((d) => d.status !== "skip").length;
+      if (shouldGenerate(prBody, prTitle, claimsFound)) {
+        const descSignal = await generateDescription({ prTitle, prBody, diff, llm, claimsFound });
+        pushSignal(signals, descSignal, weights["description-generator"]);
+        log.info({ signalId: descSignal.id, score: descSignal.score, generated: descSignal.details.some((d) => d.label === "generated-description") }, "Description generator complete");
+      }
 
       // Undocumented Changes (free tier)
       const undocSignal = await detectUndocumentedChanges({ prTitle, prBody, diff, llm });

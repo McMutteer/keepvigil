@@ -44,8 +44,8 @@ describe("computeScore", () => {
       expect(result.score).toBe(96);
       expect(result.recommendation).toBe("safe");
       expect(result.signals).toEqual(signals);
-      // 8 signals not provided → listed as skipped (risk-score is informational weight 0)
-      expect(result.skippedSignals).toHaveLength(8);
+      // 9 signals not provided → listed as skipped (risk-score + description-generator are informational weight 0)
+      expect(result.skippedSignals).toHaveLength(9);
       expect(result.skippedSignals).toContain("plan-augmentor");
       expect(result.skippedSignals).toContain("contract-checker");
       expect(result.skippedSignals).toContain("claims-verifier");
@@ -113,8 +113,8 @@ describe("computeScore", () => {
       expect(result.score).toBe(0);
       expect(result.recommendation).toBe("caution");
       expect(result.signals).toEqual([]);
-      // All 11 signals are skipped when none are provided
-      expect(result.skippedSignals).toHaveLength(11);
+      // All 12 signals are skipped when none are provided
+      expect(result.skippedSignals).toHaveLength(12);
     });
 
     it("returns score 0 and caution when all signals have weight 0", () => {
@@ -400,10 +400,11 @@ describe("getWeights", () => {
     expect(weights["undocumented-changes"]).toBe(25);
   });
 
-  it("v1+v2 weights include all signals (risk-score is informational weight 0)", () => {
+  it("v1+v2 weights include all signals (risk-score + description-generator are informational weight 0)", () => {
     const weights = getWeights("v1+v2");
+    const informationalSignals = new Set(["risk-score", "description-generator"]);
     for (const [key, w] of Object.entries(weights)) {
-      if (key === "risk-score") {
+      if (informationalSignals.has(key)) {
         expect(w).toBe(0);
       } else {
         expect(w).toBeGreaterThan(0);
@@ -417,13 +418,14 @@ describe("getWeights", () => {
 // ---------------------------------------------------------------------------
 
 describe("constants", () => {
-  it("SIGNAL_WEIGHTS has all 11 signal IDs", () => {
+  it("SIGNAL_WEIGHTS has all 12 signal IDs", () => {
     expect(Object.keys(SIGNAL_WEIGHTS).sort()).toEqual([
       "ci-bridge",
       "claims-verifier",
       "contract-checker",
       "coverage-mapper",
       "credential-scan",
+      "description-generator",
       "diff-analyzer",
       "executor",
       "gap-analyzer",

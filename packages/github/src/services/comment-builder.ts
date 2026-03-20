@@ -134,6 +134,12 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     parts.push(glanceSection, "");
   }
 
+  // Description suggestion (when PR body was empty/generic)
+  const descSection = buildDescriptionSection(confidenceScore.signals);
+  if (descSection) {
+    parts.push(descSection, "");
+  }
+
   // v2 sections: Claims + Undocumented Changes (when those signals are present)
   const claimsSection = buildClaimsSection(confidenceScore.signals);
   if (claimsSection) {
@@ -774,6 +780,50 @@ export function buildReviewSummary(signals: Signal[], diff?: string): string {
   if (parts.length === 0) return "";
 
   return `### PR at a Glance\n${parts.join("\n")}`;
+}
+
+/** Build a "Suggested PR Description" section from the description-generator signal. */
+function buildDescriptionSection(signals: Signal[]): string {
+  const descSignal = signals.find((s) => s.id === "description-generator");
+  if (!descSignal || descSignal.details.length === 0) return "";
+
+  // Skip if signal was skipped (PR body was adequate)
+  if (descSignal.details.length === 1 && descSignal.details[0].status === "skip") return "";
+
+  // Find the generated description in the details
+  const genDetail = descSignal.details.find((d) => d.label === "generated-description");
+  if (!genDetail) return "";
+
+  const summaryDetail = descSignal.details.find((d) => d.label === "Summary");
+  const summary = summaryDetail?.message || "";
+
+  const lines: string[] = ["### Suggested PR Description"];
+  if (summary) {
+    lines.push(`> **Summary:** ${summary}`);
+    lines.push("");
+  }
+
+  // Show change groups from details (excluding summary and generated-description)
+  const changeDetails = descSignal.details.filter((d) => d.label !== "Summary" && d.label !== "generated-description" && d.status === "pass");
+  if (changeDetails.length > 0) {
+    lines.push("**Changes:**");
+    for (const detail of changeDetails) {
+      lines.push(`- **${escapeTableCell(detail.label)}:** ${detail.message}`);
+    }
+    lines.push("");
+  }
+
+  // Copyable markdown block
+  lines.push("<details>");
+  lines.push("<summary>\uD83D\uDCCB Copy this to your PR description</summary>");
+  lines.push("");
+  lines.push("```markdown");
+  lines.push(genDetail.message);
+  lines.push("```");
+  lines.push("");
+  lines.push("</details>");
+
+  return lines.join("\n");
 }
 
 /** Build a "Risk Assessment" section from the risk-score signal details. */
