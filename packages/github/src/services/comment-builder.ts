@@ -97,24 +97,19 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   const emoji = recommendationEmoji[confidenceScore.recommendation] ?? "";
   const recLabel = buildContextualRecommendation(confidenceScore, summary);
 
-  // Score explanation — one-line breakdown of what drove the score
-  const signalSummaries = confidenceScore.signals
-    .filter((s) => s.weight > 0)
-    .map((s) => {
-      const icon = s.passed ? "\u2705" : (s.score >= 50 ? "\u26A0\uFE0F" : "\u274C");
-      return `${s.name} ${icon}`;
-    })
-    .join(" \u2022 ");
-
   const parts: string[] = [
     COMMENT_MARKER,
     isRetry ? `## Vigil Confidence Score: ${confidenceScore.score}/100 _(retry)_` : `## Vigil Confidence Score: ${confidenceScore.score}/100`,
     "",
     `**Recommendation:** ${recLabel} ${emoji}`,
     "",
-    `> ${signalSummaries}`,
-    "",
   ];
+
+  // Compact one-line glance (files, categories, coverage, review time)
+  const glanceLine = buildReviewSummary(confidenceScore.signals, diff);
+  if (glanceLine) {
+    parts.push(glanceLine, "");
+  }
 
   if (isRetry) {
     parts.push(`> **Retry:** re-ran ${retryItemIds!.join(", ")} — other items not re-executed.`, "");
@@ -122,12 +117,6 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
 
   if (pipelineError) {
     parts.push(`> **Note:** ${pipelineError}`, "");
-  }
-
-  // Review summary — aggregated "at a glance" from existing signal data
-  const glanceSection = buildReviewSummary(confidenceScore.signals, diff);
-  if (glanceSection) {
-    parts.push(glanceSection, "");
   }
 
   // Description suggestion (when PR body was empty/generic)
@@ -152,16 +141,19 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     parts.push(riskSection, "");
   }
 
-  // Signal table
-  parts.push(
-    "| Signal | Score | Status |",
-    "|--------|-------|--------|",
-  );
-  for (const signal of confidenceScore.signals) {
-    const statusSummary = buildSignalStatusSummary(signal);
-    parts.push(`| ${escapeTableCell(signal.name)} | ${signal.score}/100 | ${statusSummary} |`);
+  // Signal table — only signals that contribute to the score (weight > 0)
+  const scoringSignals = confidenceScore.signals.filter((s) => s.weight > 0);
+  if (scoringSignals.length > 0) {
+    parts.push(
+      "| Signal | Score | Status |",
+      "|--------|-------|--------|",
+    );
+    for (const signal of scoringSignals) {
+      const statusSummary = buildSignalStatusSummary(signal);
+      parts.push(`| ${escapeTableCell(signal.name)} | ${signal.score}/100 | ${statusSummary} |`);
+    }
+    parts.push("");
   }
-  parts.push("");
 
   // Action items — highlight failures and warnings
   const actionItems = buildActionItems(confidenceScore, items);
@@ -695,18 +687,13 @@ function buildUndocumentedSection(signals: Signal[]): string {
 export function buildReviewSummary(signals: Signal[], diff?: string): string {
   if (!diff) return "";
 
-  const parts: string[] = [];
+  const segments: string[] = [];
 
   // File counts
   const changedFiles = extractChangedFilesWithStatus(diff);
   if (changedFiles.length > 0) {
-    const newFiles = changedFiles.filter((f) => f.isNew).length;
-    const modifiedFiles = changedFiles.length - newFiles;
-    const fileParts: string[] = [];
-    if (newFiles > 0) fileParts.push(`${newFiles} new`);
-    if (modifiedFiles > 0) fileParts.push(`${modifiedFiles} modified`);
     const fileWord = changedFiles.length === 1 ? "file" : "files";
-    parts.push(`\uD83D\uDCC1 ${changedFiles.length} ${fileWord} changed (${fileParts.join(", ")})`);
+    segments.push(`\uD83D\uDCC1 ${changedFiles.length} ${fileWord}`);
   }
 
   // Categories from risk-score signal
@@ -714,13 +701,13 @@ export function buildReviewSummary(signals: Signal[], diff?: string): string {
   if (riskSignal) {
     const categories: string[] = [];
     for (const detail of riskSignal.details) {
-      if (detail.label.includes("authentication")) categories.push("authentication");
+      if (detail.label.includes("authentication")) categories.push("auth");
       if (detail.label.includes("Database")) categories.push("database");
-      if (detail.label.includes("Infrastructure")) categories.push("infrastructure");
-      if (detail.label.includes("Cross-boundary")) categories.push("API + frontend");
+      if (detail.label.includes("Infrastructure")) categories.push("infra");
+      if (detail.label.includes("Cross-boundary")) categories.push("API+frontend");
     }
     if (categories.length > 0) {
-      parts.push(`\uD83D\uDD11 Touches: ${categories.join(", ")}`);
+      segments.push(`\uD83D\uDD11 ${categories.join(", ")}`);
     }
   }
 
@@ -728,10 +715,9 @@ export function buildReviewSummary(signals: Signal[], diff?: string): string {
   if (riskSignal) {
     const depDetail = riskSignal.details.find((d) => d.label.includes("New dependencies"));
     if (depDetail) {
-      // Extract package names from message like "Added 2 new packages: ioredis, @types/ioredis"
       const match = depDetail.message.match(/:\s*(.+)$/);
       if (match) {
-        parts.push(`\uD83D\uDCE6 New deps: ${match[1]}`);
+        segments.push(`\uD83D\uDCE6 ${match[1]}`);
       }
     }
   }
@@ -743,11 +729,11 @@ export function buildReviewSummary(signals: Signal[], diff?: string): string {
     const failCount = coverageSignal.details.filter((d) => d.status === "fail").length;
     const totalTestable = passCount + failCount;
     if (totalTestable > 0) {
-      parts.push(`\uD83E\uDDEA Test coverage: ${passCount}/${totalTestable} source files have tests`);
+      segments.push(`\uD83E\uDDEA ${passCount}/${totalTestable} tested`);
     }
   }
 
-  // Estimated review time: ~1 min per 50 changed lines, ×1.5 if high risk
+  // Estimated review time
   const addedLines = diff.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++")).length;
   const removedLines = diff.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---")).length;
   const totalChangedLines = addedLines + removedLines;
@@ -755,11 +741,11 @@ export function buildReviewSummary(signals: Signal[], diff?: string): string {
   const isHighRisk = riskSignal?.details.some((d) => d.label.includes("HIGH"));
   if (isHighRisk) reviewMinutes = Math.ceil(reviewMinutes * 1.5);
   reviewMinutes = Math.max(2, Math.min(60, reviewMinutes));
-  parts.push(`\u26A1 Estimated review time: ~${reviewMinutes} min`);
+  segments.push(`\u26A1 ~${reviewMinutes} min review`);
 
-  if (parts.length === 0) return "";
+  if (segments.length === 0) return "";
 
-  return `### PR at a Glance\n${parts.join("\n")}`;
+  return `> ${segments.join(" | ")}`;
 }
 
 /** Build a "Suggested PR Description" section from the description-generator signal. */

@@ -734,19 +734,20 @@ describe("buildReviewSummary", () => {
     expect(buildReviewSummary([], undefined)).toBe("");
   });
 
-  it("shows file count with new/modified breakdown", () => {
+  it("returns compact single-line format with pipe separators", () => {
     const result = buildReviewSummary([], simpleDiff);
-    expect(result).toContain("PR at a Glance");
-    expect(result).toContain("1 file changed");
-    expect(result).toContain("1 modified");
+    expect(result).toMatch(/^> /);
+    expect(result).toContain("|");
+    expect(result).toContain("1 file");
+    expect(result).toContain("min review");
   });
 
-  it("shows new file count", () => {
+  it("includes file count", () => {
     const result = buildReviewSummary([], newFileDiff);
-    expect(result).toContain("1 new");
+    expect(result).toContain("1 file");
   });
 
-  it("shows categories from risk-score signal", () => {
+  it("includes categories from risk-score signal", () => {
     const signals = [
       makeSignal({
         id: "risk-score" as any,
@@ -758,11 +759,11 @@ describe("buildReviewSummary", () => {
       }),
     ];
     const result = buildReviewSummary(signals, simpleDiff);
-    expect(result).toContain("authentication");
+    expect(result).toContain("auth");
     expect(result).toContain("database");
   });
 
-  it("shows new dependencies from risk-score signal", () => {
+  it("includes new dependencies", () => {
     const signals = [
       makeSignal({
         id: "risk-score" as any,
@@ -773,11 +774,10 @@ describe("buildReviewSummary", () => {
       }),
     ];
     const result = buildReviewSummary(signals, simpleDiff);
-    expect(result).toContain("New deps:");
     expect(result).toContain("ioredis");
   });
 
-  it("shows test coverage from coverage-mapper signal", () => {
+  it("includes test coverage ratio", () => {
     const signals = [
       makeSignal({
         id: "coverage-mapper" as any,
@@ -790,33 +790,12 @@ describe("buildReviewSummary", () => {
       }),
     ];
     const result = buildReviewSummary(signals, simpleDiff);
-    expect(result).toContain("Test coverage: 2/3");
+    expect(result).toContain("2/3 tested");
   });
 
-  it("shows estimated review time", () => {
+  it("includes review time estimate", () => {
     const result = buildReviewSummary([], simpleDiff);
-    expect(result).toContain("Estimated review time:");
-    expect(result).toMatch(/~\d+ min/);
-  });
-
-  it("applies high risk multiplier to review time", () => {
-    const signals = [
-      makeSignal({
-        id: "risk-score" as any,
-        name: "Risk Assessment",
-        details: [
-          { label: "\uD83D\uDD34 HIGH: Touches authentication", status: "fail" as const, message: "Modifies auth files" },
-        ],
-      }),
-    ];
-    // Create a large diff to get meaningful review time
-    const largeDiff = `diff --git a/src/big.ts b/src/big.ts
---- a/src/big.ts
-+++ b/src/big.ts
-@@ -1,1 +1,200 @@
-${Array.from({ length: 200 }, (_, i) => `+const line${i} = ${i};`).join("\n")}`;
-    const result = buildReviewSummary(signals, largeDiff);
-    expect(result).toContain("Estimated review time:");
+    expect(result).toMatch(/~\d+ min review/);
   });
 
   it("floors review time at 2 min", () => {
@@ -826,6 +805,6 @@ ${Array.from({ length: 200 }, (_, i) => `+const line${i} = ${i};`).join("\n")}`;
 @@ -1 +1 @@
 +# Updated`;
     const result = buildReviewSummary([], tinyDiff);
-    expect(result).toContain("~2 min");
+    expect(result).toContain("~2 min review");
   });
 });
