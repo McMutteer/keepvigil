@@ -10,6 +10,9 @@
 
 import OpenAI from "openai";
 import type { LLMClient, LLMConfig, LLMProvider } from "./types.js";
+import { createLogger } from "./logger.js";
+
+const log = createLogger("llm-client");
 
 /** Base URLs for OpenAI-compatible providers */
 const PROVIDER_BASE_URLS: Record<LLMProvider, string | undefined> = {
@@ -81,6 +84,19 @@ export function createLLMClient(config: LLMConfig): LLMClient {
           if (!content) {
             throw new Error(`LLM returned empty response (provider: ${config.provider}, model: ${config.model})`);
           }
+
+          // Log token usage for cost tracking
+          const usage = response.usage;
+          if (usage) {
+            log.info({
+              provider: config.provider,
+              model: config.model,
+              promptTokens: usage.prompt_tokens,
+              completionTokens: usage.completion_tokens,
+              totalTokens: usage.total_tokens,
+            }, "LLM call completed");
+          }
+
           return content;
         } catch (err) {
           lastError = err;
