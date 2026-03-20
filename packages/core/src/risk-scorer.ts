@@ -31,7 +31,7 @@ export interface RiskFactor {
 // File classification patterns
 // ---------------------------------------------------------------------------
 
-const AUTH_PATTERNS = [
+const authPatterns = [
   /\bauth\b/i,
   /\bsession\b/i,
   /\blogin\b/i,
@@ -44,7 +44,7 @@ const AUTH_PATTERNS = [
   /\bmiddleware\/auth/i,
 ];
 
-const SCHEMA_PATTERNS = [
+const schemaPatterns = [
   /\bmigration/i,
   /\bschema\b/i,
   /\.sql$/i,
@@ -54,7 +54,7 @@ const SCHEMA_PATTERNS = [
   /\bknex.*migrate/i,
 ];
 
-const INFRA_PATTERNS = [
+const infraPatterns = [
   /Dockerfile/i,
   /docker-compose/i,
   /\.github\/workflows\//,
@@ -65,7 +65,7 @@ const INFRA_PATTERNS = [
   /\bhelm\b/i,
 ];
 
-const TEST_FILE_PATTERNS = [
+const testFilePatterns = [
   /\.test\.[jt]sx?$/,
   /\.spec\.[jt]sx?$/,
   /\/__tests__\//,
@@ -74,7 +74,7 @@ const TEST_FILE_PATTERNS = [
   /_test\.go$/,
 ];
 
-const NON_SOURCE_PATTERNS = [
+const nonSourcePatterns = [
   /\.md$/i,
   /\.json$/i,
   /\.ya?ml$/i,
@@ -96,18 +96,19 @@ const NON_SOURCE_PATTERNS = [
 // Diff content patterns (scanned on added lines only)
 // ---------------------------------------------------------------------------
 
-const ENV_VAR_PATTERN = /process\.env\.[A-Z_]{3,}|import\.meta\.env\.[A-Z_]{3,}|os\.environ\[/;
+const envVarPattern = /process\.env\.[A-Z_]{3,}|import\.meta\.env\.[A-Z_]{3,}|os\.environ\[/;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Classify a file path into risk categories. Only meaningful for runtime source files. */
 function classifyFile(filePath: string): string[] {
   const categories: string[] = [];
 
-  if (AUTH_PATTERNS.some((p) => p.test(filePath))) categories.push("authentication");
-  if (SCHEMA_PATTERNS.some((p) => p.test(filePath))) categories.push("database");
-  if (INFRA_PATTERNS.some((p) => p.test(filePath))) categories.push("infrastructure");
+  if (authPatterns.some((p) => p.test(filePath))) categories.push("authentication");
+  if (schemaPatterns.some((p) => p.test(filePath))) categories.push("database");
+  if (infraPatterns.some((p) => p.test(filePath))) categories.push("infrastructure");
 
   // API route detection
   if (/\broute[rs]?\b/i.test(filePath) || /\bapi\b/i.test(filePath) || /\bendpoint/i.test(filePath)) {
@@ -123,11 +124,16 @@ function classifyFile(filePath: string): string[] {
 }
 
 function isTestFile(filePath: string): boolean {
-  return TEST_FILE_PATTERNS.some((p) => p.test(filePath));
+  return testFilePatterns.some((p) => p.test(filePath));
 }
 
 function isNonSource(filePath: string): boolean {
-  return NON_SOURCE_PATTERNS.some((p) => p.test(filePath));
+  return nonSourcePatterns.some((p) => p.test(filePath));
+}
+
+/** Check if a file is a runtime source file (not test, not config/docs). */
+function isRuntimeSource(filePath: string): boolean {
+  return !isTestFile(filePath) && !isNonSource(filePath);
 }
 
 /**
@@ -251,10 +257,13 @@ export function assessRisk(
   const factors: RiskFactor[] = [];
   const details: SignalDetail[] = [];
 
+  // Pre-filter to runtime source files for classification-based checks
+  const runtimeFiles = files.filter((f) => isRuntimeSource(f.path));
+
   // --- HIGH risk factors ---
 
-  // Auth files
-  const authFiles = files.filter((f) => classifyFile(f.path).includes("authentication") && !isTestFile(f.path));
+  // Auth files (only runtime source — excludes docs/auth.md, tests, etc.)
+  const authFiles = runtimeFiles.filter((f) => classifyFile(f.path).includes("authentication"));
   if (authFiles.length > 0) {
     factors.push({
       level: "high",
@@ -264,8 +273,8 @@ export function assessRisk(
     });
   }
 
-  // DB schema/migrations
-  const schemaFiles = files.filter((f) => classifyFile(f.path).includes("database") && !isTestFile(f.path));
+  // DB schema/migrations (only runtime source)
+  const schemaFiles = runtimeFiles.filter((f) => classifyFile(f.path).includes("database"));
   if (schemaFiles.length > 0) {
     factors.push({
       level: "high",
@@ -309,7 +318,7 @@ export function assessRisk(
   // Environment variables
   const envVarFiles = new Set<string>();
   for (const { file, content } of addedLines) {
-    if (ENV_VAR_PATTERN.test(content) && !isTestFile(file)) {
+    if (envVarPattern.test(content) && !isTestFile(file)) {
       envVarFiles.add(file);
     }
   }
@@ -322,9 +331,9 @@ export function assessRisk(
     });
   }
 
-  // Cross-boundary changes (API + frontend in same PR)
+  // Cross-boundary changes (API + frontend in same PR) — only runtime source files
   const allCategories = new Set<string>();
-  for (const f of files) {
+  for (const f of runtimeFiles) {
     for (const cat of classifyFile(f.path)) {
       allCategories.add(cat);
     }
@@ -368,13 +377,15 @@ export function assessRisk(
     const untestedFiles: string[] = [];
 
     for (const f of sourceFiles) {
-      // Simple check: does a test file exist for this source file?
+      // Check multiple test file naming conventions
       const base = f.path.replace(/\.[^.]+$/, "");
       const ext = f.path.match(/\.[^.]+$/)?.[0] ?? ".ts";
+      const testsDir = f.path.replace(/\/([^/]+)$/, "/__tests__/$1");
       const hasTest =
         repoFileSet.has(`${base}.test${ext}`) ||
         repoFileSet.has(`${base}.spec${ext}`) ||
-        repoFileSet.has(f.path.replace(/\/([^/]+)$/, "/__tests__/$1").replace(/(\.[^.]+)$/, `.test$1`));
+        repoFileSet.has(testsDir.replace(/(\.[^.]+)$/, `.test$1`)) ||
+        repoFileSet.has(testsDir.replace(/(\.[^.]+)$/, `.spec$1`));
 
       if (!hasTest) {
         untestedFiles.push(f.path);
@@ -404,21 +415,21 @@ export function assessRisk(
   }
 
   // Compute score: start at 100, deduct per factor
-  const DEDUCTIONS: Record<RiskLevel, number> = { high: 20, medium: 10, low: 5 };
+  const deductions: Record<RiskLevel, number> = { high: 20, medium: 10, low: 5 };
   let score = 100;
   for (const factor of factors) {
-    score -= DEDUCTIONS[factor.level];
+    score -= deductions[factor.level];
   }
   score = Math.max(0, score);
 
   // Build details from factors
-  const LEVEL_EMOJI: Record<RiskLevel, string> = { high: "\uD83D\uDD34", medium: "\uD83D\uDFE1", low: "\uD83D\uDFE2" };
-  const LEVEL_STATUS: Record<RiskLevel, "fail" | "warn" | "pass"> = { high: "fail", medium: "warn", low: "pass" };
+  const levelEmoji: Record<RiskLevel, string> = { high: "\uD83D\uDD34", medium: "\uD83D\uDFE1", low: "\uD83D\uDFE2" };
+  const levelStatus: Record<RiskLevel, "fail" | "warn" | "pass"> = { high: "fail", medium: "warn", low: "pass" };
 
   for (const factor of factors) {
     details.push({
-      label: `${LEVEL_EMOJI[factor.level]} ${factor.level.toUpperCase()}: ${factor.label}`,
-      status: LEVEL_STATUS[factor.level],
+      label: `${levelEmoji[factor.level]} ${factor.level.toUpperCase()}: ${factor.label}`,
+      status: levelStatus[factor.level],
       message: factor.message,
       file: factor.files?.[0],
     });
@@ -443,4 +454,3 @@ export function assessRisk(
     details,
   });
 }
-
