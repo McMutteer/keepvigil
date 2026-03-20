@@ -813,13 +813,15 @@ function buildDescriptionSection(signals: Signal[]): string {
     lines.push("");
   }
 
-  // Copyable markdown block
+  // Copyable markdown block — use a dynamic fence to handle embedded backticks
+  const maxBackticks = (genDetail.message.match(/`{3,}/g) ?? []).reduce((max, m) => Math.max(max, m.length), 2);
+  const fence = "`".repeat(maxBackticks + 1);
   lines.push("<details>");
   lines.push("<summary>\uD83D\uDCCB Copy this to your PR description</summary>");
   lines.push("");
-  lines.push("```markdown");
+  lines.push(`${fence}markdown`);
   lines.push(genDetail.message);
-  lines.push("```");
+  lines.push(fence);
   lines.push("");
   lines.push("</details>");
 

@@ -122,7 +122,7 @@ async function _runPipeline(
   const signals: Signal[] = [];
 
   try {
-    // Stage 1: Create LLM client (OpenAI nano primary, Groq fallback)
+    // Stage 1: Create LLM client (OpenAI mini primary, Groq fallback)
     const reasoningEffort = TIER_REASONING[tier] ?? "none";
     const groqModel = llmConfig.groqModel || GROQ_MODEL;
 

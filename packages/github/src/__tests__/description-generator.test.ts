@@ -58,7 +58,13 @@ describe("shouldGenerate", () => {
     expect(shouldGenerate("minor changes", "fix")).toBe(true);
     expect(shouldGenerate("done", "wip")).toBe(true);
     expect(shouldGenerate("updates", "update")).toBe(true);
-    expect(shouldGenerate("small fix", "feat: stuff")).toBe(true);
+    expect(shouldGenerate("small fix", "feat:")).toBe(true);
+    expect(shouldGenerate("small fix", "fix:")).toBe(true);
+  });
+
+  it("returns false for short body with descriptive scoped title", () => {
+    expect(shouldGenerate("small fix", "feat(api): add Redis-backed rate limiting")).toBe(false);
+    expect(shouldGenerate("small fix", "fix: resolve login timeout")).toBe(false);
   });
 
   it("returns true when claimsFound is 0", () => {

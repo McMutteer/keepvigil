@@ -28,8 +28,10 @@ export interface DescriptionGeneratorOptions {
 // Activation check
 // ---------------------------------------------------------------------------
 
-/** Titles that are generic enough to suggest the PR needs a proper description */
-const GENERIC_TITLE_PATTERN = /^(wip|todo|update|fix|feat|changes|misc|cleanup|refactor|chore|tmp|temp|draft|test|testing|stuff|work|progress|commit|push|save|wip:?.*|fix:?.*|feat:?.*|chore:?.*)$/i;
+/** Titles that are generic enough to suggest the PR needs a proper description.
+ * Matches bare keywords or keyword with colon but no subject (e.g., "fix", "fix:", "feat:")
+ * Does NOT match descriptive titles like "feat(api): add Redis-backed rate limiting" */
+const GENERIC_TITLE_PATTERN = /^(wip|todo|update|fix|feat|changes|misc|cleanup|refactor|chore|tmp|temp|draft|test|testing|stuff|work|progress|commit|push|save)(:\s*)?$/i;
 
 /**
  * Determine if the description generator should run.
