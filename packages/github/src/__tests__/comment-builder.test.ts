@@ -19,6 +19,7 @@ import {
   formatEvidence,
   buildConfigBlock,
   buildOnboardingTips,
+  buildReviewSummary,
   COMMENT_MARKER,
 } from "../services/comment-builder.js";
 import type { ReportItem, ReportSummary } from "../services/reporter.js";
@@ -742,5 +743,126 @@ describe("buildCommentBody (score-based)", () => {
     );
     expect(body).toContain("caution");
     expect(body).toContain("CI Bridge");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildReviewSummary — PR at a Glance
+// ---------------------------------------------------------------------------
+
+describe("buildReviewSummary", () => {
+  const simpleDiff = `diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1,3 +1,5 @@
++import { foo } from "./foo";
++const bar = process.env.API_URL;
+ export const app = "test";`;
+
+  const newFileDiff = `diff --git a/src/new-file.ts b/src/new-file.ts
+--- /dev/null
++++ b/src/new-file.ts
+@@ -0,0 +1,3 @@
++export const hello = "world";
++export const foo = "bar";
++export const baz = "qux";`;
+
+  it("returns empty string when no diff", () => {
+    expect(buildReviewSummary([], undefined)).toBe("");
+  });
+
+  it("shows file count with new/modified breakdown", () => {
+    const result = buildReviewSummary([], simpleDiff);
+    expect(result).toContain("PR at a Glance");
+    expect(result).toContain("1 files changed");
+    expect(result).toContain("1 modified");
+  });
+
+  it("shows new file count", () => {
+    const result = buildReviewSummary([], newFileDiff);
+    expect(result).toContain("1 new");
+  });
+
+  it("shows categories from risk-score signal", () => {
+    const signals = [
+      makeSignal({
+        id: "risk-score" as any,
+        name: "Risk Assessment",
+        details: [
+          { label: "\uD83D\uDD34 HIGH: Touches authentication", status: "fail" as const, message: "Modifies auth files" },
+          { label: "\uD83D\uDFE1 MEDIUM: Database schema changes", status: "warn" as const, message: "Modifies schema" },
+        ],
+      }),
+    ];
+    const result = buildReviewSummary(signals, simpleDiff);
+    expect(result).toContain("authentication");
+    expect(result).toContain("database");
+  });
+
+  it("shows new dependencies from risk-score signal", () => {
+    const signals = [
+      makeSignal({
+        id: "risk-score" as any,
+        name: "Risk Assessment",
+        details: [
+          { label: "\uD83D\uDFE1 MEDIUM: New dependencies", status: "warn" as const, message: "Added 2 new packages: ioredis, @types/ioredis" },
+        ],
+      }),
+    ];
+    const result = buildReviewSummary(signals, simpleDiff);
+    expect(result).toContain("New deps:");
+    expect(result).toContain("ioredis");
+  });
+
+  it("shows test coverage from coverage-mapper signal", () => {
+    const signals = [
+      makeSignal({
+        id: "coverage-mapper" as any,
+        name: "Coverage Mapper",
+        details: [
+          { label: "src/app.ts", status: "pass" as const, message: "Test file found" },
+          { label: "src/utils.ts", status: "fail" as const, message: "No test file" },
+          { label: "src/config.ts", status: "pass" as const, message: "Test file found" },
+        ],
+      }),
+    ];
+    const result = buildReviewSummary(signals, simpleDiff);
+    expect(result).toContain("Test coverage: 2/3");
+  });
+
+  it("shows estimated review time", () => {
+    const result = buildReviewSummary([], simpleDiff);
+    expect(result).toContain("Estimated review time:");
+    expect(result).toMatch(/~\d+ min/);
+  });
+
+  it("applies high risk multiplier to review time", () => {
+    const signals = [
+      makeSignal({
+        id: "risk-score" as any,
+        name: "Risk Assessment",
+        details: [
+          { label: "\uD83D\uDD34 HIGH: Touches authentication", status: "fail" as const, message: "Modifies auth files" },
+        ],
+      }),
+    ];
+    // Create a large diff to get meaningful review time
+    const largeDiff = `diff --git a/src/big.ts b/src/big.ts
+--- a/src/big.ts
++++ b/src/big.ts
+@@ -1,1 +1,200 @@
+${Array.from({ length: 200 }, (_, i) => `+const line${i} = ${i};`).join("\n")}`;
+    const result = buildReviewSummary(signals, largeDiff);
+    expect(result).toContain("Estimated review time:");
+  });
+
+  it("floors review time at 2 min", () => {
+    const tinyDiff = `diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
++# Updated`;
+    const result = buildReviewSummary([], tinyDiff);
+    expect(result).toContain("~2 min");
   });
 });

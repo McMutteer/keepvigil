@@ -251,6 +251,7 @@ export async function reportResults(context: ReportContext): Promise<void> {
       confidenceScore,
       isFirstRun,
       context.pipelineMode,
+      context.diff ?? undefined,
     );
 
     if (existingCommentId) {
