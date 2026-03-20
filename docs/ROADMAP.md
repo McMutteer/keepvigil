@@ -89,24 +89,42 @@ Found by running Vigil on its own dashboard PRs (#81-#87). All fixed and verifie
 - [x] Translation dictionaries (`en.ts`, `es.ts`)
 - [x] Language switcher in navbar (EN | ES)
 
+### Signal Quality Round 2 (PRs #94, #96, #98)
+- [x] `coverage.exclude` in `.vigil.yml` — repos exclude paths from coverage analysis
+- [x] Inline comment deduplication across re-reviews
+- [x] LLM retry with exponential backoff (429/502/503)
+- [x] Claims verifier threshold raised from 50% to 80%, penalties increased
+- [x] Failure cap only for credential-scan (not coverage-mapper)
+- [x] Undocumented changes: concrete ignore patterns + examples in prompt
+- [x] Contract checker: broader file patterns (GraphQL, tRPC, ORM)
+- [x] Credential scanner: skip .env.example files, apply generic test value check to all patterns
+
+### AI-First Messaging Rewrite (PR #95)
+- [x] Hero: "Merge with confidence" + AI-assisted development badge
+- [x] Signals: 3 layers → 2 (Trust Verification + Deep Analysis)
+- [x] 8 deprecated doc pages → redirect stubs
+- [x] 10 doc pages rewritten for v2-only
+- [x] FAQ + pricing + about updated
+
+### OpenAI GPT-5.4 Nano (PR #99)
+- [x] Primary: OpenAI GPT-5.4 nano with reasoning effort
+- [x] Fallback: Groq gpt-oss-120b (automatic on failure)
+- [x] `createLLMClientWithFallback()` for provider resilience
+- [x] Reasoning effort by tier: configurable per subscription level
+
 ---
 
 ## Next Up
 
-### Deploy Latest (PRs #88-#93)
-- [ ] Verify env vars on server: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET`
-- [ ] Verify OAuth callback URL in GitHub App settings
-- [ ] Deploy via `ssh root@161.97.97.243 deploy-keepvigil.sh`
-- [ ] Verify: `/dashboard` loads, OAuth flow, i18n locale switching, auto-approve config
-
-### Signal Quality — Open Issues
-- [ ] Coverage mapper flags React components as needing tests — 20+ false positives on frontend PRs (tanks score to 70)
-- [ ] Inline review comments accumulate on re-reviews — no deduplication against previous reviews
+### Per-Seat Pricing Pivot
+- [ ] Per-seat rate limiter (key by developer, not installation)
+- [ ] Stripe per-seat checkout (quantity-based pricing)
+- [ ] Landing + docs update for per-seat pricing ($12/dev Pro, $24/dev Team)
 
 ### Announce (blocked: waiting for Marketplace approval)
 - [ ] Twitter/X thread — show real siegekit PR #24 as demo
 - [ ] Reddit post — r/programming, r/devtools
-- [ ] Hacker News — "Show HN: Vigil — Verifies that your PR does what it says it does"
+- [ ] Hacker News — "Show HN: Vigil — The verification layer for AI-generated PRs"
 
 ---
 
@@ -116,7 +134,6 @@ Found by running Vigil on its own dashboard PRs (#81-#87). All fixed and verifie
 - [ ] Dashboard i18n (currently English only)
 - [ ] Team features (shared dashboard, SSO, custom scoring rules)
 - [ ] GitLab / Bitbucket support (evaluate demand)
-- [ ] Pricing restructure (per-developer, trial PRs, freemium by repo — needs usage data)
 
 ### Infrastructure
 - [ ] Landing Dockerfile SHA pin (matches main Dockerfile)
@@ -128,8 +145,9 @@ Found by running Vigil on its own dashboard PRs (#81-#87). All fixed and verifie
 ## Notes
 
 - **Real-world testing:** siegekit PRs #8-#14 (v1), #24 (v2 first production test)
-- **Best score:** 95/100 on keepvigil PR #47
+- **Best score:** 100/100 on keepvigil PR #96
 - **Dogfooding:** Vigil reviews its own PRs — tracked in project memory
-- **757 tests** across 39 files (core + github packages)
+- **775 tests** across 39 files (core + github packages)
+- **LLM:** GPT-5.4 nano (primary) + Groq gpt-oss-120b (fallback)
 - Marketplace review pending — GitHub will notify via email
 - v1 modules removed: parser, classifier, executors, Chromium, BYOLLM
