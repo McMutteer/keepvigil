@@ -28,6 +28,30 @@ related: [2026-03-17-legal-implementation-and-coderabbit-benchmark]
 **Aprendido:** (1) Benchmarkear contra competidores antes de publicar legales descubre clausulas que nunca habrias pensado (no-model-training). (2) "Proveedores de LLM" es overbroad cuando el usuario puede traer su propio provider via BYOLLM — hay que distinguir "tu default" vs "el del usuario". (3) Un assertion executor que trata respuestas no parseables como PASS es un bug silencioso que infla scores — fail-safe siempre. (4) `response.body?.cancel()` no existe en el Fetch API standard — usar `arrayBuffer()` para drenar streams. (5) Los rate limiters in-memory con read→check→increment tienen race conditions en Node.js aunque sea single-threaded — los callbacks async crean ventanas. (6) El self-evaluation log (`docs/vigil-self-evaluation.md`) es el artefacto mas valioso de esta sesion — convierte cada PR review de Vigil en una mejora futura del producto.
 
 ---
+
+---
+id: 2026-03-20-qualitative-leap
+type: feat
+project: vigil
+branch: main
+pr: 107, 108, 109, 110
+date: 2026-03-20
+tags: [risk-score, review-summary, description-generator, comment-polish, pro-gating, rate-limits, codereview-feedback]
+summary: "Qualitative Leap: 3 features nuevas (Risk Score, PR at a Glance, Description Generator) + comment compacto + Pro gating y rate limits eliminados."
+related: []
+---
+
+### El Salto Cualitativo
+
+**Hilo:** Vigil verificaba claims pero no cambiaba el workflow del dev. Si lo quitabas, el reviewer simplemente no verificaba (como siempre). Esta sesion transformo Vigil de "policia que verifica" a "asistente que informa" — risk assessment, resumen compacto, y generacion de descripciones.
+
+**Lo que paso:** Plan ambicioso de 3 PRs encadenados (risk-score → review-summary → description-generator). El risk-scorer fue straightforward — signal deterministico sin LLM, patterns de archivos. CodeRabbit pidio brace-depth tracking para deps y camelCase — fixes aplicados. El review summary agrego una seccion "PR at a Glance" que despues en el polish se compacto a una sola linea con pipes. El description generator fue el mas interesante — el "inverso" del claims-verifier: lee el diff y genera claims en vez de verificarlos. Dos problemas inesperados: (1) un hook o proceso de VSCode cambiaba silenciosamente a `feat/admin-panel` entre tool calls — cada `git checkout` podia aterrizar en la branch equivocada, y los edits se perdian. Descubierto cuando un `git log` mostro commits que no eran nuestros. Defensa: siempre `git branch --show-current` antes de cualquier operacion. (2) Al cambiar base de PRs #108/#109 de branch-chain a main, CodeRabbit no auto-reviso — tuvo que ser triggeado manualmente con `@coderabbitai review`. Post-merge, el usuario pidio quitar todo el Pro gating y rate limits porque solo lo usa el durante testing. Tres commits directos a main: rate limits a 9999, `if (proEnabled)` gates removidos, Pro lock badges y upsell eliminados del comment.
+
+**Resultado:** 4 PRs mergeados (#107-#110). 8 signals activos (antes 6). ~839 tests (antes 776). Comment compacto con one-liner glance. Todo deployado y verificado en repo faro (score 86/100 con nuevo formato).
+
+**Aprendido:** (1) Un proceso externo (VSCode?) puede cambiar branches entre tool calls — `git branch --show-current` es obligatorio antes de commits, no opcional. (2) CodeRabbit no re-revisa automaticamente al cambiar la base branch de un PR — hay que triggearlo con `@coderabbitai review`. (3) La heuristica `requiresLLM && weight === 0` para detectar Pro signals es fragil — cuando agregas signals informativos free-tier (description-generator), se rompe. Allowlist explicita es mejor. (4) Signals con weight 0 en la signal table confunden al usuario (ven score 95/100 pero no afecta nada) — mejor ocultarlos de la tabla y darles secciones propias. (5) El comment de Vigil es denso por default — compactar el glance a una linea y filtrar la tabla a scoring signals mejora drasticamente la legibilidad.
+
+---
 id: 2026-03-18-v2-phase1-claims-undocumented
 type: feat
 project: vigil
