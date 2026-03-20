@@ -23,6 +23,7 @@ export const SIGNAL_WEIGHTS: Record<SignalId, number> = {
   "claims-verifier": 15,
   "undocumented-changes": 10,
   "risk-score": 0,
+  "description-generator": 0,
 };
 
 /** v2-only weights — PR has no test plan, only v2 signals run */
@@ -38,6 +39,7 @@ export const SIGNAL_WEIGHTS_V2: Record<SignalId, number> = {
   "claims-verifier": 30,
   "undocumented-changes": 25,
   "risk-score": 0,
+  "description-generator": 0,
 };
 
 /** Get the weight profile for a given pipeline mode */
