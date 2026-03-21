@@ -128,3 +128,27 @@ Tambien agregamos token logging — cada LLM call ahora loggea `promptTokens`, `
 **Resultado:** PRs #96-#101, 5 deploys. 776 tests. GPT-5.4 nano live como LLM primario. Per-seat rate limiter implementado. Token usage logging activo. 21 ramas remotas eliminadas (de sesiones anteriores). Costo real medido: $0.0005/PR.
 
 **Aprendido:** (1) GPT-5.4 nano NO soporta `reasoning` — solo mini y full. La documentacion de OpenAI no es clara sobre esto; la comunidad lo confirma en foros. (2) Docker-compose no hereda automaticamente del `.env` del host a las variables del container — hay que declarar cada variable explicitamente en `environment:`. (3) `pr.user.login` cambia si el usuario renombra su cuenta de GitHub; `pr.user.id` es inmutable. CodeRabbit lo detecto, Vigil no — porque son herramientas complementarias. (4) A $0.0005/PR, el costo de LLM es irrelevante para el negocio. El servidor ($10/mo) cuesta mas que 20,000 PRs de LLM. (5) Siempre log el error del provider primario antes de caer al fallback — sin el log, el fallback silencioso hace imposible debuggear por que no se usa OpenAI.
+
+---
+
+---
+id: 2026-03-21-admin-panel-blog-launch-prep
+type: feat
+project: vigil
+branch: main
+pr: 111, 113, 116, 117, 118, 119
+date: 2026-03-21
+tags: [admin-panel, llm-cost-tracking, blog, legal-cleanup, content-marketing, marketplace, branch-cleanup, deploy]
+summary: "Admin panel from zero to production, blog infra + dogfooding post, legal v2 cleanup, marketplace listing update, 20+ stale branches purged."
+related: [2026-03-20-el-motor-nuevo]
+---
+
+### El Centro de Mando
+
+**Hilo:** Después del qualitative leap (risk-score, description-generator, comment polish), faltaba visibilidad operativa. Sin admin panel no sabíamos cuánto costaba cada PR ni quién usaba qué. La sesión nació de continuar el plan de admin panel que se cortó por contexto, y terminó siendo una maratón de 9 PRs que cubrió admin, legal, blog, y go-to-market prep.
+
+**Lo que pasó:** El fantasma del branch-switching volvió — VSCode cambiaba de branch entre tool calls, archivos se revertían silenciosamente, un rebase stuck interfería con todo. La defensa: bash/python para writes + `git add` inmediato. El admin panel se construyó completo (DB table, API 7 endpoints, SPA 6 páginas, nginx routing, Docker build) en ~3 horas. Luego descubrimos que PRs #106 y #115 (per-seat checkout + landing rewrite) ya estaban mergeados por otra sesión — ajustamos el plan al vuelo. Legal cleanup reveló que Terms y Privacy seguían llenos de v1 (BYOLLM, test execution, Plan Augmentor) — 23 referencias desactualizadas en 2 archivos. El blog se construyó sin MDX, puro TSX inline con i18n EN/ES, siguiendo el patrón de las docs pages. Deploys al servidor tomaban 15+ min cada uno por el build de Next.js en Contabo.
+
+**Resultado:** 9 PRs mergeados y deployed. Admin panel live en /admin/. Blog live en /blog/dogfooding. Legal actualizado. README actualizado. Content marketing drafts en repo. Marketplace listing re-submitted con copy correcto. 20+ branches purgadas. Repo limpio: solo main.
+
+**Aprendido:** El patrón "write via bash/python + git add inmediato" es la única defensa confiable contra el linter/VSCode phantom revert. Para archivos grandes (legal pages), python con string replacement es más confiable que sed/awk por el manejo de unicode. Los deploys al servidor son el bottleneck real — considerar CI/CD o build cache para reducir de 15 min a <5.
