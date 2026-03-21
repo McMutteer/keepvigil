@@ -4,6 +4,7 @@ import { DocsLink } from "@/components/docs/docs-link";
 export const metadata: Metadata = {
   title: "Shell Allowlist (Removed) | Vigil Docs",
   description: "Shell execution was removed in Vigil v5.0.",
+  robots: { index: false, follow: true },
 };
 
 export default function ShellAllowlistPage() {

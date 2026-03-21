@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Writing Test Plans (Removed) | Vigil Docs",
   description:
     "Test plans are no longer required. Vigil verifies any PR automatically.",
+  robots: { index: false, follow: true },
 };
 
 export default function WritingTestPlansPage() {
