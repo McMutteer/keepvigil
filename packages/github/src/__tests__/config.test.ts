@@ -77,10 +77,17 @@ describe("loadConfig", () => {
     expect(() => loadConfig()).toThrow(/Configuration error/);
   });
 
-  it("allows empty GROQ_API_KEY (optional)", () => {
+  it("allows empty GROQ_API_KEY when OPENAI_API_KEY is set", () => {
     vi.stubEnv("GROQ_API_KEY", "");
+    vi.stubEnv("OPENAI_API_KEY", "sk-test");
     const config = loadConfig();
     expect(config.groqApiKey).toBe("");
+  });
+
+  it("throws when both OPENAI_API_KEY and GROQ_API_KEY are empty", () => {
+    vi.stubEnv("GROQ_API_KEY", "");
+    vi.stubEnv("OPENAI_API_KEY", "");
+    expect(() => loadConfig()).toThrow(/LLM provider/);
   });
 
   it("reports all missing required vars in a single error (not just the first)", () => {

@@ -31,7 +31,7 @@ const PLANS = [
       "Priority support",
     ],
     cta: "Start Pro Trial",
-    ctaHref: "https://keepvigil.dev/api/checkout?plan=pro",
+    ctaHref: "/api/checkout?plan=pro",
     highlighted: true,
   },
   {
@@ -48,7 +48,7 @@ const PLANS = [
       "Dedicated support",
     ],
     cta: "Start Team Trial",
-    ctaHref: "https://keepvigil.dev/api/checkout?plan=team",
+    ctaHref: "/api/checkout?plan=team",
     highlighted: false,
   },
 ];

@@ -129,7 +129,7 @@ export function handleLogin(_req: IncomingMessage, res: ServerResponse, config: 
   // Generate CSRF state nonce
   const state = randomBytes(16).toString("hex");
 
-  const redirectUri = "https://keepvigil.dev/api/auth/callback";
+  const redirectUri = config.oauthRedirectUri || "https://keepvigil.dev/api/auth/callback";
   const url = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(config.githubClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:org&state=${encodeURIComponent(state)}`;
 
   // Set state cookie (short-lived, 10 min)

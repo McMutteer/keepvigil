@@ -26,7 +26,7 @@ export function App() {
       <Route element={<Layout session={session} onLogout={logout} />}>
         <Route index element={<DashboardHome session={session} />} />
         <Route path="history" element={<ExecutionList session={session} />} />
-        <Route path="pr/:id" element={<ExecutionDetail />} />
+        <Route path="pr/:id" element={<ExecutionDetail session={session} />} />
       </Route>
     </Routes>
   );

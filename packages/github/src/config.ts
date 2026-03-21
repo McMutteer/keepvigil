@@ -17,6 +17,7 @@ const AppConfigSchema = z.object({
   stripeForwardingSecret: z.string().default(""),
   stripeProPriceId:      z.string().default(""),
   stripeTeamPriceId:     z.string().default(""),
+  oauthRedirectUri:      z.string().default(""),
   port:                z.coerce.number().int().min(1).max(65535).default(3200),
   nodeEnv:             z.string().default("development"),
 }).superRefine((data, ctx) => {
@@ -28,6 +29,14 @@ const AppConfigSchema = z.object({
       code: z.ZodIssueCode.custom,
       message: "OAuth requires all three: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, SESSION_SECRET",
       path: ["githubClientId"],
+    });
+  }
+  // At least one LLM provider must be configured
+  if (!data.openaiApiKey && !data.groqApiKey) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "At least one LLM provider is required: OPENAI_API_KEY or GROQ_API_KEY",
+      path: ["openaiApiKey"],
     });
   }
   // SESSION_SECRET must be at least 32 characters when set
@@ -61,6 +70,7 @@ export function loadConfig(): AppConfig {
     stripeForwardingSecret: process.env.STRIPE_FORWARDING_SECRET,
     stripeProPriceId:       process.env.STRIPE_PRO_PRICE_ID,
     stripeTeamPriceId:      process.env.STRIPE_TEAM_PRICE_ID,
+    oauthRedirectUri:       process.env.OAUTH_REDIRECT_URI,
     port:                process.env.PORT,
     nodeEnv:             process.env.NODE_ENV,
   });
