@@ -98,6 +98,11 @@ export function CtaFooter({ dict, locale }: { dict: Dictionary; locale: Locale }
                   </a>
                 </li>
                 <li>
+                  <a href={`/${locale}/blog`} className="text-text-muted hover:text-text-secondary transition-colors">
+                    Blog
+                  </a>
+                </li>
+                <li>
                   <a href={`/${locale}/docs/changelog`} className="text-text-muted hover:text-text-secondary transition-colors">
                     {t.changelog}
                   </a>

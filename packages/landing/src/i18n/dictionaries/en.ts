@@ -3,6 +3,7 @@ const en = {
     product: "Product",
     docs: "Docs",
     about: "About",
+    blog: "Blog",
     dashboard: "Dashboard",
     installOnGithub: "Install on GitHub",
     documentation: "Documentation",
