@@ -232,23 +232,24 @@ export default function TermsPage() {
           la cobertura de archivos modificados contra tests existentes.
         </Li>
         <Li>
-          <strong className="text-text-primary">Gap Analyzer:</strong> detecta
-          gaps entre lo que el PR cambia y lo que el test plan verifica.
+          <strong className="text-text-primary">Diff Analyzer:</strong> detecta
+          gaps entre lo que el PR cambia y lo que se document\u00f3.
         </Li>
       </UL>
       <P>El Servicio se ofrece en los siguientes niveles:</P>
       <UL>
         <Li>
-          <strong className="text-text-primary">Free ($0/mes):</strong> 6
+          <strong className="text-text-primary">Free ($0/mes):</strong> 8
           signals, PRs y repositorios ilimitados. Disponible indefinidamente.
         </Li>
         <Li>
-          <strong className="text-text-primary">Pro ($19/mes):</strong> 8
-          signals + BYOLLM (Bring Your Own LLM) + webhooks de notificación.
+          <strong className="text-text-primary">Pro ($12/dev/mes):</strong>{" "}
+          todo lo de Free + comentarios inline, auto-approve, webhooks de notificaci\u00f3n.
         </Li>
         <Li>
-          <strong className="text-text-primary">Team ($49/mes):</strong>{" "}
-          dashboard de equipo + SSO + configuración organizacional.
+          <strong className="text-text-primary">Team ($24/dev/mes):</strong>{" "}
+          todo lo de Pro + dashboard de equipo, @vigil commands, repo memory,
+          reglas de scoring personalizadas.
         </Li>
       </UL>
       <P>

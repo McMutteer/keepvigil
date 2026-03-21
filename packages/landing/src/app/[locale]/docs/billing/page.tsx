@@ -49,8 +49,8 @@ export default function BillingPage() {
                 $0
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                Claims Verification, Undocumented Change Detection, credential
-                scanning, coverage mapping, unlimited repos
+                All 8 signals, PR at a Glance, Risk Assessment, Description
+                Generator, unlimited repos and PRs
               </td>
             </tr>
             <tr>
@@ -58,11 +58,11 @@ export default function BillingPage() {
                 <strong className="text-text-primary">Pro</strong>
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                $19/mo
+                $12/dev/mo
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                Everything in Free + Deep Analysis (contract checking, diff
-                analysis), inline review comments, webhooks
+                Everything in Free + inline review comments, auto-approve,
+                webhook notifications
               </td>
             </tr>
             <tr>
@@ -70,10 +70,11 @@ export default function BillingPage() {
                 <strong className="text-text-primary">Team</strong>
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                $49/mo
+                $24/dev/mo
               </td>
               <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">
-                Everything in Pro + team dashboard, SSO, audit log
+                Everything in Pro + team dashboard, @vigil commands, repo memory,
+                custom scoring rules
               </td>
             </tr>
           </tbody>
@@ -137,44 +138,9 @@ export default function BillingPage() {
         Rate Limits
       </h2>
       <p className="text-text-secondary leading-relaxed mb-4">
-        Each plan has rate limits on how many PR verifications Vigil will process.
-        Rate-limited requests receive a neutral check run status — no partial
-        execution occurs.
+        All plans currently have unlimited PR verifications. Rate limits may be
+        introduced in the future as usage scales.
       </p>
-      <div className="overflow-x-auto mb-4">
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
-                Plan
-              </th>
-              <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
-                Per Hour
-              </th>
-              <th className="text-left py-2 px-3 text-xs font-medium uppercase tracking-wider text-text-muted border-b border-white/[0.06]">
-                Per Day
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Free</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">10</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">50</td>
-            </tr>
-            <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Pro</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">50</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">500</td>
-            </tr>
-            <tr>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">Team</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">200</td>
-              <td className="py-2 px-3 text-text-secondary border-b border-white/[0.04]">2,000</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
 
       {/* FAQ */}
       <h2 className="text-xl font-semibold text-text-primary mt-12 mb-4 pb-2 border-b border-white/[0.06]">

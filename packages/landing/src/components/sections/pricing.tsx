@@ -5,15 +5,13 @@ const PLANS = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Immediate value, zero config.",
+    description: "All 8 signals, zero config.",
     features: [
-      "CI Bridge — verify GitHub Actions results",
-      "Credential Scan — catch hardcoded secrets",
-      "Coverage Mapper — find untested files",
-      "Test Execution — sandbox verification",
-      "Assertion Verifier — file content checks",
-      "Plan Augmentor — auto-generate missing checks",
-      "Unlimited public repos",
+      "All 8 verification signals included",
+      "PR at a Glance \u2014 instant PR summary",
+      "Risk Assessment \u2014 flag high-risk changes",
+      "Description Generator \u2014 auto-generate missing descriptions",
+      "Unlimited repos and PRs",
     ],
     cta: "Install Free",
     ctaHref: "https://github.com/apps/keepvigil",
@@ -21,15 +19,14 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "$19",
-    period: "/month",
-    description: "Full verification with impact analysis.",
+    price: "$12",
+    period: "/dev/month",
+    description: "Inline comments and automation.",
     badge: "Recommended",
     features: [
       "Everything in Free, plus:",
-      "Contract Checker — API/frontend compatibility",
-      "Diff Analyzer — structural diff analysis",
       "Inline review comments on diff lines",
+      "Auto-approve for high-confidence PRs",
       "Webhook notifications (Slack/Discord)",
       "Priority support",
     ],
@@ -39,15 +36,15 @@ const PLANS = [
   },
   {
     name: "Team",
-    price: "$49",
-    period: "/month",
+    price: "$24",
+    period: "/dev/month",
     description: "For teams managing agents at scale.",
     features: [
       "Everything in Pro, plus:",
-      "Shared dashboard",
+      "Dashboard \u2014 PR history, scores, team metrics",
+      "@vigil commands \u2014 explain, verify, recheck, ignore",
+      "Repo memory \u2014 persistent ignore rules",
       "Custom scoring rules",
-      "SSO / SAML",
-      "Org-wide configuration",
       "Dedicated support",
     ],
     cta: "Start Team Trial",
@@ -135,7 +132,7 @@ export function Pricing() {
 
         <ScrollReveal delay={400}>
           <p className="text-center text-xs text-text-muted mt-8">
-            All plans include unlimited repos and unlimited PRs. No credit card
+            All plans include all 8 signals and unlimited repos. No credit card
             required for the Free tier.
           </p>
         </ScrollReveal>

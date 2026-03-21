@@ -21,19 +21,36 @@ type Plan = {
 };
 
 const COMPARISON_VALUES: { free: string; pro: string; team: string }[] = [
+  // Claims Verifier
   { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // Undocumented Changes
   { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // Credential Scan
   { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // Coverage Mapper
   { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // Contract Checker
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // Diff Analyzer
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // Risk Assessment
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // Description Generator
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // PR at a Glance
+  { free: "\u2705", pro: "\u2705", team: "\u2705" },
+  // Inline review comments
   { free: "\u2014", pro: "\u2705", team: "\u2705" },
+  // Auto-approve
   { free: "\u2014", pro: "\u2705", team: "\u2705" },
+  // Webhook notifications
   { free: "\u2014", pro: "\u2705", team: "\u2705" },
-  { free: "\u2014", pro: "\u2705", team: "\u2705" },
+  // @vigil commands
   { free: "\u2014", pro: "\u2014", team: "\u2705" },
+  // Repo memory
   { free: "\u2014", pro: "\u2014", team: "\u2705" },
+  // Custom scoring rules
   { free: "\u2014", pro: "\u2014", team: "\u2705" },
-  { free: "10", pro: "50", team: "200" },
-  { free: "50", pro: "500", team: "2,000" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -314,8 +331,8 @@ export function PricingPageClient({
     },
     {
       name: t.plans.pro.name,
-      monthly: 19,
-      annual: 190,
+      monthly: 12,
+      annual: 120,
       description: t.plans.pro.description,
       badge: t.plans.pro.badge,
       features: t.plans.pro.features,
@@ -328,8 +345,8 @@ export function PricingPageClient({
     },
     {
       name: t.plans.team.name,
-      monthly: 49,
-      annual: 490,
+      monthly: 24,
+      annual: 240,
       description: t.plans.team.description,
       features: t.plans.team.features,
       cta: t.plans.team.cta,
