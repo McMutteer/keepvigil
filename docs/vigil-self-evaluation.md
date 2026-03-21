@@ -4,6 +4,14 @@ Tracking how Vigil evaluates its own PRs. Each entry captures the score, signal 
 
 ## Score History
 
+### v2 Pipeline (Claims Verification)
+
+| PR | Date | Score | Claims | Undocumented | Coverage | Key Observation |
+|----|------|-------|--------|--------------|----------|-----------------|
+| #125 | 2026-03-21 | **89/100** | 9/9 ✅ (100) | 1 warning (97) | 0/4 tested (0) | Claims verification excellent — all 9 extracted and confirmed. Undocumented: caught language switcher in DocsNavbar not mentioned in PR description (legitimate). Coverage Mapper noisy: flagged 4 React UI components as untested — technically correct but not actionable for presentation components. Inline comments spammy (4x identical "No test file found"). |
+
+### v1 Pipeline (Test Plans — deprecated)
+
 | PR | Date | Score | Test Plan Items | Key Issue |
 |----|------|-------|-----------------|-----------|
 | #59 | 2026-03-17 | **42/100** | 0/3 (1 skip) | Rate limited (free tier) → fixed to Pro. Re-run: 42 with Pro signals (sandbox failures) |
@@ -176,3 +184,5 @@ PR #47 (94/100) and PR #49 (91/100) are the gold standard. What they have in com
 | **P1** | Add `pnpm --filter` and `pnpm -r` to shell allowlist | PR #58 |
 | **P2** | Auto-map vague items to shell commands | PRs #56, #50 |
 | **P2** | Augmentor score weighting for executor-limited failures | Multiple |
+| **P2** | Coverage Mapper: distinguish presentation components from business logic | PR #125 — 4 React UI components flagged as untested, not actionable |
+| **P2** | Consolidate duplicate inline comments into single summary | PR #125 — 4 identical "No test file found" comments are spammy |
