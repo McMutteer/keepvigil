@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".claude/identity/icon.svg" width="64" alt="Vigil">
+  <img src=".claude/identity/icon-recraft.svg" width="64" alt="Vigil">
 </p>
 
 <h1 align="center">Vigil</h1>
