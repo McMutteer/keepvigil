@@ -14,7 +14,7 @@ export default function TermsPage() {
         Términos y Condiciones de Uso
       </h1>
       <p className="text-sm text-text-muted mb-4">
-        Última actualización: 17 de marzo de 2026
+        Última actualización: 21 de marzo de 2026
       </p>
       <p className="text-xs text-text-muted mb-12 italic">
         La versión en español es la versión oficial y vinculante. Pronto estará
@@ -26,17 +26,19 @@ export default function TermsPage() {
       <P>
         Nqual5 S. de R.L. de C.V. (en lo sucesivo &quot;Nqual5&quot;) opera
         Vigil, una GitHub App que analiza pull requests y genera confidence
-        scores basados en 8 signals independientes. Vigil automatiza la
-        verificación de test plans escritos en PRs, cerrando la brecha entre
-        &quot;lo que debería testearse&quot; y &quot;lo que realmente se
-        testea&quot;.
+        scores basados en 8 signals independientes. Vigil verifica que lo que
+        un PR declara corresponda con lo que el código realmente hace,
+        cerrando la brecha entre &quot;lo que se dice&quot; y &quot;lo que
+        se cambió&quot;.
       </P>
       <P>
-        Vigil es capaz de parsear test plans, ejecutar assertions contra
-        archivos del repositorio, verificar contratos entre APIs y consumidores,
-        escanear credenciales, analizar diffs, detectar gaps de cobertura y
-        generar items de verificación adicionales mediante inteligencia
-        artificial.
+        Vigil opera como una capa de análisis de solo lectura. Lee el título,
+        descripción y diff de cada PR, y ejecuta verificaciones automatizadas
+        mediante inteligencia artificial: verificación de claims, detección de
+        cambios no documentados, escaneo de credenciales, análisis de cobertura,
+        verificación de contratos entre APIs y análisis de diffs. Vigil nunca
+        ejecuta código, nunca modifica repositorios y nunca accede a sistemas
+        de producción.
       </P>
       <P>
         El código fuente de Vigil es open source bajo la licencia MIT. El
@@ -94,13 +96,14 @@ export default function TermsPage() {
           solicitud de cambio de código que Vigil analiza.
         </Li>
         <Li>
-          <strong className="text-text-primary">Test Plan:</strong> la lista de
-          verificaciones incluida en el cuerpo de un PR, generalmente en formato
-          de checkboxes.
+          <strong className="text-text-primary">Test Plan:</strong> lista
+          opcional de verificaciones en el cuerpo de un PR. Vigil la lee como
+          contexto pero no la ejecuta.
         </Li>
         <Li>
           <strong className="text-text-primary">Signal:</strong> cada uno de los
-          8 análisis independientes que Vigil ejecuta sobre un PR.
+          análisis independientes que Vigil ejecuta sobre un PR (actualmente 8
+          signals: 6 con peso en el score y 2 informativos).
         </Li>
         <Li>
           <strong className="text-text-primary">Confidence Score:</strong> la
@@ -199,57 +202,80 @@ export default function TermsPage() {
       <P>
         Vigil es una GitHub App que se instala en repositorios de código. Al
         detectar un nuevo pull request o una actualización, Vigil analiza el PR
-        y genera un confidence score basado en 8 signals independientes:
+        y genera un confidence score basado en 8 signals independientes (6 con
+        peso en el score, 2 informativos):
+      </P>
+      <P>
+        <strong className="text-text-primary">Signals con peso (determinan el score):</strong>
       </P>
       <UL>
         <Li>
-          <strong className="text-text-primary">CI Bridge:</strong> verifica el
-          estado de los checks de CI/CD del PR.
+          <strong className="text-text-primary">Claims Verifier:</strong>{" "}
+          compara las afirmaciones del título y descripción del PR contra los
+          cambios reales en el diff.
+        </Li>
+        <Li>
+          <strong className="text-text-primary">Undocumented Changes:</strong>{" "}
+          detecta cambios en el código que no fueron mencionados en la
+          descripción del PR.
         </Li>
         <Li>
           <strong className="text-text-primary">Credential Scan:</strong>{" "}
-          escanea el diff en busca de credenciales expuestas.
+          escanea el diff en busca de credenciales, API keys o secretos expuestos.
         </Li>
         <Li>
-          <strong className="text-text-primary">Test Execution:</strong> ejecuta
-          los items del test plan (assertions contra archivos, shell commands).
-        </Li>
-        <Li>
-          <strong className="text-text-primary">Plan Augmentor:</strong> genera
-          items de verificación adicionales que el test plan no incluyó.
+          <strong className="text-text-primary">Coverage Mapper:</strong> mapea
+          la cobertura de archivos modificados contra tests existentes en el
+          repositorio.
         </Li>
         <Li>
           <strong className="text-text-primary">Contract Checker:</strong>{" "}
           verifica compatibilidad entre APIs y consumidores cuando un PR toca
-          ambos.
+          ambos lados de un contrato.
         </Li>
         <Li>
           <strong className="text-text-primary">Diff Analyzer:</strong> analiza
-          el diff para detectar discrepancias con las afirmaciones del test plan.
-        </Li>
-        <Li>
-          <strong className="text-text-primary">Coverage Mapper:</strong> mapea
-          la cobertura de archivos modificados contra tests existentes.
-        </Li>
-        <Li>
-          <strong className="text-text-primary">Diff Analyzer:</strong> detecta
-          gaps entre lo que el PR cambia y lo que se document\u00f3.
+          el diff para detectar patrones de riesgo, inconsistencias y
+          discrepancias.
         </Li>
       </UL>
+      <P>
+        <strong className="text-text-primary">Signals informativos (peso 0, no afectan el score):</strong>
+      </P>
+      <UL>
+        <Li>
+          <strong className="text-text-primary">Risk Score:</strong> evalúa el
+          nivel de riesgo del PR basado en factores como cantidad de archivos,
+          tipo de cambios y áreas sensibles.
+        </Li>
+        <Li>
+          <strong className="text-text-primary">Description Generator:</strong>{" "}
+          genera una descripción sugerida cuando el PR no tiene descripción o
+          es genérica.
+        </Li>
+      </UL>
+      <P>
+        Vigil opera exclusivamente en modo de solo lectura a través del GitHub
+        API. No ejecuta código, no accede a sistemas de producción y no
+        modifica el repositorio del Usuario.
+      </P>
       <P>El Servicio se ofrece en los siguientes niveles:</P>
       <UL>
         <Li>
-          <strong className="text-text-primary">Free ($0/mes):</strong> 8
-          signals, PRs y repositorios ilimitados. Disponible indefinidamente.
+          <strong className="text-text-primary">Free ($0/mes):</strong> 6
+          signals con peso (Claims Verifier, Undocumented Changes, Credential
+          Scan, Coverage Mapper), repositorios ilimitados, límite de 3 PRs/hora
+          y 10 PRs/día. Disponible indefinidamente.
         </Li>
         <Li>
           <strong className="text-text-primary">Pro ($12/dev/mes):</strong>{" "}
-          todo lo de Free + comentarios inline, auto-approve, webhooks de notificaci\u00f3n.
+          todo lo de Free + Contract Checker, Diff Analyzer, comentarios inline,
+          auto-approve, 10 PRs/hora, sin límite diario.
         </Li>
         <Li>
           <strong className="text-text-primary">Team ($24/dev/mes):</strong>{" "}
-          todo lo de Pro + dashboard de equipo, @vigil commands, repo memory,
-          reglas de scoring personalizadas.
+          todo lo de Pro + 50 PRs/hora, dashboard de equipo, @vigil commands,
+          repo memory.
         </Li>
       </UL>
       <P>
@@ -368,11 +394,11 @@ export default function TermsPage() {
         siguientes funciones:
       </P>
       <UL>
-        <Li>Clasificación de items de test plans</Li>
-        <Li>Análisis de diffs y detección de discrepancias</Li>
-        <Li>Detección de gaps de cobertura</Li>
-        <Li>Generación de items de verificación adicionales (Plan Augmentor)</Li>
+        <Li>Verificación de claims del PR contra el diff (Claims Verifier)</Li>
+        <Li>Detección de cambios no documentados (Undocumented Changes)</Li>
+        <Li>Análisis de diffs y detección de discrepancias (Diff Analyzer)</Li>
         <Li>Verificación de contratos entre APIs y consumidores (Contract Checker)</Li>
+        <Li>Generación de descripciones sugeridas para PRs (Description Generator)</Li>
       </UL>
       <P>Limitaciones conocidas:</P>
       <UL>
@@ -386,7 +412,7 @@ export default function TermsPage() {
         </Li>
         <Li>
           Los resultados pueden variar según el contexto del PR, la calidad del
-          test plan y la complejidad del código.
+          descripción del PR y la complejidad del código.
         </Li>
         <Li>
           Vigil no garantiza la detección de todos los bugs, vulnerabilidades o
@@ -397,19 +423,11 @@ export default function TermsPage() {
         <strong className="text-text-primary">
           No entrenamiento de modelos:
         </strong>{" "}
-        Ni Vigil ni sus proveedores de LLM (Groq, en la configuración por
-        defecto) utilizan el código del Usuario para entrenar, refinar o
-        influenciar modelos de inteligencia artificial. El código se procesa
-        exclusivamente para generar los resultados del análisis y se descarta
-        inmediatamente después.
-      </P>
-      <P>
-        <strong className="text-text-primary">BYOLLM:</strong> Cuando el
-        Usuario configura su propio LLM mediante{" "}
-        <code className="font-mono text-sm text-accent">.vigil.yml</code>,
-        fragmentos del código del PR son enviados al proveedor de LLM
-        configurado por el Usuario (por ejemplo, OpenAI, Groq, Ollama). Vigil no
-        controla el manejo de datos por parte del proveedor del Usuario.
+        Ni Vigil ni sus proveedores de LLM (OpenAI, como proveedor principal,
+        y Groq como proveedor de respaldo automático) utilizan el código del
+        Usuario para entrenar, refinar o influenciar modelos de inteligencia
+        artificial. El código se procesa exclusivamente para generar los
+        resultados del análisis y se descarta inmediatamente después.
       </P>
       <P>
         La Empresa no será responsable de pérdidas o daños derivados del uso de
@@ -739,7 +757,7 @@ export default function TermsPage() {
         Términos no constituirá una renuncia a dicho derecho.
       </P>
       <P>
-        Fecha de entrada en vigor: Estos Términos entran en vigor el 17 de marzo
+        Fecha de entrada en vigor: Estos Términos entran en vigor el 21 de marzo
         de 2026.
       </P>
     </div>

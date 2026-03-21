@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         Aviso de Privacidad
       </h1>
       <p className="text-sm text-text-muted mb-4">
-        Última actualización: 17 de marzo de 2026
+        Última actualización: 21 de marzo de 2026
       </p>
       <p className="text-xs text-text-muted mb-12 italic">
         La versión en español es la versión oficial y vinculante. Pronto estará
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
       </UL>
       <P>
         Vigil es una GitHub App que analiza pull requests y genera confidence
-        scores basados en 8 signals independientes. Al utilizar Vigil, el
+        scores basados en 8 signals independientes (6 con peso en el score, 2 informativos). Al utilizar Vigil, el
         servicio accede temporalmente a datos del repositorio del Usuario (PR
         body, diff, file tree) para realizar el análisis. La protección de dicha
         información es prioritaria para nosotros.
@@ -108,7 +108,7 @@ export default function PrivacyPage() {
         API:
       </P>
       <UL>
-        <Li>PR body (test plan).</Li>
+        <Li>PR title, body (descripción) y test plan (si existe).</Li>
         <Li>PR diff.</Li>
         <Li>File tree del repositorio.</Li>
       </UL>
@@ -118,11 +118,9 @@ export default function PrivacyPage() {
           almacenados.
         </strong>{" "}
         Se descartan tras completar el análisis del PR. Ni Vigil ni su
-        proveedor de LLM por defecto (Groq) utilizan el código del Usuario para
+        proveedor de LLM principal (OpenAI GPT-5.4-mini, con Groq como respaldo automático) utilizan el código del Usuario para
         entrenar, refinar o influenciar modelos de inteligencia artificial.
-        Cuando el Usuario configura BYOLLM, el tratamiento de los datos por
-        parte del proveedor elegido se rige por los términos y políticas de
-        dicho proveedor.
+        
       </P>
 
       <Sub>3.3 Metadata almacenada</Sub>
@@ -230,8 +228,12 @@ export default function PrivacyPage() {
           código donde se instala la App y se accede a los datos de PRs.
         </Li>
         <Li>
-          <strong className="text-text-primary">Groq:</strong> proveedor de LLM
-          por defecto para análisis (diff, gaps, classification).
+          <strong className="text-text-primary">OpenAI:</strong> proveedor
+          principal de LLM para análisis de PRs (GPT-5.4-mini).
+        </Li>
+        <Li>
+          <strong className="text-text-primary">Groq:</strong> proveedor de LLM de
+          respaldo automático cuando OpenAI no está disponible.
         </Li>
         <Li>
           <strong className="text-text-primary">Contabo / Dokploy:</strong>{" "}
@@ -242,12 +244,7 @@ export default function PrivacyPage() {
           pagos.
         </Li>
       </UL>
-      <P>
-        Cuando el Usuario configura BYOLLM, fragmentos de código son enviados al
-        proveedor de LLM configurado por el Usuario. Vigil no es responsable del
-        manejo de datos por parte de dicho proveedor.
-      </P>
-
+      
       <Sub>6.2 Transferencias internacionales</Sub>
       <P>
         Algunos datos pueden ser transferidos fuera de México. En estos casos,
@@ -375,7 +372,7 @@ export default function PrivacyPage() {
       <SectionTitle>11. Uso Permitido y Responsabilidad</SectionTitle>
       <P>
         Los usuarios deben utilizar Vigil exclusivamente con fines legítimos
-        relacionados con el análisis de código y la verificación de test plans.
+        relacionados con el análisis de pull requests y la verificación de código.
         Está prohibido utilizar el servicio para evaluar personas, enviar código
         malicioso, o abusar del GitHub API. Para detalle completo, consulte la
         Sección 5 de los{" "}
@@ -489,7 +486,7 @@ export default function PrivacyPage() {
       {/* --- S16: Vigencia --- */}
       <SectionTitle>16. Vigencia y Última Actualización</SectionTitle>
       <P>
-        Este Aviso de Privacidad entra en vigor el 17 de marzo de 2026 y
+        Este Aviso de Privacidad entra en vigor el 21 de marzo de 2026 y
         permanecerá vigente mientras se mantengan las finalidades del
         tratamiento de datos aquí descritas.
       </P>
@@ -499,6 +496,11 @@ export default function PrivacyPage() {
           <strong className="text-text-primary">17 de marzo de 2026:</strong>{" "}
           Publicación de la versión inicial del Aviso de Privacidad de Vigil,
           adaptado del marco legal de NQUAL5.
+        </Li>
+        <Li>
+          <strong className="text-text-primary">21 de marzo de 2026:</strong>{" "}
+          Actualización: señales v2, proveedor LLM principal (OpenAI), eliminación
+          de referencias a BYOLLM (funcionalidad deprecada).
         </Li>
       </UL>
       <P>
