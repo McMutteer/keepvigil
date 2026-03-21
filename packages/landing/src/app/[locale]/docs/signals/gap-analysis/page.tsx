@@ -4,6 +4,7 @@ import { DocsLink } from "@/components/docs/docs-link";
 export const metadata: Metadata = {
   title: "Gap Analysis (Removed) | Vigil Docs",
   description: "The Gap Analysis signal was removed in Vigil v5.0.",
+  robots: { index: false, follow: true },
 };
 
 export default function GapAnalysisPage() {
@@ -21,7 +22,7 @@ export default function GapAnalysisPage() {
         <DocsLink href="/docs/signals" className="text-accent hover:underline">
           Signals Overview
         </DocsLink>{" "}
-        for the current set of 6 verification signals.
+        for the current set of 8 verification signals.
       </p>
     </>
   );
