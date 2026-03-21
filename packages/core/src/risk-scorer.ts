@@ -12,6 +12,7 @@
 
 import type { Signal, SignalDetail } from "./types.js";
 import { createSignal } from "./score-engine.js";
+import { isTestFile, isNonSource } from "./file-patterns.js";
 import { extractChangedFilesWithStatus, type ChangedFile } from "./coverage-mapper.js";
 
 // ---------------------------------------------------------------------------
@@ -65,32 +66,7 @@ const infraPatterns = [
   /\bhelm\b/i,
 ];
 
-const testFilePatterns = [
-  /\.test\.[jt]sx?$/,
-  /\.spec\.[jt]sx?$/,
-  /\/__tests__\//,
-  /\/test_[^/]+\.py$/,
-  /\/tests?\//,
-  /_test\.go$/,
-];
-
-const nonSourcePatterns = [
-  /\.md$/i,
-  /\.json$/i,
-  /\.ya?ml$/i,
-  /\.toml$/i,
-  /\.lock$/i,
-  /\.lockb$/i,
-  /\.env/i,
-  /\.gitignore$/,
-  /\.eslintrc/,
-  /\.prettierrc/,
-  /tsconfig/i,
-  /vitest\.config/i,
-  /jest\.config/i,
-  /^LICENSE/i,
-  /^Makefile$/i,
-];
+// Test file and non-source patterns imported from shared file-patterns.ts
 
 // ---------------------------------------------------------------------------
 // Diff content patterns (scanned on added lines only)
@@ -121,14 +97,6 @@ function classifyFile(filePath: string): string[] {
   }
 
   return categories;
-}
-
-function isTestFile(filePath: string): boolean {
-  return testFilePatterns.some((p) => p.test(filePath));
-}
-
-function isNonSource(filePath: string): boolean {
-  return nonSourcePatterns.some((p) => p.test(filePath));
 }
 
 /** Check if a file is a runtime source file (not test, not config/docs). */

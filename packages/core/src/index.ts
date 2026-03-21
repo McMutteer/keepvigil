@@ -9,3 +9,4 @@ export * from "./errors.js";
 export * from "./smart-reader.js";
 export * from "./diff-position-mapper.js";
 export * from "./risk-scorer.js";
+export * from "./file-patterns.js";

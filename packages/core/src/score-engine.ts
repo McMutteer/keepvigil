@@ -7,6 +7,9 @@
 
 import type { ConfidenceScore, PipelineMode, Signal, SignalDetail, SignalId, ScoreRecommendation } from "./types.js";
 
+/** Signals that hard-cap the score when they fail (deterministic failures only) */
+const CRITICAL_SIGNALS: ReadonlySet<string> = new Set(["credential-scan"]);
+
 /**
  * Default weights — v1+v2 mode (PR has a test plan).
  * Kept as the primary export for backward compatibility.
@@ -97,7 +100,6 @@ export function computeScore(signals: Signal[]): ConfidenceScore {
 
   // Failure cap only applies for critical deterministic signals (credential leaks).
   // Non-critical failures (coverage mapper) inform but don't hard-cap.
-  const CRITICAL_SIGNALS: Set<string> = new Set(["credential-scan"]);
   const hasCriticalFailure = signals.some((s) => !s.passed && !s.requiresLLM && CRITICAL_SIGNALS.has(s.id));
   if (hasCriticalFailure && score > FAILURE_CAP) {
     score = FAILURE_CAP;
