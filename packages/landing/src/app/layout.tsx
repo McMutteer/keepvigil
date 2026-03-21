@@ -23,7 +23,11 @@ export const metadata: Metadata = {
     "Install the GitHub App. Open a PR. Get verification. Vigil checks that your code changes match your PR description — claims verified, undocumented changes surfaced, impact analyzed.",
   metadataBase: new URL("https://keepvigil.dev"),
   icons: {
-    icon: "/brand/favicon.svg",
+    icon: [
+      { url: "/brand/favicon.ico", sizes: "32x32" },
+      { url: "/brand/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/brand/apple-touch-icon.png",
   },
   openGraph: {
     title: "Vigil — Verifies that your PR does what it says it does",
