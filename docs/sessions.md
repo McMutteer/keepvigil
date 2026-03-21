@@ -167,6 +167,42 @@ summary: "Full navigation redesign: route groups, persistent navbar/footer, Docs
 related: [2026-03-21-admin-panel-blog-launch-prep]
 ---
 
+### La Navegación Reimaginada
+
+**Hilo:** Con el admin, blog y legal completos, la landing necesitaba coherencia en navegación — rutas inconsistentes, navbar que aparecía/desaparecía, docs sin sidebar persistente. Se diseñó y ejecutó en una sesión.
+
+**Lo que pasó:** Empezó como un brainstorm sobre UX y terminó en un redesign completo con route groups de Next.js. El patrón `(marketing)` vs `(docs)` separó layouts limpiamente. El mega-dropdown del navbar se construyó responsive con keyboard nav. La mayor sorpresa fue que breadcrumbs requerían un client component para leer pathname — en static export funciona pero hay un flash.
+
+**Resultado:** PR #125 mergeado. Route groups, DocsNavbar persistente, breadcrumbs, mega-dropdown, mobile CTA, page transitions.
+
+---
+
+---
+id: 2026-03-21-la-auditoría-y-el-pivote
+type: feat
+project: vigil
+branch: main
+pr: 120,121,122,123,124
+date: 2026-03-21
+tags: [security-audit, reliability, posthog, google-ads, growth-pivot, testing, deploy]
+summary: "5-agent security audit → 5 phases of fixes → growth operator pivot: PostHog + Google Ads live. 865 tests. First ad campaign launched."
+related: [2026-03-21-admin-panel-blog-launch-prep, 2026-03-21-navigation-redesign]
+---
+
+### La Auditoría y el Pivote
+
+**Hilo:** Con el producto técnicamente completo y 0 usuarios pagando, la sesión arrancó buscando mejoras de código y terminó en un cambio de rol: de ingeniero a growth operator.
+
+**Lo que pasó:** Lanzamos 5 agentes en paralelo para auditar seguridad, core quality, github services, frontend, y tests/CI. Regresaron con 57 findings. Los organizamos en 5 fases y ejecutamos las 5 en una sesión: timeout leak en checkout, race condition en pipeline LLM tracking, HTTP security headers, admin IDs a env var, per-signal timeouts de 60s, graceful shutdown con drain de requests, shared file patterns, 19 tests nuevos (865 total), noindex en docs deprecated. Todo en 4 PRs mergeados + deployed.
+
+Después vino la reflexión honesta: "¿pagarían los clientes por esto?" El free tier regala demasiado. El rename a CodeVigil se descartó — derivativo. El usuario reveló lo que realmente necesitaba: no un panel de marketing sino que **yo operara** su growth. "Quiero que tú configures las plataformas y solo me digas dónde meter dinero."
+
+PostHog se integró en 5 minutos (client component, auto-capture). Google Ads fue guiado paso a paso — keywords, copy, títulos de 30 chars, presupuesto $10/día. El Google tag no funcionó con `<head>` ni `next/script` en static export — la solución fue inyectar via `document.createElement` dentro del PostHog provider (client component que sí hydrata).
+
+**Resultado:** PRs #120-#124 mergeados y deployed. 865 tests. PostHog live. Google Ads campaign lanzada ($10/día, 8 search themes, US/UK/DE/CA/NL). ADMIN_USER_IDS configurado en servidor. Security headers verificados en producción.
+
+**Aprendido:** En Next.js static export, ni `<head>` manual ni `next/script` funcionan para third-party scripts. La única vía es inyección DOM en un client component via `useEffect` + `document.createElement`. También: el producto puede estar over-engineered y aún no estar listo para producción — falta la prueba E2E completa (install → verify → pay → cancel).
+
 ### La Brújula que Faltaba
 
 **Hilo:** El landing estaba completo — 8 signals, per-seat pricing, blog, docs, admin. Pero había un problema básico que nadie había notado: la navbar solo existía en la home page. Si llegabas a /pricing desde Google, no había forma de navegar a ningún lado sin darle atrás en el browser. Los docs estaban completamente aislados. Era como un edificio con puertas solo en la planta baja.
