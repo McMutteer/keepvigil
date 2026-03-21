@@ -152,3 +152,27 @@ related: [2026-03-20-el-motor-nuevo]
 **Resultado:** 9 PRs mergeados y deployed. Admin panel live en /admin/. Blog live en /blog/dogfooding. Legal actualizado. README actualizado. Content marketing drafts en repo. Marketplace listing re-submitted con copy correcto. 20+ branches purgadas. Repo limpio: solo main.
 
 **Aprendido:** El patrón "write via bash/python + git add inmediato" es la única defensa confiable contra el linter/VSCode phantom revert. Para archivos grandes (legal pages), python con string replacement es más confiable que sed/awk por el manejo de unicode. Los deploys al servidor son el bottleneck real — considerar CI/CD o build cache para reducir de 15 min a <5.
+
+---
+
+---
+id: 2026-03-21-navigation-redesign
+type: feat
+project: vigil
+branch: main
+pr: 125
+date: 2026-03-21
+tags: [navigation, route-groups, landing, ux-redesign, brainstorm, next-js-architecture]
+summary: "Full navigation redesign: route groups, persistent navbar/footer, DocsNavbar, breadcrumbs, mega-dropdown, mobile CTA, page transitions."
+related: [2026-03-21-admin-panel-blog-launch-prep]
+---
+
+### La Brújula que Faltaba
+
+**Hilo:** El landing estaba completo — 8 signals, per-seat pricing, blog, docs, admin. Pero había un problema básico que nadie había notado: la navbar solo existía en la home page. Si llegabas a /pricing desde Google, no había forma de navegar a ningún lado sin darle atrás en el browser. Los docs estaban completamente aislados. Era como un edificio con puertas solo en la planta baja.
+
+**Lo que pasó:** Empezamos con /brainstorm completo — visual companion en el browser para mostrar mockups de cada decisión. 6 preguntas con mockups interactivos: alcance (rediseño completo), estilo navbar (dropdowns mejorados), scroll behavior (glassmorphism), docs integration (navbar compacta con "Back to site"), footer (standard SaaS 4 columnas), y 6 extras de UX donde el usuario no entendía las opciones hasta que las mostré visualmente con antes/después. La implementación fue limpia — el patrón de Next.js route groups `(marketing)` y `(docs)` resolvió el problema de raíz moviendo la navbar al layout en vez de hardcodearla en cada página. 44 archivos tocados pero la mayoría fueron renames (git detectó 100% de los moves). El único ajuste fino fue coordinar z-indexes entre DocsNavbar, sidebar mobile, y breadcrumbs — 3 capas que tienen que coexistir sin taparse. Build, 865 tests, lint, typecheck — todo verde a la primera. Vigil dio 89/100 con 9/9 claims verificadas.
+
+**Resultado:** PR #125 mergeado. 5 componentes nuevos (Footer, DocsNavbar, Breadcrumbs, BackToTop, MobileFloatingCta). Navbar con mega-dropdown de 3 columnas y active page indicator. Navegación persistente en todas las páginas del sitio.
+
+**Aprendido:** (1) Route groups de Next.js App Router son la solución correcta para "misma URL, distinto layout" — los paréntesis no afectan la URL pero permiten layouts separados para marketing vs docs. (2) El visual companion del brainstorm fue decisivo — cuando el usuario dijo "no entiendo" en las opciones de UX, mostrar antes/después con mockups cambió la conversación de "no sé" a "ah, sí quiero eso". (3) Para PRs grandes de frontend (44 archivos), la clave es que git detecte los renames — mover archivos con `mv` antes de editarlos mantiene el diff limpio y el review manejable.
