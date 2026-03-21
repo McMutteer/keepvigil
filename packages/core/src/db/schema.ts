@@ -99,6 +99,8 @@ export const subscriptions = pgTable("subscriptions", {
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }).notNull(),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   plan: varchar("plan", { length: 50 }).notNull().default("free"),
+  /** Number of seats (developers) in the subscription */
+  seats: integer("seats").notNull().default(1),
   status: varchar("status", { length: 50 }).notNull().default("active"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

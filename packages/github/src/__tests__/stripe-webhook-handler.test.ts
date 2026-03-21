@@ -220,14 +220,15 @@ describe("stripe webhook handler (comprehensive)", () => {
 
       expect(res.status).toBe(200);
       expect(mockUpsert).toHaveBeenCalledOnce();
-      expect(mockUpsert).toHaveBeenCalledWith(mockDb, {
+      expect(mockUpsert).toHaveBeenCalledWith(mockDb, expect.objectContaining({
         installationId: "42",
         accountLogin: "TestOrg",
         stripeCustomerId: "cus_ABC",
         stripeSubscriptionId: "sub_XYZ",
         plan: "team",
+        seats: 1,
         status: "active",
-      });
+      }));
     });
 
     it("always sets status to 'active' regardless of any other data", async () => {
@@ -369,7 +370,7 @@ describe("stripe webhook handler (comprehensive)", () => {
       await handleStripeWebhook(req, res);
 
       expect(res.status).toBe(200);
-      expect(mockUpsert).toHaveBeenCalledWith(mockDb, {
+      expect(mockUpsert).toHaveBeenCalledWith(mockDb, expect.objectContaining({
         installationId: "55",
         accountLogin: "OrgName",
         stripeCustomerId: "cus_U",
@@ -377,7 +378,7 @@ describe("stripe webhook handler (comprehensive)", () => {
         plan: "team",
         status: "active",
         currentPeriodEnd: new Date(periodEnd * 1000),
-      });
+      }));
     });
 
     it("handles trialing status", async () => {

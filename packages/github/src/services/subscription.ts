@@ -35,16 +35,20 @@ export async function upsertSubscription(
     stripeCustomerId: string;
     stripeSubscriptionId?: string | null;
     plan: Plan;
+    seats?: number;
     status: string;
     currentPeriodEnd?: Date | null;
   },
 ): Promise<void> {
+  const seats = data.seats ?? 1;
+
   await db.insert(schema.subscriptions).values({
     installationId: data.installationId,
     accountLogin: data.accountLogin,
     stripeCustomerId: data.stripeCustomerId,
     stripeSubscriptionId: data.stripeSubscriptionId ?? null,
     plan: data.plan,
+    seats,
     status: data.status,
     currentPeriodEnd: data.currentPeriodEnd ?? null,
   }).onConflictDoUpdate({
@@ -53,11 +57,12 @@ export async function upsertSubscription(
       stripeCustomerId: data.stripeCustomerId,
       stripeSubscriptionId: data.stripeSubscriptionId ?? null,
       plan: data.plan,
+      seats,
       status: data.status,
       currentPeriodEnd: data.currentPeriodEnd ?? null,
       updatedAt: new Date(),
     },
   });
 
-  log.info({ installationId: data.installationId, plan: data.plan, status: data.status }, "Subscription upserted");
+  log.info({ installationId: data.installationId, plan: data.plan, seats, status: data.status }, "Subscription upserted");
 }

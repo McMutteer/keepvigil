@@ -17,6 +17,7 @@ export async function handleCheckout(req: IncomingMessage, res: ServerResponse, 
   const plan = url.searchParams.get("plan") || "";
   const installationId = url.searchParams.get("installation_id") || "";
   const accountLogin = url.searchParams.get("account") || "";
+  const seats = Math.max(1, Math.min(100, parseInt(url.searchParams.get("seats") || "1", 10) || 1));
 
   if (!VALID_PLANS.has(plan)) {
     res.writeHead(400, { "Content-Type": "application/json" });
@@ -49,10 +50,10 @@ export async function handleCheckout(req: IncomingMessage, res: ServerResponse, 
       },
       body: JSON.stringify({
         mode: "subscription",
-        lineItems: [{ price: priceId, quantity: 1 }],
-        successUrl: `https://keepvigil.dev/checkout/success?plan=${encodeURIComponent(plan)}`,
+        lineItems: [{ price: priceId, quantity: seats }],
+        successUrl: `https://keepvigil.dev/checkout/success?plan=${encodeURIComponent(plan)}&seats=${seats}`,
         cancelUrl: "https://keepvigil.dev/#pricing",
-        metadata: { installationId, accountLogin, plan },
+        metadata: { installationId, accountLogin, plan, seats: String(seats) },
       }),
       signal: controller.signal,
     });
@@ -75,7 +76,7 @@ export async function handleCheckout(req: IncomingMessage, res: ServerResponse, 
 
     res.writeHead(303, { Location: result.data.url });
     res.end();
-    log.info({ plan, installationId }, "Checkout session created, redirecting to Stripe");
+    log.info({ plan, installationId, seats }, "Checkout session created, redirecting to Stripe");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     log.error({ error: msg }, "Checkout error");

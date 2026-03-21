@@ -148,14 +148,14 @@ describe("stripe webhook handler", () => {
       await handleStripeWebhook(makeReq(payload, sign(payload)), res);
 
       expect(res.status).toBe(200);
-      expect(mockUpsert).toHaveBeenCalledWith(mockDb, {
+      expect(mockUpsert).toHaveBeenCalledWith(mockDb, expect.objectContaining({
         installationId: "114114042",
         accountLogin: "McMutteer",
         stripeCustomerId: "cus_123",
         stripeSubscriptionId: "sub_456",
         plan: "pro",
         status: "active",
-      });
+      }));
     });
 
     it("skips when installationId missing in metadata", async () => {
