@@ -62,25 +62,33 @@ function LanguageSwitcher({ locale }: { locale: Locale }) {
 }
 
 function MegaDropdown({
+  id,
   label,
   isActive,
+  openId,
+  onOpen,
+  onClose,
   children,
 }: {
+  id: string;
   label: string;
   isActive: boolean;
+  openId: string | null;
+  onOpen: (id: string) => void;
+  onClose: () => void;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const open = openId === id;
 
   const handleEnter = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setOpen(true);
-  }, []);
+    onOpen(id);
+  }, [id, onOpen]);
 
   const handleLeave = useCallback(() => {
-    timeoutRef.current = setTimeout(() => setOpen(false), 150);
-  }, []);
+    timeoutRef.current = setTimeout(() => onClose(), 150);
+  }, [onClose]);
 
   useEffect(() => {
     return () => {
@@ -153,6 +161,7 @@ export function Navbar({
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const pathname = usePathname();
   const t = dict.nav;
 
@@ -212,7 +221,7 @@ export function Navbar({
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-1">
             {/* Product mega-dropdown */}
-            <MegaDropdown label={t.product} isActive={isProductActive}>
+            <MegaDropdown id="product" label={t.product} isActive={isProductActive} openId={openDropdown} onOpen={setOpenDropdown} onClose={() => setOpenDropdown(null)}>
               <div className="flex gap-0 p-4 min-w-[480px]">
                 <div className="flex-1 pr-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2.5">
@@ -311,32 +320,58 @@ export function Navbar({
             </MegaDropdown>
 
             {/* Docs dropdown */}
-            <MegaDropdown label={t.docs} isActive={isDocsActive}>
-              <div className="p-3 min-w-[200px]">
-                <Link
-                  href={`/${locale}/docs/getting-started`}
-                  className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-md transition-colors"
-                >
-                  {t.docsLinks.gettingStarted}
-                </Link>
-                <Link
-                  href={`/${locale}/docs/configuration`}
-                  className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-md transition-colors"
-                >
-                  {t.docsLinks.configuration}
-                </Link>
-                <Link
-                  href={`/${locale}/docs/signals`}
-                  className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-md transition-colors"
-                >
-                  Signals
-                </Link>
-                <Link
-                  href={`/${locale}/docs/security`}
-                  className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-md transition-colors"
-                >
-                  {t.docsLinks.security}
-                </Link>
+            <MegaDropdown id="docs" label={t.docs} isActive={isDocsActive} openId={openDropdown} onOpen={setOpenDropdown} onClose={() => setOpenDropdown(null)}>
+              <div className="flex gap-0 p-4 min-w-[340px]">
+                <div className="flex-1 pr-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2.5">
+                    Guides
+                  </p>
+                  <div className="space-y-1">
+                    <Link
+                      href={`/${locale}/docs/getting-started`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      {t.docsLinks.gettingStarted}
+                      <span className="block text-[11px] text-text-muted">
+                        Install and first PR
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/${locale}/docs/configuration`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      {t.docsLinks.configuration}
+                      <span className="block text-[11px] text-text-muted">
+                        Customize .vigil.yml
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+                <div className="flex-1 border-l border-white/[0.06] pl-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2.5">
+                    Reference
+                  </p>
+                  <div className="space-y-1">
+                    <Link
+                      href={`/${locale}/docs/signals`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      Signals
+                      <span className="block text-[11px] text-text-muted">
+                        All 8 verification signals
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/${locale}/docs/security`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      {t.docsLinks.security}
+                      <span className="block text-[11px] text-text-muted">
+                        Data handling and privacy
+                      </span>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </MegaDropdown>
 

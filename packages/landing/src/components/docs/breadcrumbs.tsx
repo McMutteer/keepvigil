@@ -62,10 +62,10 @@ export function Breadcrumbs() {
 
   return (
     <>
-      <div className="bg-bg-deep/50 border-b border-white/[0.03] px-4 sm:px-6 lg:pl-[284px]">
+      <div className="border-b border-white/[0.06] px-6 lg:px-16">
         <nav
           aria-label="Breadcrumb"
-          className="max-w-[720px] py-2"
+          className="max-w-[720px] py-2.5"
         >
           <ol className="flex items-center gap-1.5 text-xs">
             {crumbs.map((crumb, i) => {
