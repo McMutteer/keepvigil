@@ -47,17 +47,17 @@ export function useExecutions(installationId: number | null, page = 1) {
   return { data, loading, refetch: fetch };
 }
 
-export function useExecutionDetail(id: string | undefined) {
+export function useExecutionDetail(id: string | undefined, installationId: number | null) {
   const [data, setData] = useState<ExecutionDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !installationId) return;
     setLoading(true);
-    api<ExecutionDetail>(`/dashboard/executions/${id}`)
+    api<ExecutionDetail>(`/dashboard/executions/${id}?installation_id=${installationId}`)
       .then(setData)
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, installationId]);
 
   return { data, loading };
 }

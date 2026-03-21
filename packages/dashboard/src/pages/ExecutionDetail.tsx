@@ -1,11 +1,13 @@
 import { useParams, Link } from "react-router-dom";
+import type { Session } from "../hooks/useSession";
 import { useExecutionDetail } from "../hooks/useExecutions";
 import { ScoreBadge } from "../components/ScoreBadge";
 import { SignalBar } from "../components/SignalBar";
 
-export function ExecutionDetail() {
+export function ExecutionDetail({ session }: { session: Session }) {
   const { id } = useParams<{ id: string }>();
-  const { data, loading } = useExecutionDetail(id);
+  const installationId = session.installationIds[0] ?? 0;
+  const { data, loading } = useExecutionDetail(id, installationId);
 
   if (loading) {
     return <div className="text-text-muted py-8">Loading...</div>;
