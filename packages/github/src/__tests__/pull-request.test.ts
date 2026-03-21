@@ -52,7 +52,7 @@ function makeContext(overrides: {
     octokit: {
       rest: {
         checks: { update: mockChecksUpdate },
-        repos: { getContent: vi.fn().mockRejectedValue(new Error("404")) },
+        repos: { getContent: vi.fn().mockRejectedValue(Object.assign(new Error("Not Found"), { status: 404 })) },
       },
     } as unknown,
     log: {

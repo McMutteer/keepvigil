@@ -1485,7 +1485,7 @@ describe("reportResults — execution persistence", () => {
     });
 
     // Let the fire-and-forget promise settle
-    await new Promise((r) => setTimeout(r, 10));
+    await vi.waitFor(() => {});
 
     expect(mockDb.insert).toHaveBeenCalledOnce();
     const insertedValues = mockDb._valuesFn.mock.calls[0][0];
@@ -1513,7 +1513,7 @@ describe("reportResults — execution persistence", () => {
       executionResults: [],
     });
 
-    await new Promise((r) => setTimeout(r, 10));
+    await vi.waitFor(() => {});
     expect(mockDb.insert).not.toHaveBeenCalled();
   });
 
@@ -1536,7 +1536,7 @@ describe("reportResults — execution persistence", () => {
       jobId: "12345-org-repo-7",
     });
 
-    await new Promise((r) => setTimeout(r, 10));
+    await vi.waitFor(() => {});
 
     const insertedValues = mockDb._valuesFn.mock.calls[0][0];
     expect(insertedValues.status).toBe("failed");
@@ -1567,7 +1567,7 @@ describe("reportResults — execution persistence", () => {
       jobId: "12345-org-repo-7",
     });
 
-    await new Promise((r) => setTimeout(r, 10));
+    await vi.waitFor(() => {});
     expect(mockDb.insert).toHaveBeenCalledOnce();
   });
 });
