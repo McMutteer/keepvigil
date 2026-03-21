@@ -30,6 +30,10 @@ function IconImpactAnalysis() {
   return <SignalIcon><path d="M12 3l8 4v5c0 5.25-3.5 9.74-8 11-4.5-1.26-8-5.75-8-11V7l8-4z" /></SignalIcon>;
 }
 
+function IconDeveloperAssist() {
+  return <SignalIcon><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z" /></SignalIcon>;
+}
+
 function LayerCard({
   icon,
   name,
@@ -45,26 +49,15 @@ function LayerCard({
   signals: readonly { readonly name: string; readonly description: string }[];
   index: number;
 }) {
-  const isPro = tier === "Pro";
-
   return (
     <ScrollReveal delay={index * 200}>
-      <div
-        className={`bg-bg-surface rounded-[12px] p-6 ${
-          isPro ? "border border-accent/20" : "border-subtle"
-        }`}
-      >
+      <div className="bg-bg-surface rounded-[12px] p-6 border-subtle">
         {/* Layer header */}
         <div className="flex items-center gap-3 mb-3">
-          <span className={isPro ? "text-accent" : "text-text-muted"}>{icon}</span>
+          <span className="text-accent">{icon}</span>
           <span className="font-mono text-[15px] text-text-primary">{name}</span>
-          <span
-            className={`ml-auto text-[10px] font-medium uppercase tracking-[0.05em] px-2 py-0.5 rounded-full ${
-              isPro
-                ? "text-accent bg-accent/10"
-                : "text-text-muted bg-white/[0.04]"
-            }`}
-          >
+          <span className="ml-auto text-[10px] font-medium uppercase tracking-[0.05em] px-2 py-0.5 rounded-full text-text-muted bg-white/[0.04]">
+
             {tier}
           </span>
         </div>
@@ -97,6 +90,7 @@ export function Signals({ dict }: { dict: Dictionary }) {
   const layers = [
     { icon: <IconClaimsVerification />, ...t.layers.trustVerification },
     { icon: <IconImpactAnalysis />, ...t.layers.deepAnalysis },
+    { icon: <IconDeveloperAssist />, ...t.layers.developerAssist },
   ];
 
   return (
@@ -113,7 +107,7 @@ export function Signals({ dict }: { dict: Dictionary }) {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {layers.map((layer, i) => (
             <LayerCard key={i} {...layer} index={i} />
           ))}
