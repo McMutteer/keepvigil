@@ -76,6 +76,35 @@ function pushSignal(signals: Signal[], signal: Signal, weight: number): void {
   signals.push({ ...signal, weight });
 }
 
+/** Per-signal timeout — prevents a hung LLM call from blocking the entire pipeline */
+const SIGNAL_TIMEOUT_MS = 60_000;
+
+async function withTimeout<T>(promise: Promise<T>, signalName: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`Signal "${signalName}" timed out after ${SIGNAL_TIMEOUT_MS / 1000}s`)), SIGNAL_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
+/** Run a signal with timeout and individual error handling. Returns null on failure. */
+async function safeRunSignal<T>(
+  signalName: string,
+  fn: () => Promise<T>,
+): Promise<T | null> {
+  try {
+    return await withTimeout(fn(), signalName);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error({ signal: signalName, error: msg }, "Signal failed");
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Coordinator
 // ---------------------------------------------------------------------------
@@ -170,30 +199,43 @@ async function _runPipeline(
     if (diff) {
       // Claims Verifier (free tier)
       currentSignalId = "claims-verifier";
-      const claimsSignal = await verifyClaims({ prTitle, prBody, diff, llm });
-      pushSignal(signals, claimsSignal, weights["claims-verifier"]);
-      log.info({ signalId: claimsSignal.id, score: claimsSignal.score, passed: claimsSignal.passed }, "Claims verifier complete");
+      const claimsSignal = await safeRunSignal("claims-verifier", () =>
+        verifyClaims({ prTitle, prBody, diff: diff!, llm }),
+      );
+      if (claimsSignal) {
+        pushSignal(signals, claimsSignal, weights["claims-verifier"]);
+        log.info({ signalId: claimsSignal.id, score: claimsSignal.score, passed: claimsSignal.passed }, "Claims verifier complete");
+      }
 
       // Description Generator (free tier, only when body is empty/generic or no claims found)
-      const claimsFound = claimsSignal.details.filter((d) => d.status !== "skip").length;
+      const claimsFound = claimsSignal?.details.filter((d) => d.status !== "skip").length ?? 0;
       if (shouldGenerate(prBody, prTitle, claimsFound)) {
-        const descSignal = await generateDescription({ prTitle, prBody, diff, llm, claimsFound });
-        pushSignal(signals, descSignal, weights["description-generator"]);
-        log.info({ signalId: descSignal.id, score: descSignal.score, generated: descSignal.details.some((d) => d.label === "generated-description") }, "Description generator complete");
+        currentSignalId = "description-generator";
+        const descSignal = await safeRunSignal("description-generator", () =>
+          generateDescription({ prTitle, prBody, diff: diff!, llm, claimsFound }),
+        );
+        if (descSignal) {
+          pushSignal(signals, descSignal, weights["description-generator"]);
+          log.info({ signalId: descSignal.id, score: descSignal.score, generated: descSignal.details.some((d) => d.label === "generated-description") }, "Description generator complete");
+        }
       }
 
       // Undocumented Changes (free tier)
       currentSignalId = "undocumented-changes";
-      const undocSignal = await detectUndocumentedChanges({ prTitle, prBody, diff, llm });
-      pushSignal(signals, undocSignal, weights["undocumented-changes"]);
-      log.info({ signalId: undocSignal.id, score: undocSignal.score, passed: undocSignal.passed, findings: undocSignal.details.length }, "Undocumented changes complete");
+      const undocSignal = await safeRunSignal("undocumented-changes", () =>
+        detectUndocumentedChanges({ prTitle, prBody, diff: diff!, llm }),
+      );
+      if (undocSignal) {
+        pushSignal(signals, undocSignal, weights["undocumented-changes"]);
+        log.info({ signalId: undocSignal.id, score: undocSignal.score, passed: undocSignal.passed, findings: undocSignal.details.length }, "Undocumented changes complete");
+      }
 
-      // Credential Scan (free tier)
+      // Credential Scan (free tier — synchronous, no timeout needed)
       const credSignal = scanCredentials(diff);
       pushSignal(signals, credSignal, weights["credential-scan"]);
       log.info({ signalId: credSignal.id, score: credSignal.score, passed: credSignal.passed, findings: credSignal.details.length }, "Credential scan complete");
 
-      // Coverage Mapper (free tier)
+      // Coverage Mapper (free tier — synchronous except file list fetch)
       const changedFiles = extractChangedFilesWithStatus(diff);
       const repoFiles = await fetchRepoFileList({ octokit, owner, repo, headSha });
       const coverageSignal = mapCoverage(changedFiles, repoFiles, undefined, vigiConfig?.coverage?.exclude);
@@ -210,15 +252,23 @@ async function _runPipeline(
 
       // Contract Checker (all tiers during testing)
       currentSignalId = "contract-checker";
-      const { signal: contractSignal } = await checkContracts({ diff, llm });
-      pushSignal(signals, contractSignal, weights["contract-checker"]);
-      log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed }, "Contract checker complete");
+      const contractResult = await safeRunSignal("contract-checker", () =>
+        checkContracts({ diff: diff!, llm }),
+      );
+      if (contractResult) {
+        pushSignal(signals, contractResult.signal, weights["contract-checker"]);
+        log.info({ signalId: contractResult.signal.id, score: contractResult.signal.score, passed: contractResult.signal.passed }, "Contract checker complete");
+      }
 
       // Diff Analyzer (all tiers during testing)
       currentSignalId = "diff-analyzer";
-      const diffSignal = await analyzeDiff({ diff, classifiedItems: [], llm });
-      pushSignal(signals, diffSignal, weights["diff-analyzer"]);
-      log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");
+      const diffSignal = await safeRunSignal("diff-analyzer", () =>
+        analyzeDiff({ diff: diff!, classifiedItems: [], llm }),
+      );
+      if (diffSignal) {
+        pushSignal(signals, diffSignal, weights["diff-analyzer"]);
+        log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");
+      }
     } else {
       pipelineError = "Could not fetch PR diff";
     }

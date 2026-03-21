@@ -31,6 +31,14 @@ const AppConfigSchema = z.object({
       path: ["githubClientId"],
     });
   }
+  // At least one LLM provider must be configured
+  if (!data.openaiApiKey && !data.groqApiKey) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "At least one LLM provider is required: OPENAI_API_KEY or GROQ_API_KEY",
+      path: ["openaiApiKey"],
+    });
+  }
   // SESSION_SECRET must be at least 32 characters when set
   if (data.sessionSecret && data.sessionSecret.length < 32) {
     ctx.addIssue({

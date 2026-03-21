@@ -1,8 +1,11 @@
 import type { Context } from "probot";
+import { createLogger } from "@vigil/core";
 import { createPendingCheckRun } from "../services/check-run.js";
 import { enqueueVerification } from "../services/queue.js";
 import { parseVigilConfig } from "../services/vigil-config.js";
 import type { VigilConfig } from "@vigil/core/types";
+
+const log = createLogger("pull-request");
 
 type PullRequestContext = Context<
   "pull_request.opened" | "pull_request.synchronize" | "pull_request.edited"
@@ -62,8 +65,12 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
       vigiConfig = result.config;
       if (result.warnings.length > 0) configWarnings = result.warnings;
     }
-  } catch {
-    // File not found (404) or permission error — use defaults
+  } catch (err) {
+    // 404 = file not found (expected), anything else = log warning
+    const status = (err as { status?: number })?.status;
+    if (status !== 404) {
+      log.warn({ owner, repo, error: String(err) }, "Failed to load .vigil.yml — using defaults");
+    }
   }
 
   let checkRunId: number | undefined;

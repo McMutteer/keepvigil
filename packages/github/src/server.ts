@@ -93,8 +93,14 @@ async function main(): Promise<void> {
   // Create webhook middleware
   const webhookMiddleware = await createNodeMiddleware(vigilApp, { probot });
 
+  // Track in-flight requests for graceful shutdown
+  let activeRequests = 0;
+
   // HTTP server: health + metrics + Probot webhooks
   const server = createServer((req, res) => {
+    activeRequests++;
+    res.on("close", () => { activeRequests--; });
+
     // Security headers for all responses
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -341,7 +347,7 @@ async function main(): Promise<void> {
     log.info({ signal }, "Shutdown initiated");
 
     try {
-      // Phase 1: Stop accepting new HTTP connections
+      // Phase 1: Stop accepting new connections + drain in-flight requests
       await Promise.race([
         new Promise<void>((resolve, reject) => {
           server.close((err) => (err ? reject(err) : resolve()));
@@ -353,6 +359,19 @@ async function main(): Promise<void> {
           }, 10_000),
         ),
       ]);
+      // Wait up to 10s for in-flight requests to complete
+      if (activeRequests > 0) {
+        log.info({ activeRequests }, "Waiting for in-flight requests to complete");
+        await Promise.race([
+          new Promise<void>((resolve) => {
+            const check = setInterval(() => {
+              if (activeRequests <= 0) { clearInterval(check); resolve(); }
+            }, 100);
+          }),
+          new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
+        ]);
+        if (activeRequests > 0) log.warn({ activeRequests }, "Forcing shutdown with pending requests");
+      }
       log.info({ ms: Date.now() - t0 }, "Phase 1: HTTP server closed");
 
       // Phase 2: Drain BullMQ worker (up to 30s)
