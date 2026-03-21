@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import localFont from "next/font/local";
 import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
@@ -62,10 +61,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="font-sans">
-        <Script src="https://www.googletagmanager.com/gtag/js?id=AW-18032447128" strategy="afterInteractive" />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-18032447128');`}
-        </Script>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
