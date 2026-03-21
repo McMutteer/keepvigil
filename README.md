@@ -16,7 +16,7 @@
 
 ## The Problem
 
-Your PR says "adds auth middleware." Did it? Your PR says "no breaking changes." Are there any? The gap between what a PR claims and what the code actually does grows with every merge.
+Your PR says "adds auth middleware." Did it? Your PR says "no breaking changes." Are there any? The gap between what a PR claims and what the code actually does grows with every merge — especially when AI agents write the code.
 
 Vigil closes that gap. It reads your PR description, verifies every claim against the actual diff, and surfaces changes you didn't mention — so reviewers know exactly what's real.
 
@@ -55,30 +55,22 @@ Vigil closes that gap. It reads your PR description, verifies every claim agains
 
 ---
 
-## Three Verification Layers
+## Verification Signals
 
-| Layer | Tier | Description |
-|-------|------|-------------|
-| **Claims Verification** | Free | Extracts claims from PR title and body, verifies each against the diff |
-| **Undocumented Changes** | Free | Surfaces significant changes not mentioned in the PR description |
-| **Impact Analysis** | Pro | Breaking changes, coverage gaps, contract violations, credential patterns |
+8 signals feed into a weighted confidence score:
 
-Under the hood, 10 signals feed into a weighted verification score:
+| Signal | Weight | Tier | Description |
+|--------|--------|------|-------------|
+| Claims Verifier | 30 | Free | Verifies PR title/body claims against the diff |
+| Undocumented Changes | 25 | Free | Detects significant changes not mentioned in the PR |
+| Credential Scan | 20 | Free | Detects secrets, API keys, and passwords in the diff |
+| Coverage Mapper | 10 | Free | Checks if changed files have corresponding tests |
+| Contract Checker | 10 | Pro | Verifies API and type contracts across files |
+| Diff Analyzer | 5 | Pro | LLM-powered diff quality and pattern analysis |
+| Risk Score | 0 | Free | Informational risk assessment (file count, sensitive areas) |
+| Description Generator | 0 | Free | Suggests a description when the PR body is empty |
 
-| Signal | Weight | Description |
-|--------|--------|-------------|
-| Claims Verifier | 15 | Verifies PR claims against the diff |
-| Undocumented Changes | 10 | Detects unmentioned changes |
-| CI Bridge | 20 | Maps test plan items to CI results |
-| Credential Scan | 15 | Detects secrets in the diff |
-| Test Execution | 10 | Runs test plan items in sandbox |
-| Plan Augmentor | 10 | Auto-generates verification items |
-| Coverage Mapper | 5 | Checks changed files have tests |
-| Contract Checker | 5 | Verifies cross-file type contracts |
-| Diff Analyzer | 5 | LLM compares diff vs PR claims |
-| Gap Analyzer | 5 | LLM identifies untested changes |
-
-**Dual-mode:** PRs with test plans get all 10 signals. PRs without test plans get the 6 that don't require one — still a full verification.
+**Read-only analysis** — Vigil never executes code, never modifies your repo, and never accesses production systems.
 
 ---
 
@@ -86,7 +78,7 @@ Under the hood, 10 signals feed into a weighted verification score:
 
 ### GitHub Marketplace (hosted)
 
-Install from the [GitHub Marketplace](https://github.com/marketplace/keepvigil), select your repos, and you're done. Free tier includes Claims Verification, Undocumented Change Detection, credential scanning, and coverage mapping — unlimited PRs, unlimited repos.
+Install from the [GitHub Marketplace](https://github.com/marketplace/keepvigil), select your repos, and you're done. Free tier includes all 8 signals — unlimited repos.
 
 ### Self-host
 
@@ -105,28 +97,17 @@ docker compose up
 Vigil works zero-config. Optionally customize via `.vigil.yml` in the repository root:
 
 ```yaml
-version: 1
-
-timeouts:
-  shell: 300
-  api: 30
-  browser: 60
-
-skip:
-  categories:
-    - visual
-    - metadata
-
-shell:
-  image: "nikolaik/python-nodejs:python3.12-nodejs22"
-  allow:
-    - "npm run build"
-    - "pytest"
-
 notifications:
   on: failure
   urls:
     - https://hooks.slack.com/services/T.../B.../xxx
+
+autoApprove:
+  threshold: 90
+
+coverage:
+  exclude:
+    - packages/landing/
 ```
 
 ---
@@ -143,8 +124,7 @@ Full docs at **[keepvigil.dev/docs](https://keepvigil.dev/docs/getting-started)*
 |-------|-----------|
 | Runtime | Node.js 22 + TypeScript 5.8 |
 | GitHub Integration | Probot 14 + Octokit |
-| LLM | Platform Groq (default) + BYOLLM option |
-| Browser Automation | Playwright |
+| LLM | OpenAI GPT-5.4-mini (primary) + Groq (fallback) |
 | Task Queue | BullMQ + Redis 7 |
 | Database | PostgreSQL 16 + Drizzle ORM |
 | Build | tsup (ESM) + pnpm workspaces |
@@ -154,17 +134,18 @@ Full docs at **[keepvigil.dev/docs](https://keepvigil.dev/docs/getting-started)*
 
 ## Development
 
-pnpm monorepo with four packages:
+pnpm monorepo with five packages:
 
 ```text
 packages/
-  core/         — types, parser, classifier, score engine, credential scanner, coverage mapper
+  core/         — types, score engine, credential scanner, coverage mapper, LLM client
   github/       — Probot app, webhooks, pipeline, signals, reporter
-  executors/    — shell, API, browser, and assertion execution
   landing/      — Next.js 15 landing page (keepvigil.dev)
+  dashboard/    — React SPA for users (/dashboard)
+  admin/        — React SPA for operations (/admin)
 ```
 
-1387+ tests across 55 files.
+844 tests across 42 files.
 
 ```bash
 pnpm build && pnpm test && pnpm lint && pnpm typecheck
