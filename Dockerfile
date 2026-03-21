@@ -2,7 +2,7 @@
 # To re-pin: docker pull node:22.14-alpine && docker inspect --format='{{index .RepoDigests 0}}'
 ARG NODE_IMAGE=node:22.14-alpine@sha256:01393fe5a51489b63da0ab51aa8e0a7ff9990132917cf20cfc3d46f5e36c0e48
 FROM ${NODE_IMAGE} AS base
-RUN npm i -g corepack@latest && corepack enable
+RUN npm i -g corepack@0.31.0 && corepack enable
 WORKDIR /app
 
 # --- Dependencies ---
@@ -22,7 +22,7 @@ RUN pnpm build
 # --- Production ---
 FROM ${NODE_IMAGE} AS production
 ENV NODE_ENV=production
-RUN npm i -g corepack@latest && corepack enable
+RUN npm i -g corepack@0.31.0 && corepack enable
 WORKDIR /app
 
 RUN apk add --no-cache git ca-certificates
