@@ -5,6 +5,7 @@ const es: Dictionary = {
     product: "Producto",
     docs: "Docs",
     about: "Nosotros",
+    blog: "Blog",
     dashboard: "Dashboard",
     installOnGithub: "Instalar en GitHub",
     documentation: "Documentaci\u00f3n",

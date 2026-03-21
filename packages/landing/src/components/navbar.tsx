@@ -194,6 +194,12 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
             >
               {t.about}
             </Link>
+            <Link
+              href={`/${locale}/blog`}
+              className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
+            >
+              {t.blog}
+            </Link>
           </div>
 
           {/* Desktop right */}
@@ -337,6 +343,13 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
                 >
                   {t.about}
+                </Link>
+                <Link
+                  href={`/${locale}/blog`}
+                  onClick={() => setMobileOpen(false)}
+                  className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                >
+                  {t.blog}
                 </Link>
                 <a
                   href="/dashboard"
