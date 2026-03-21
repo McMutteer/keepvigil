@@ -68,6 +68,7 @@ function MegaDropdown({
   openId,
   onOpen,
   onClose,
+  closeTimeoutRef,
   children,
 }: {
   id: string;
@@ -76,25 +77,19 @@ function MegaDropdown({
   openId: string | null;
   onOpen: (id: string) => void;
   onClose: () => void;
+  closeTimeoutRef: React.RefObject<ReturnType<typeof setTimeout> | null>;
   children: React.ReactNode;
 }) {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const open = openId === id;
 
   const handleEnter = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     onOpen(id);
-  }, [id, onOpen]);
+  }, [id, onOpen, closeTimeoutRef]);
 
   const handleLeave = useCallback(() => {
-    timeoutRef.current = setTimeout(() => onClose(), 150);
-  }, [onClose]);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
+    closeTimeoutRef.current = setTimeout(() => onClose(), 150);
+  }, [onClose, closeTimeoutRef]);
 
   return (
     <div
@@ -162,6 +157,7 @@ export function Navbar({
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const t = dict.nav;
 
@@ -221,7 +217,7 @@ export function Navbar({
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-1">
             {/* Product mega-dropdown */}
-            <MegaDropdown id="product" label={t.product} isActive={isProductActive} openId={openDropdown} onOpen={setOpenDropdown} onClose={() => setOpenDropdown(null)}>
+            <MegaDropdown id="product" label={t.product} isActive={isProductActive} openId={openDropdown} onOpen={setOpenDropdown} onClose={() => setOpenDropdown(null)} closeTimeoutRef={dropdownTimeoutRef}>
               <div className="flex gap-0 p-4 min-w-[480px]">
                 <div className="flex-1 pr-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2.5">
@@ -320,7 +316,7 @@ export function Navbar({
             </MegaDropdown>
 
             {/* Docs dropdown */}
-            <MegaDropdown id="docs" label={t.docs} isActive={isDocsActive} openId={openDropdown} onOpen={setOpenDropdown} onClose={() => setOpenDropdown(null)}>
+            <MegaDropdown id="docs" label={t.docs} isActive={isDocsActive} openId={openDropdown} onOpen={setOpenDropdown} onClose={() => setOpenDropdown(null)} closeTimeoutRef={dropdownTimeoutRef}>
               <div className="flex gap-0 p-4 min-w-[340px]">
                 <div className="flex-1 pr-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2.5">
