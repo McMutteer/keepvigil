@@ -27,11 +27,11 @@ function ChevronDown({ className }: { className?: string }) {
   );
 }
 
-function GitHubIcon() {
+function GitHubIcon({ size = 20 }: { size?: number }) {
   return (
     <svg
-      width="20"
-      height="20"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="currentColor"
       aria-hidden="true"
@@ -46,7 +46,6 @@ function LanguageSwitcher({ locale }: { locale: Locale }) {
 
   function getAlternateHref(): string {
     const otherLocale = locale === "en" ? "es" : "en";
-    // Replace /en/ or /es/ at the start of the path
     const newPath = pathname.replace(`/${locale}`, `/${otherLocale}`);
     return newPath || `/${otherLocale}`;
   }
@@ -55,19 +54,21 @@ function LanguageSwitcher({ locale }: { locale: Locale }) {
     <Link
       href={getAlternateHref()}
       className="px-2 py-1 text-xs font-medium text-text-muted hover:text-text-primary transition-colors duration-150 border border-white/[0.06] rounded-[4px]"
-      aria-label={locale === "en" ? "Cambiar a espa\u00f1ol" : "Switch to English"}
+      aria-label={locale === "en" ? "Cambiar a español" : "Switch to English"}
     >
       {locale === "en" ? "ES" : "EN"}
     </Link>
   );
 }
 
-function Dropdown({
+function MegaDropdown({
   label,
-  items,
+  isActive,
+  children,
 }: {
   label: string;
-  items: { label: string; href: string }[];
+  isActive: boolean;
+  children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,8 +96,13 @@ function Dropdown({
     >
       <button
         type="button"
-        className="flex items-center gap-1 px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
+        className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors duration-150 ${
+          isActive
+            ? "text-accent"
+            : "text-text-secondary hover:text-text-primary"
+        }`}
         aria-expanded={open}
+        aria-haspopup="true"
       >
         {label}
         <ChevronDown
@@ -105,17 +111,9 @@ function Dropdown({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 pt-1">
-          <div className="min-w-[200px] bg-bg-surface border border-white/[0.06] rounded-[12px] shadow-lg py-1.5 overflow-hidden">
-            {items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="block py-2 px-4 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors duration-150"
-              >
-                {item.label}
-              </Link>
-            ))}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2">
+          <div className="bg-bg-surface border border-white/[0.08] rounded-[12px] shadow-xl shadow-black/20 overflow-hidden">
+            {children}
           </div>
         </div>
       )}
@@ -123,23 +121,40 @@ function Dropdown({
   );
 }
 
-export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+function NavLink({
+  href,
+  isActive,
+  children,
+}: {
+  href: string;
+  isActive: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`px-3 py-2 text-sm transition-colors duration-150 ${
+        isActive
+          ? "text-accent border-b-2 border-accent"
+          : "text-text-secondary hover:text-text-primary"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+export function Navbar({
+  locale,
+  dict,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
   const t = dict.nav;
-
-  const productLinks = [
-    { label: t.productLinks.signalsOverview, href: `/${locale}/docs/signals` },
-    { label: t.productLinks.howItWorks, href: `/${locale}/docs/how-it-works` },
-    { label: t.productLinks.pricing, href: `/${locale}/pricing` },
-    { label: t.productLinks.changelog, href: `/${locale}/docs/changelog` },
-  ];
-
-  const docsLinks = [
-    { label: t.docsLinks.gettingStarted, href: `/${locale}/docs/getting-started` },
-    { label: t.docsLinks.configuration, href: `/${locale}/docs/configuration` },
-    { label: t.docsLinks.security, href: `/${locale}/docs/security` },
-  ];
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -147,7 +162,6 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden";
@@ -159,13 +173,24 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
     };
   }, [mobileOpen]);
 
+  const isProductActive =
+    pathname.includes("/docs/signals") ||
+    pathname.includes("/docs/how-it-works") ||
+    pathname.includes("/docs/scoring") ||
+    pathname.includes("/docs/changelog");
+  const isDocsActive =
+    pathname.includes("/docs/") && !isProductActive;
+  const isPricingActive = pathname.includes("/pricing");
+  const isAboutActive = pathname.includes("/about");
+  const isBlogActive = pathname.includes("/blog");
+
   return (
     <>
       <nav
         aria-label="Main"
-        className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-150 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
           scrolled
-            ? "bg-bg-deep/80 backdrop-blur-md border-b border-white/[0.06]"
+            ? "bg-bg-deep/80 backdrop-blur-xl border-b border-white/[0.06]"
             : "bg-transparent"
         }`}
       >
@@ -186,20 +211,144 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
 
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-1">
-            <Dropdown label={t.product} items={productLinks} />
-            <Dropdown label={t.docs} items={docsLinks} />
-            <Link
-              href={`/${locale}/about`}
-              className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
-            >
+            {/* Product mega-dropdown */}
+            <MegaDropdown label={t.product} isActive={isProductActive}>
+              <div className="flex gap-0 p-4 min-w-[480px]">
+                <div className="flex-1 pr-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2.5">
+                    Verification
+                  </p>
+                  <div className="space-y-1">
+                    <Link
+                      href={`/${locale}/docs/signals/credential-scan`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      🔍 Claims Verifier
+                      <span className="block text-[11px] text-text-muted">
+                        Verify PR claims against diff
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/${locale}/docs/signals`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      📋 Undocumented Changes
+                      <span className="block text-[11px] text-text-muted">
+                        Surface hidden changes
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/${locale}/docs/signals/credential-scan`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      🔑 Credential Scan
+                      <span className="block text-[11px] text-text-muted">
+                        Detect leaked secrets
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+                <div className="flex-1 border-l border-white/[0.06] pl-4 pr-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2.5">
+                    Analysis
+                  </p>
+                  <div className="space-y-1">
+                    <Link
+                      href={`/${locale}/docs/signals/coverage-mapper`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      📊 Coverage Mapper
+                      <span className="block text-[11px] text-text-muted">
+                        Map test coverage
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/${locale}/docs/signals/contract-checker`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      📝 Contract Checker
+                      <span className="block text-[11px] text-text-muted">
+                        API contract changes
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/${locale}/docs/signals/diff-analysis`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      🔬 Diff Analyzer
+                      <span className="block text-[11px] text-text-muted">
+                        Deep diff analysis
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+                <div className="flex-1 border-l border-white/[0.06] pl-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2.5">
+                    Learn
+                  </p>
+                  <div className="space-y-1">
+                    <Link
+                      href={`/${locale}/docs/how-it-works`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      {t.productLinks.howItWorks}
+                    </Link>
+                    <Link
+                      href={`/${locale}/docs/scoring`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      Confidence Score
+                    </Link>
+                    <Link
+                      href={`/${locale}/docs/changelog`}
+                      className="block py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      {t.productLinks.changelog}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </MegaDropdown>
+
+            {/* Docs dropdown */}
+            <MegaDropdown label={t.docs} isActive={isDocsActive}>
+              <div className="p-3 min-w-[200px]">
+                <Link
+                  href={`/${locale}/docs/getting-started`}
+                  className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-md transition-colors"
+                >
+                  {t.docsLinks.gettingStarted}
+                </Link>
+                <Link
+                  href={`/${locale}/docs/configuration`}
+                  className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-md transition-colors"
+                >
+                  {t.docsLinks.configuration}
+                </Link>
+                <Link
+                  href={`/${locale}/docs/signals`}
+                  className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-md transition-colors"
+                >
+                  Signals
+                </Link>
+                <Link
+                  href={`/${locale}/docs/security`}
+                  className="block py-2 px-3 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated rounded-md transition-colors"
+                >
+                  {t.docsLinks.security}
+                </Link>
+              </div>
+            </MegaDropdown>
+
+            <NavLink href={`/${locale}/pricing`} isActive={isPricingActive}>
+              {t.productLinks.pricing}
+            </NavLink>
+            <NavLink href={`/${locale}/about`} isActive={isAboutActive}>
               {t.about}
-            </Link>
-            <Link
-              href={`/${locale}/blog`}
-              className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
-            >
+            </NavLink>
+            <NavLink href={`/${locale}/blog`} isActive={isBlogActive}>
               {t.blog}
-            </Link>
+            </NavLink>
           </div>
 
           {/* Desktop right */}
@@ -273,8 +422,22 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
 
           {/* Slide-over panel */}
           <div className="absolute top-0 right-0 bottom-0 w-[280px] bg-bg-deep overflow-y-auto">
-            {/* Close button */}
-            <div className="flex justify-end p-4">
+            {/* Header with close */}
+            <div className="flex items-center justify-between p-4 border-b border-white/[0.06]">
+              <Link
+                href={`/${locale}`}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2"
+              >
+                <Image
+                  src="/brand/icon.svg"
+                  alt="Vigil"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6"
+                />
+                <span className="font-medium text-text-primary">vigil</span>
+              </Link>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
@@ -296,60 +459,89 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
               </button>
             </div>
 
-            <div className="px-4 pb-8 space-y-6">
+            <div className="px-4 pb-8 pt-4 space-y-6">
               {/* Product group */}
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-text-muted mb-2 px-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2 px-2">
                   {t.product}
                 </p>
                 <div className="space-y-0.5">
-                  {productLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+                  <Link
+                    href={`/${locale}/docs/signals`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                  >
+                    {t.productLinks.signalsOverview}
+                  </Link>
+                  <Link
+                    href={`/${locale}/docs/how-it-works`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                  >
+                    {t.productLinks.howItWorks}
+                  </Link>
+                  <Link
+                    href={`/${locale}/docs/scoring`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                  >
+                    Confidence Score
+                  </Link>
+                  <Link
+                    href={`/${locale}/docs/changelog`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                  >
+                    {t.productLinks.changelog}
+                  </Link>
                 </div>
               </div>
 
-              {/* Documentation group */}
+              {/* Resources group */}
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-text-muted mb-2 px-2">
-                  {t.documentation}
+                <p className="text-[10px] font-semibold uppercase tracking-[1px] text-accent mb-2 px-2">
+                  Resources
                 </p>
                 <div className="space-y-0.5">
-                  {docsLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+                  <Link
+                    href={`/${locale}/docs/getting-started`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                  >
+                    {t.docsLinks.gettingStarted}
+                  </Link>
+                  <Link
+                    href={`/${locale}/docs/configuration`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                  >
+                    {t.docsLinks.configuration}
+                  </Link>
+                  <Link
+                    href={`/${locale}/blog`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                  >
+                    {t.blog}
+                  </Link>
                 </div>
               </div>
 
               {/* Standalone links */}
-              <div className="space-y-0.5">
+              <div className="border-t border-white/[0.06] pt-4 space-y-0.5">
+                <Link
+                  href={`/${locale}/pricing`}
+                  onClick={() => setMobileOpen(false)}
+                  className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
+                >
+                  {t.productLinks.pricing}
+                </Link>
                 <Link
                   href={`/${locale}/about`}
                   onClick={() => setMobileOpen(false)}
                   className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
                 >
                   {t.about}
-                </Link>
-                <Link
-                  href={`/${locale}/blog`}
-                  onClick={() => setMobileOpen(false)}
-                  className="block py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
-                >
-                  {t.blog}
                 </Link>
                 <a
                   href="/dashboard"
@@ -365,7 +557,7 @@ export function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2 py-2 px-2 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150 rounded-md hover:bg-bg-elevated"
                 >
-                  <GitHubIcon />
+                  <GitHubIcon size={16} />
                   GitHub
                 </a>
               </div>
