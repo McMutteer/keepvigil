@@ -1,3 +1,6 @@
+// Set ADMIN_USER_IDS before module load (admin-api.ts reads it at import time)
+process.env.ADMIN_USER_IDS = "124670303";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { handleAdminApi } from "../services/admin-api.js";

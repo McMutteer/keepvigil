@@ -362,13 +362,14 @@ async function main(): Promise<void> {
       // Wait up to 10s for in-flight requests to complete
       if (activeRequests > 0) {
         log.info({ activeRequests }, "Waiting for in-flight requests to complete");
+        let drainInterval: ReturnType<typeof setInterval>;
         await Promise.race([
           new Promise<void>((resolve) => {
-            const check = setInterval(() => {
-              if (activeRequests <= 0) { clearInterval(check); resolve(); }
+            drainInterval = setInterval(() => {
+              if (activeRequests <= 0) { clearInterval(drainInterval); resolve(); }
             }, 100);
           }),
-          new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
+          new Promise<void>((resolve) => setTimeout(() => { clearInterval(drainInterval!); resolve(); }, 10_000)),
         ]);
         if (activeRequests > 0) log.warn({ activeRequests }, "Forcing shutdown with pending requests");
       }

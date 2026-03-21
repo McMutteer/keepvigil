@@ -10,11 +10,12 @@ import { schema } from "@vigil/core/db";
 import type { AppConfig } from "../config.js";
 import { requireSession } from "./auth-middleware.js";
 
-/** GitHub user IDs allowed to access admin endpoints (configurable via ADMIN_USER_IDS env var) */
-const ADMIN_IDS = (process.env.ADMIN_USER_IDS ?? "124670303")
-  .split(",")
-  .map((id) => Number(id.trim()))
-  .filter((id) => id > 0);
+/** GitHub user IDs allowed to access admin endpoints (requires ADMIN_USER_IDS env var) */
+function getAdminIds(): number[] {
+  const raw = process.env.ADMIN_USER_IDS;
+  if (!raw) return [];
+  return raw.split(",").map((id) => Number(id.trim())).filter((id) => id > 0);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,7 +44,7 @@ async function requireAdmin(
 ): Promise<boolean> {
   const session = await requireSession(req, res, config);
   if (!session) return false;
-  if (!ADMIN_IDS.includes(session.userId)) {
+  if (!getAdminIds().includes(session.userId)) {
     json(res, 403, { error: "Admin access required" });
     return false;
   }
