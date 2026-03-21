@@ -17,6 +17,7 @@ const AppConfigSchema = z.object({
   stripeForwardingSecret: z.string().default(""),
   stripeProPriceId:      z.string().default(""),
   stripeTeamPriceId:     z.string().default(""),
+  oauthRedirectUri:      z.string().default(""),
   port:                z.coerce.number().int().min(1).max(65535).default(3200),
   nodeEnv:             z.string().default("development"),
 }).superRefine((data, ctx) => {
@@ -61,6 +62,7 @@ export function loadConfig(): AppConfig {
     stripeForwardingSecret: process.env.STRIPE_FORWARDING_SECRET,
     stripeProPriceId:       process.env.STRIPE_PRO_PRICE_ID,
     stripeTeamPriceId:      process.env.STRIPE_TEAM_PRICE_ID,
+    oauthRedirectUri:       process.env.OAUTH_REDIRECT_URI,
     port:                process.env.PORT,
     nodeEnv:             process.env.NODE_ENV,
   });

@@ -97,12 +97,17 @@ export async function handleExecutionDetail(
   config: AppConfig,
   db: Database,
   executionId: string,
+  installationId: number,
 ): Promise<void> {
   // Validate UUID format
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(executionId)) {
     json(res, 400, { error: "Invalid execution ID" });
     return;
   }
+
+  // Check authorization before querying
+  const session = await requireInstallationAccess(req, res, config, installationId);
+  if (!session) return;
 
   const rows = await db.select()
     .from(schema.executions)
@@ -114,11 +119,6 @@ export async function handleExecutionDetail(
     json(res, 404, { error: "Execution not found" });
     return;
   }
-
-  // Check installation access
-  const installationId = Number(execution.installationId);
-  const session = await requireInstallationAccess(req, res, config, installationId);
-  if (!session) return;
 
   json(res, 200, {
     id: execution.id,
@@ -253,10 +253,15 @@ export async function handleDashboardApi(
   const url = parseUrl(req);
   const path = url.pathname;
 
-  // GET /api/dashboard/executions/:id
+  // GET /api/dashboard/executions/:id?installation_id=X
   const detailMatch = path.match(/^\/api\/dashboard\/executions\/([^/]+)$/);
   if (detailMatch && req.method === "GET") {
-    await handleExecutionDetail(req, res, config, db, detailMatch[1]);
+    const installationId = parseInstallationId(url);
+    if (!installationId) {
+      json(res, 400, { error: "Missing or invalid installation_id" });
+      return;
+    }
+    await handleExecutionDetail(req, res, config, db, detailMatch[1], installationId);
     return;
   }
 

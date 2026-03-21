@@ -10,8 +10,11 @@ import { schema } from "@vigil/core/db";
 import type { AppConfig } from "../config.js";
 import { requireSession } from "./auth-middleware.js";
 
-/** GitHub user IDs allowed to access admin endpoints */
-const ADMIN_IDS = [124670303];
+/** GitHub user IDs allowed to access admin endpoints (configurable via ADMIN_USER_IDS env var) */
+const ADMIN_IDS = (process.env.ADMIN_USER_IDS ?? "124670303")
+  .split(",")
+  .map((id) => Number(id.trim()))
+  .filter((id) => id > 0);
 
 // ---------------------------------------------------------------------------
 // Helpers

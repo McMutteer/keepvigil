@@ -42,22 +42,26 @@ export async function handleCheckout(req: IncomingMessage, res: ServerResponse, 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT_MS);
 
-    const response = await fetch(`${config.stripeGatewayUrl}/checkout/sessions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": config.stripeGatewayApiKey,
-      },
-      body: JSON.stringify({
-        mode: "subscription",
-        lineItems: [{ price: priceId, quantity: seats }],
-        successUrl: `https://keepvigil.dev/checkout/success?plan=${encodeURIComponent(plan)}&seats=${seats}`,
-        cancelUrl: "https://keepvigil.dev/#pricing",
-        metadata: { installationId, accountLogin, plan, seats: String(seats) },
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
+    let response: Response;
+    try {
+      response = await fetch(`${config.stripeGatewayUrl}/checkout/sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": config.stripeGatewayApiKey,
+        },
+        body: JSON.stringify({
+          mode: "subscription",
+          lineItems: [{ price: priceId, quantity: seats }],
+          successUrl: `https://keepvigil.dev/checkout/success?plan=${encodeURIComponent(plan)}&seats=${seats}`,
+          cancelUrl: "https://keepvigil.dev/#pricing",
+          metadata: { installationId, accountLogin, plan, seats: String(seats) },
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       log.error({ status: response.status }, "Stripe Gateway returned non-OK status");

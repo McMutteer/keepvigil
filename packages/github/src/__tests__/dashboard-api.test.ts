@@ -150,13 +150,26 @@ describe("dashboard-api", () => {
   });
 
   describe("GET /api/dashboard/executions/:id", () => {
+    it("returns 400 when installation_id is missing", async () => {
+      const cookie = await makeCookie(config);
+      const res = makeRes();
+      const db = makeMockDb();
+
+      await handleDashboardApi(
+        makeReq("/api/dashboard/executions/00000000-0000-0000-0000-000000000001", cookie),
+        res, config, db as any,
+      );
+
+      expect(res._status).toBe(400);
+    });
+
     it("returns 400 for invalid UUID", async () => {
       const cookie = await makeCookie(config);
       const res = makeRes();
       const db = makeMockDb();
 
       await handleDashboardApi(
-        makeReq("/api/dashboard/executions/not-a-uuid", cookie),
+        makeReq("/api/dashboard/executions/not-a-uuid?installation_id=111", cookie),
         res, config, db as any,
       );
 
@@ -169,7 +182,7 @@ describe("dashboard-api", () => {
       const db = makeMockDb([]); // empty result
 
       await handleDashboardApi(
-        makeReq("/api/dashboard/executions/00000000-0000-0000-0000-000000000001", cookie),
+        makeReq("/api/dashboard/executions/00000000-0000-0000-0000-000000000001?installation_id=111", cookie),
         res, config, db as any,
       );
 

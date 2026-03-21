@@ -123,8 +123,10 @@ async function _runPipeline(
   const signals: Signal[] = [];
 
   // LLM usage tracking — fire-and-forget DB inserts
-  let currentSignal = "unknown";
-  const onUsage = (event: LLMUsageEvent) => {
+  // Each signal gets its own onUsage callback that captures signalId by value
+  // to avoid race conditions with a shared mutable variable.
+  let currentSignalId = "unknown";
+  const makeOnUsage = (signalId: string) => (event: LLMUsageEvent) => {
     if (!pipelineDb) return;
     pipelineDb.insert(schema.llmUsage).values({
       correlationId,
@@ -132,7 +134,7 @@ async function _runPipeline(
       owner,
       repo,
       pullNumber,
-      signalId: currentSignal,
+      signalId,
       provider: event.provider,
       model: event.model,
       promptTokens: event.promptTokens,
@@ -141,6 +143,7 @@ async function _runPipeline(
       estimatedCostUsd: event.estimatedCostUsd,
     }).catch((err) => log.warn({ error: String(err) }, "Failed to persist LLM usage"));
   };
+  const onUsage = (event: LLMUsageEvent) => makeOnUsage(currentSignalId)(event);
 
   try {
     // Stage 1: Create LLM client (OpenAI mini primary, Groq fallback)
@@ -166,7 +169,7 @@ async function _runPipeline(
 
     if (diff) {
       // Claims Verifier (free tier)
-      currentSignal = "claims-verifier";
+      currentSignalId = "claims-verifier";
       const claimsSignal = await verifyClaims({ prTitle, prBody, diff, llm });
       pushSignal(signals, claimsSignal, weights["claims-verifier"]);
       log.info({ signalId: claimsSignal.id, score: claimsSignal.score, passed: claimsSignal.passed }, "Claims verifier complete");
@@ -180,7 +183,7 @@ async function _runPipeline(
       }
 
       // Undocumented Changes (free tier)
-      currentSignal = "undocumented-changes";
+      currentSignalId = "undocumented-changes";
       const undocSignal = await detectUndocumentedChanges({ prTitle, prBody, diff, llm });
       pushSignal(signals, undocSignal, weights["undocumented-changes"]);
       log.info({ signalId: undocSignal.id, score: undocSignal.score, passed: undocSignal.passed, findings: undocSignal.details.length }, "Undocumented changes complete");
@@ -206,13 +209,13 @@ async function _runPipeline(
       log.info({ signalId: riskSignal.id, score: riskSignal.score, passed: riskSignal.passed, factors: riskSignal.details.length }, "Risk assessment complete");
 
       // Contract Checker (all tiers during testing)
-      currentSignal = "contract-checker";
+      currentSignalId = "contract-checker";
       const { signal: contractSignal } = await checkContracts({ diff, llm });
       pushSignal(signals, contractSignal, weights["contract-checker"]);
       log.info({ signalId: contractSignal.id, score: contractSignal.score, passed: contractSignal.passed }, "Contract checker complete");
 
       // Diff Analyzer (all tiers during testing)
-      currentSignal = "diff-analyzer";
+      currentSignalId = "diff-analyzer";
       const diffSignal = await analyzeDiff({ diff, classifiedItems: [], llm });
       pushSignal(signals, diffSignal, weights["diff-analyzer"]);
       log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");

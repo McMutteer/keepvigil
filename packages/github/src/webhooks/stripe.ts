@@ -17,6 +17,7 @@ export function setStripeWebhookDeps(database: Database, secret: string): void {
 
 function verifySignature(payload: string, signature: string): boolean {
   if (!forwardingSecret) return false;
+  if (!/^[a-f0-9]+$/i.test(signature)) return false;
   const expected = createHmac("sha256", forwardingSecret).update(payload).digest("hex");
   if (signature.length !== expected.length) return false;
   return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));

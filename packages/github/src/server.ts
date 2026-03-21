@@ -95,6 +95,12 @@ async function main(): Promise<void> {
 
   // HTTP server: health + metrics + Probot webhooks
   const server = createServer((req, res) => {
+    // Security headers for all responses
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    res.setHeader("X-XSS-Protection", "0");
+
     if (req.url === "/health" && req.method === "GET") {
       handleHealthCheck(pool, res).catch((err) => {
         log.error({ err }, "Unhandled error in health check");
