@@ -103,7 +103,7 @@ export function MobileSidebar() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-[6px] bg-bg-surface border border-white/[0.06] text-text-primary"
+        className="lg:hidden fixed top-[60px] left-4 z-40 p-2 rounded-[6px] bg-bg-surface border border-white/[0.06] text-text-primary"
         aria-label="Open navigation"
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -119,17 +119,20 @@ export function MobileSidebar() {
       {open && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-[44] lg:hidden"
             onClick={() => setOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 w-[280px] bg-bg-deep border-r border-white/[0.06] z-50 lg:hidden">
-            <div className="flex justify-end p-3">
+          <div className="fixed inset-y-0 left-0 w-[280px] bg-bg-deep border-r border-white/[0.06] z-[45] lg:hidden pt-14">
+            <div className="flex justify-end p-2">
               <button
                 onClick={() => setOpen(false)}
-                className="p-1 text-text-muted hover:text-text-primary"
+                className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-bg-elevated transition-colors"
                 aria-label="Close navigation"
               >
-                ✕
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                </svg>
               </button>
             </div>
             <Sidebar />
