@@ -29,6 +29,12 @@ export const metadata: Metadata = {
     ],
     apple: "/brand/apple-touch-icon.png",
   },
+  manifest: "/manifest.json",
+  other: {
+    "theme-color": "#0f1729",
+    "color-scheme": "dark",
+    "msapplication-TileColor": "#0f1729",
+  },
   openGraph: {
     title: "Vigil — Verifies that your PR does what it says it does",
     description:
@@ -36,12 +42,13 @@ export const metadata: Metadata = {
     url: "https://keepvigil.dev",
     siteName: "Vigil",
     type: "website",
+    locale: "en_US",
     images: [
       {
         url: "/brand/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Vigil — Verifies that your PR does what it says it does",
+        alt: "Vigil — The verification layer for AI-assisted development",
       },
     ],
   },
@@ -54,6 +61,10 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: "https://keepvigil.dev",
+    languages: {
+      en: "https://keepvigil.dev/en",
+      es: "https://keepvigil.dev/es",
+    },
   },
 };
 
@@ -73,7 +84,7 @@ export default function RootLayout({
               "@type": "SoftwareApplication",
               name: "Vigil",
               description:
-                "PR verification for GitHub. Vigil checks that code changes match PR descriptions — claims verified, undocumented changes surfaced, impact analyzed.",
+                "The verification layer for AI-assisted development. Vigil checks that code changes match PR descriptions — 8 signals including claims verification, credential scanning, risk scoring, and impact analysis.",
               applicationCategory: "DeveloperApplication",
               operatingSystem: "Web",
               url: "https://keepvigil.dev",
@@ -83,21 +94,35 @@ export default function RootLayout({
                   price: "0",
                   priceCurrency: "USD",
                   name: "Free",
-                  description: "Claims verification, undocumented change detection, credential scanning",
+                  description: "Claims verification, undocumented change detection, credential scanning, coverage mapping",
                 },
                 {
                   "@type": "Offer",
-                  price: "19",
+                  price: "12",
                   priceCurrency: "USD",
+                  priceSpecification: {
+                    "@type": "UnitPriceSpecification",
+                    price: "12",
+                    priceCurrency: "USD",
+                    unitText: "developer/month",
+                    billingIncrement: 1,
+                  },
                   name: "Pro",
-                  description: "Full verification with impact analysis and inline comments",
+                  description: "All 8 signals, contract checking, diff analysis, inline review comments",
                 },
                 {
                   "@type": "Offer",
-                  price: "49",
+                  price: "24",
                   priceCurrency: "USD",
+                  priceSpecification: {
+                    "@type": "UnitPriceSpecification",
+                    price: "24",
+                    priceCurrency: "USD",
+                    unitText: "developer/month",
+                    billingIncrement: 1,
+                  },
                   name: "Team",
-                  description: "Full verification, team dashboard, SSO",
+                  description: "All Pro features, team dashboard, priority support, SSO",
                 },
               ],
               author: {

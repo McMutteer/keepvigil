@@ -1,0 +1,27 @@
+{
+  "name": "Vigil — PR Verification for GitHub",
+  "short_name": "Vigil",
+  "description": "Verifies that your PR does what it says it does. Claims verified, undocumented changes surfaced, impact analyzed.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080d1a",
+  "theme_color": "#0f1729",
+  "icons": [
+    {
+      "src": "/brand/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
