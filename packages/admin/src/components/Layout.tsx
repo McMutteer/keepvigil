@@ -24,8 +24,8 @@ export function Layout({ session, onLogout }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-1.5">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
-                <img src="/brand/icon-cropped.svg" alt="Vigil" className="w-[34px] h-[34px]" />
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                <img src="/brand/icon-cropped.svg" alt="Vigil" className="w-8 h-8" />
               </div>
               <span className="font-semibold text-2xl text-text-primary tracking-wider">vigil</span>
               <span className="text-sm text-accent">Admin</span>

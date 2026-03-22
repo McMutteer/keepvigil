@@ -44,13 +44,13 @@ export function DocsNavbar({ locale }: { locale: Locale }) {
         {/* Left: Logo + Docs */}
         <div className="flex items-center gap-3">
           <Link href={`/${locale}`} className="flex items-center gap-1.5">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
               <Image
                 src="/brand/icon-cropped.svg"
                 alt="Vigil"
-                width={34}
-                height={34}
-                className="w-[34px] h-[34px]"
+                width={32}
+                height={32}
+                className="w-8 h-8"
               />
             </div>
             <span className="font-semibold text-2xl text-text-primary tracking-wider">vigil</span>

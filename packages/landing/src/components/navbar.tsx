@@ -201,17 +201,17 @@ export function Navbar({
       >
         <div className="mx-auto max-w-[1200px] px-6 h-20 flex items-center justify-between">
           {/* Logo */}
-          <Link href={`/${locale}`} className="flex items-center gap-1.5">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
+          <Link href={`/${locale}`} className="flex items-center gap-2">
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
               <Image
                 src="/brand/icon-cropped.svg"
                 alt="Vigil"
-                width={42}
-                height={42}
-                className="w-[42px] h-[42px]"
+                width={38}
+                height={38}
+                className="w-[38px] h-[38px]"
               />
             </div>
-            <span className="font-semibold text-[32px] text-text-primary tracking-wider">
+            <span className="font-semibold text-[28px] text-text-primary tracking-wider">
               vigil
             </span>
           </Link>
@@ -462,13 +462,13 @@ export function Navbar({
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-1.5"
               >
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
                   <Image
                     src="/brand/icon-cropped.svg"
                     alt="Vigil"
-                    width={34}
-                    height={34}
-                    className="w-[34px] h-[34px]"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8"
                   />
                 </div>
                 <span className="font-semibold text-2xl text-text-primary tracking-wider">vigil</span>

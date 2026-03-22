@@ -66,13 +66,13 @@ export function Sidebar() {
     <nav className="flex flex-col h-full" aria-label="Documentation">
       <div className="p-4 border-b border-white/[0.06]">
         <Link href={`/${locale}`} className="flex items-center gap-1.5">
-          <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center">
             <Image
               src="/brand/icon-cropped.svg"
               alt="Vigil"
-              width={30}
-              height={30}
-              className="w-[30px] h-[30px]"
+              width={28}
+              height={28}
+              className="w-7 h-7"
             />
           </div>
           <span className="font-semibold text-lg text-text-primary tracking-wider">vigil</span>
