@@ -17,15 +17,15 @@ export function Footer({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12">
           {/* Brand column */}
           <div className="col-span-2 sm:col-span-1">
-            <a href={`/${locale}`} className="flex items-center gap-2 mb-3">
+            <a href={`/${locale}`} className="flex items-center gap-2.5 mb-3">
               <Image
                 src="/brand/icon.svg"
                 alt="Vigil"
-                width={20}
-                height={20}
-                className="w-5 h-5 opacity-60"
+                width={28}
+                height={28}
+                className="w-7 h-7"
               />
-              <span className="text-sm font-medium text-text-primary">
+              <span className="text-base font-semibold text-text-primary tracking-wider">
                 vigil
               </span>
             </a>

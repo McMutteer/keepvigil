@@ -65,15 +65,15 @@ export function Sidebar() {
   return (
     <nav className="flex flex-col h-full" aria-label="Documentation">
       <div className="p-4 border-b border-white/[0.06]">
-        <Link href={`/${locale}`} className="flex items-center gap-2">
+        <Link href={`/${locale}`} className="flex items-center gap-2.5">
           <Image
             src="/brand/icon.svg"
             alt="Vigil"
-            width={24}
-            height={24}
-            className="w-6 h-6"
+            width={28}
+            height={28}
+            className="w-7 h-7"
           />
-          <span className="font-medium text-text-primary">vigil</span>
+          <span className="font-semibold text-text-primary tracking-wider">vigil</span>
           <span className="text-xs text-text-muted">docs</span>
         </Link>
       </div>

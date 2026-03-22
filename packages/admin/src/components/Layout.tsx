@@ -23,9 +23,10 @@ export function Layout({ session, onLogout }: LayoutProps) {
       <nav className="border-b border-white/[0.06] bg-bg-surface/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2">
-              <img src="/brand/icon.svg" alt="Vigil" className="w-6 h-6" />
-              <span className="font-medium text-accent">Admin</span>
+            <Link to="/" className="flex items-center gap-2.5">
+              <img src="/brand/icon.svg" alt="Vigil" className="w-8 h-8" />
+              <span className="font-semibold text-lg text-text-primary tracking-wider">vigil</span>
+              <span className="text-sm text-accent">Admin</span>
             </Link>
             <div className="hidden md:flex items-center gap-1">
               {NAV_ITEMS.map((item) => {

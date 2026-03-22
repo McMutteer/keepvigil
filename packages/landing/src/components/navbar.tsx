@@ -201,15 +201,15 @@ export function Navbar({
       >
         <div className="mx-auto max-w-[1200px] px-6 h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link href={`/${locale}`} className="flex items-center gap-2.5">
+          <Link href={`/${locale}`} className="flex items-center gap-3">
             <Image
               src="/brand/icon.svg"
               alt="Vigil"
-              width={28}
-              height={28}
-              className="w-7 h-7"
+              width={36}
+              height={36}
+              className="w-9 h-9"
             />
-            <span className="font-medium text-lg text-text-primary tracking-wide">
+            <span className="font-semibold text-xl text-text-primary tracking-wider">
               vigil
             </span>
           </Link>
@@ -463,11 +463,11 @@ export function Navbar({
                 <Image
                   src="/brand/icon.svg"
                   alt="Vigil"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8"
                 />
-                <span className="font-medium text-text-primary">vigil</span>
+                <span className="font-semibold text-lg text-text-primary tracking-wider">vigil</span>
               </Link>
               <button
                 type="button"
