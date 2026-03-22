@@ -12,9 +12,11 @@ export function Layout({ session, onLogout }: LayoutProps) {
       <nav className="border-b border-white/[0.06] bg-bg-surface/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2.5">
-              <img src="/brand/icon.svg" alt="Vigil" className="w-8 h-8" />
-              <span className="font-semibold text-lg text-text-primary tracking-wider">vigil</span>
+            <Link to="/" className="flex items-center gap-1.5">
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                <img src="/brand/icon-cropped.svg" alt="Vigil" className="w-[34px] h-[34px]" />
+              </div>
+              <span className="font-semibold text-2xl text-text-primary tracking-wider">vigil</span>
               <span className="text-sm text-text-secondary">Dashboard</span>
             </Link>
             <div className="hidden sm:flex items-center gap-4">

@@ -199,17 +199,19 @@ export function Navbar({
             : "bg-transparent"
         }`}
       >
-        <div className="mx-auto max-w-[1200px] px-6 h-16 flex items-center justify-between">
+        <div className="mx-auto max-w-[1200px] px-6 h-20 flex items-center justify-between">
           {/* Logo */}
-          <Link href={`/${locale}`} className="flex items-center gap-3">
-            <Image
-              src="/brand/icon.svg"
-              alt="Vigil"
-              width={36}
-              height={36}
-              className="w-9 h-9"
-            />
-            <span className="font-semibold text-xl text-text-primary tracking-wider">
+          <Link href={`/${locale}`} className="flex items-center gap-1.5">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
+              <Image
+                src="/brand/icon-cropped.svg"
+                alt="Vigil"
+                width={42}
+                height={42}
+                className="w-[42px] h-[42px]"
+              />
+            </div>
+            <span className="font-semibold text-[32px] text-text-primary tracking-wider">
               vigil
             </span>
           </Link>
@@ -458,16 +460,18 @@ export function Navbar({
               <Link
                 href={`/${locale}`}
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1.5"
               >
-                <Image
-                  src="/brand/icon.svg"
-                  alt="Vigil"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8"
-                />
-                <span className="font-semibold text-lg text-text-primary tracking-wider">vigil</span>
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                  <Image
+                    src="/brand/icon-cropped.svg"
+                    alt="Vigil"
+                    width={34}
+                    height={34}
+                    className="w-[34px] h-[34px]"
+                  />
+                </div>
+                <span className="font-semibold text-2xl text-text-primary tracking-wider">vigil</span>
               </Link>
               <button
                 type="button"

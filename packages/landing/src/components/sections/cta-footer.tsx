@@ -35,15 +35,17 @@ export function CtaFooter({ dict, locale }: { dict: Dictionary; locale: Locale }
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12">
             {/* Logo column */}
             <div className="col-span-2 sm:col-span-1">
-              <a href={`/${locale}`} className="flex items-center gap-2.5 mb-4">
-                <Image
-                  src="/brand/icon.svg"
-                  alt="Vigil"
-                  width={28}
-                  height={28}
-                  className="w-7 h-7"
-                />
-                <span className="text-base font-semibold text-text-primary tracking-wider">vigil</span>
+              <a href={`/${locale}`} className="flex items-center gap-1.5 mb-4">
+                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
+                  <Image
+                    src="/brand/icon-cropped.svg"
+                    alt="Vigil"
+                    width={30}
+                    height={30}
+                    className="w-[30px] h-[30px]"
+                  />
+                </div>
+                <span className="text-xl font-semibold text-text-primary tracking-wider">vigil</span>
               </a>
             </div>
 

@@ -43,15 +43,17 @@ export function DocsNavbar({ locale }: { locale: Locale }) {
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 h-14 flex items-center justify-between">
         {/* Left: Logo + Docs */}
         <div className="flex items-center gap-3">
-          <Link href={`/${locale}`} className="flex items-center gap-2.5">
-            <Image
-              src="/brand/icon.svg"
-              alt="Vigil"
-              width={32}
-              height={32}
-              className="w-8 h-8"
-            />
-            <span className="font-semibold text-lg text-text-primary tracking-wider">vigil</span>
+          <Link href={`/${locale}`} className="flex items-center gap-1.5">
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+              <Image
+                src="/brand/icon-cropped.svg"
+                alt="Vigil"
+                width={34}
+                height={34}
+                className="w-[34px] h-[34px]"
+              />
+            </div>
+            <span className="font-semibold text-2xl text-text-primary tracking-wider">vigil</span>
           </Link>
           <span className="text-text-muted text-lg">│</span>
           <span className="text-sm text-text-secondary font-medium">
