@@ -212,3 +212,30 @@ PostHog se integró en 5 minutos (client component, auto-capture). Google Ads fu
 **Resultado:** PR #125 mergeado. 5 componentes nuevos (Footer, DocsNavbar, Breadcrumbs, BackToTop, MobileFloatingCta). Navbar con mega-dropdown de 3 columnas y active page indicator. Navegación persistente en todas las páginas del sitio.
 
 **Aprendido:** (1) Route groups de Next.js App Router son la solución correcta para "misma URL, distinto layout" — los paréntesis no afectan la URL pero permiten layouts separados para marketing vs docs. (2) El visual companion del brainstorm fue decisivo — cuando el usuario dijo "no entiendo" en las opciones de UX, mostrar antes/después con mockups cambió la conversación de "no sé" a "ah, sí quiero eso". (3) Para PRs grandes de frontend (44 archivos), la clave es que git detecte los renames — mover archivos con `mv` antes de editarlos mantiene el diff limpio y el review manejable.
+
+---
+
+```yaml
+---
+id: 2026-03-22-rebranding-steel-watch
+type: design
+project: vigil
+branch: main
+pr: 126
+date: 2026-03-22
+tags: [rebranding, logo, recraft, seo, pwa, identity, svg-viewbox]
+summary: "Complete visual rebrand — from hand-coded SVGs to Recraft-generated silhouette icon, white circle lockup, and comprehensive SEO overhaul."
+related: []
+---
+```
+
+### El Escudo Que Aprendió a Verse
+
+**Hilo:** Vigil tenía logo desde /sigil pero era SVG escrito a mano — se veía amateur. El usuario quería presencia de marca real: GitHub, Google Ads, favicon, navbar. No solo un logo bonito — presencia en todos sitios.
+
+**Lo que pasó:** Empezamos con Recraft.ai — el primer SVG salió con colores demasiado oscuros (#020142) que se perdían en fondo dark. Monté una página interactiva de presets de color y el usuario eligió Steel Watch (#243a5c) + Amber (#e8a820). Generé 17 variantes PNG, desplegué... y el logo se veía enano. 28px en un navbar de 64px. Investigamos CodeRabbit: logo combinado de 160x30px con forma + wordmark. Intentamos agrandar — seguía pequeño. El problema real: el SVG tenía un viewBox de 1024x1024 pero el contenido ocupaba ~500px en el centro. Recorté el viewBox, añadí círculo blanco detrás... y el usuario dijo "no me gusta el color". De vuelta a Recraft: segunda generación con silueta sólida tipo GitHub/CodeRabbit. El usuario probó 10+ combinaciones en la preview interactiva hasta llegar a: soft gray circle (#f1f5f9), 48px, icon 80%, texto 28px. Después vino la auditoría SEO: JSON-LD con precios de $19/$49 (eran $12/$24 hace semanas), sitemap sin URLs /es/, sin manifest.json, sin theme-color, dashboard/admin sin noindex.
+
+**Resultado:** 5 commits en main. Logo v2 silueta con círculo soft gray en navbar/footer/docs/dashboard/admin. 17 PNGs regenerados. manifest.json, theme-color, sitemap bilingüe con hreflang, JSON-LD corregido, noindex en admin/dashboard. Todo deployed.
+
+**Aprendido:** (1) Los SVGs de Recraft vienen con viewBox gigante y espacio muerto — siempre recortar a bounding box real del contenido. (2) Las páginas de preview interactivas con sliders son la forma más eficiente de iterar branding con el usuario — mucho más rápido que generar-deplegar-ver-repetir. (3) El SEO se degrada silenciosamente: precios, sitemaps y meta tags se quedan stale mientras el producto evoluciona. Auditar periódicamente.
+
