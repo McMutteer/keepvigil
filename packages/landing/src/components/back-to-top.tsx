@@ -21,12 +21,12 @@ export function BackToTop() {
       aria-label="Back to top"
     >
       <svg
-        width="18"
-        height="18"
+        width="24"
+        height="24"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2.5"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
