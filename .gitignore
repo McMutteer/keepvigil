@@ -38,3 +38,7 @@ docs/*-audit-*.md
 docs/first-*-showcase.md
 docs/plans/
 .claude/plans/
+
+# Internal documentation (Claude-only, never published)
+.internal-docs/
+.superpowers/

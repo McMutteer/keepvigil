@@ -57,6 +57,24 @@ Logo files: `.claude/identity/` (source of truth)
 **Commit style:** Conventional Commits — `feat(parser): extract checkbox items from markdown`
 **Language:** Conversations in Spanish, code/commits/PRs in English
 
+## Internal Documentation
+
+Comprehensive internal docs live at `.internal-docs/` (gitignored, never published). Read these before starting work:
+
+| File | What's in it |
+|------|-------------|
+| `README.md` | Project overview, identity, quick start |
+| `architecture.md` | Packages, pipeline, DB, LLM, infrastructure |
+| `features-implemented.md` | Everything built with PR numbers |
+| `pending-work.md` | Prioritized pending tasks with context |
+| `bugs-and-improvements.md` | Known bugs, UX issues, signal improvements, backend/infra suggestions |
+| `go-to-market.md` | Pricing, gating status, growth platforms, content marketing |
+| `deployment.md` | Server details, deploy commands, Docker, troubleshooting |
+| `api-reference.md` | All backend endpoints (auth, billing, dashboard, admin) |
+| `signals-reference.md` | All 8 signals: purpose, weights, LLM usage, known issues |
+| `landing-page.md` | Frontend architecture, components, i18n, design tokens |
+| `credentials.md` | Where secrets live (NO actual secrets), external accounts |
+
 ## Toolbox
 
 Skills repo: `McMutteer/claude-skills` (synced to `~/.claude/skills/`)
