@@ -27,10 +27,11 @@ Code is becoming commodity (AI agents write it). Trust is becoming scarce. Vigil
 
 ## Architecture
 
-- **v2-only pipeline:** All PRs run the same 6 signals (v1 deprecated in PR #91)
-- **Two verification layers:** Trust Verification (free: claims, undocumented, credential, coverage) + Deep Analysis (pro: contract, diff)
-- **6 signals:** claims-verifier, undocumented-changes, credential-scan, coverage-mapper, contract-checker, diff-analyzer
+- **v2-only pipeline:** All PRs run the same 8 signals (v1 deprecated in PR #91)
+- **Two verification layers:** Trust Verification (free: claims, undocumented, credential, coverage) + Deep Analysis (pro: contract, diff) + Informational (risk-score, description-generator)
+- **8 signals:** claims-verifier (w30), undocumented-changes (w25), credential-scan (w20), coverage-mapper (w10), contract-checker (w10), diff-analyzer (w5), risk-score (w0), description-generator (w0)
 - **Score:** 0-100 weighted average, failure cap at 70 for deterministic failures
+- **Per-signal timeout:** 60s with individual try-catch (one failure doesn't kill the pipeline)
 
 ## Visual Identity
 
