@@ -1,157 +1,194 @@
 <p align="center">
-  <img src=".claude/identity/icon-recraft.svg" width="64" alt="Vigil">
+  <a href="https://keepvigil.dev">
+    <img src=".claude/identity/icon-dark-512.png" width="120" alt="Vigil">
+  </a>
 </p>
 
 <h1 align="center">Vigil</h1>
 
-<p align="center"><strong>Verifies that your PR does what it says it does.</strong></p>
+<p align="center">
+  <strong>The verification layer for AI-assisted development.</strong><br>
+  <sub>Checks that your PR does what it says it does.</sub>
+</p>
 
 <p align="center">
+  <a href="https://github.com/marketplace/keepvigil"><img src="https://img.shields.io/badge/GitHub%20Marketplace-Install-2ea44f?logo=github" alt="Install on GitHub"></a>
+  <a href="https://keepvigil.dev"><img src="https://img.shields.io/badge/keepvigil.dev-e8a820?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMMyA3djEwbDkgNSA5LTVWN2wtOS01eiIgZmlsbD0id2hpdGUiLz48L3N2Zz4=" alt="Website"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
-  <a href="https://github.com/McMutteer/keepvigil/actions"><img src="https://github.com/McMutteer/keepvigil/actions/workflows/ci.yml/badge.svg" alt="Build"></a>
-  <a href="https://keepvigil.dev"><img src="https://img.shields.io/badge/website-keepvigil.dev-e8a820" alt="Website"></a>
+  <a href="https://github.com/McMutteer/keepvigil/actions"><img src="https://github.com/McMutteer/keepvigil/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
+
+<p align="center">
+  <a href="https://keepvigil.dev/en/docs/getting-started">Docs</a> · <a href="https://keepvigil.dev/en/pricing">Pricing</a> · <a href="https://keepvigil.dev/en/blog">Blog</a> · <a href="https://keepvigil.dev/en/about">About</a>
 </p>
 
 ---
 
 ## The Problem
 
-Your PR says "adds auth middleware." Did it? Your PR says "no breaking changes." Are there any? The gap between what a PR claims and what the code actually does grows with every merge — especially when AI agents write the code.
+AI agents write code faster than humans can review it. Your PR says *"adds auth middleware"* — did it? It says *"no breaking changes"* — are there any?
 
-Vigil closes that gap. It reads your PR description, verifies every claim against the actual diff, and surfaces changes you didn't mention — so reviewers know exactly what's real.
+**The gap between what a PR claims and what the code actually does grows with every merge.**
 
----
+Vigil closes that gap. It reads your PR description, verifies every claim against the actual diff, and surfaces changes you didn't mention.
 
 ## How It Works
 
-1. **Install** — Add Vigil from the [GitHub Marketplace](https://github.com/marketplace/keepvigil) or self-host
-2. **Open a PR** — Any PR. No test plan needed. No configuration.
-3. **Get Verified** — Vigil checks claims, surfaces undocumented changes, and analyzes impact
-
-```text
-┌──────────────────────────────────────────────────────┐
-│   Vigil — PR Verification: 82/100                    │
-│                                                      │
-│   Claims                                             │
-│   ✅ "Add rate limiting to API endpoints"            │
-│      — confirmed, rate-limiter.ts created            │
-│   ✅ "Add tests for rate limiter"                    │
-│      — confirmed, 12 tests in rate-limiter.test.ts   │
-│   ⚠️ "No breaking changes"                           │
-│      — GET /api/users adds rateLimit field            │
-│                                                      │
-│   Undocumented Changes                               │
-│   ⚠️ New dependency: ioredis (not mentioned)          │
-│   ⚠️ Environment variable: REDIS_URL (not documented) │
-│                                                      │
-│   Impact                                             │
-│   ✅ Credentials scan clean                          │
-│   ⚠️ Coverage gap: src/middleware/auth.ts             │
-│   ✅ No breaking API changes                         │
-│                                                      │
-│   Score: 82/100 — Review recommended                 │
-└──────────────────────────────────────────────────────┘
+```
+Install → Open a PR → Get verified. That's it.
 ```
 
----
+Vigil posts a verification comment on every PR:
 
-## Verification Signals
+```
+┌─────────────────────────────────────────────────────────┐
+│  Vigil Confidence Score: 82/100                         │
+│  Recommendation: Review recommended                     │
+│                                                         │
+│  Claims                                                 │
+│  ✅ "Add rate limiting to API endpoints"                │
+│     — confirmed: rate-limiter.ts created with 3 limits  │
+│  ✅ "Add tests for rate limiter"                        │
+│     — confirmed: 12 tests in rate-limiter.test.ts       │
+│  ⚠️  "No breaking changes"                              │
+│     — GET /api/users response adds rateLimit field      │
+│                                                         │
+│  Undocumented Changes                                   │
+│  ⚠️  New dependency: ioredis (not mentioned in PR)       │
+│  ⚠️  New env var: REDIS_URL (not documented)             │
+│                                                         │
+│  Impact                                                 │
+│  ✅ Credentials scan: clean                             │
+│  ⚠️  Coverage gap: src/middleware/auth.ts has no tests    │
+│  ✅ No breaking API contract changes                    │
+│                                                         │
+│  Risk: MEDIUM — 7 files, touches API response schema    │
+└─────────────────────────────────────────────────────────┘
+```
 
-8 signals feed into a weighted confidence score:
+**Read-only.** Vigil never executes code, never modifies your repo, and never accesses production systems.
 
-| Signal | Weight | Tier | Description |
-|--------|--------|------|-------------|
-| Claims Verifier | 30 | Free | Verifies PR title/body claims against the diff |
-| Undocumented Changes | 25 | Free | Detects significant changes not mentioned in the PR |
-| Credential Scan | 20 | Free | Detects secrets, API keys, and passwords in the diff |
-| Coverage Mapper | 10 | Free | Checks if changed files have corresponding tests |
-| Contract Checker | 10 | Pro | Verifies API and type contracts across files |
-| Diff Analyzer | 5 | Pro | LLM-powered diff quality and pattern analysis |
-| Risk Score | 0 | Free | Informational risk assessment (file count, sensitive areas) |
-| Description Generator | 0 | Free | Suggests a description when the PR body is empty |
+## Install
 
-**Read-only analysis** — Vigil never executes code, never modifies your repo, and never accesses production systems.
+### Hosted (recommended)
 
----
+**[Install from GitHub Marketplace →](https://github.com/marketplace/keepvigil)**
 
-## Quick Start
-
-### GitHub Marketplace (hosted)
-
-Install from the [GitHub Marketplace](https://github.com/marketplace/keepvigil), select your repos, and you're done. Free tier includes all 8 signals — unlimited repos.
+Select your repos and you're done. No configuration needed. Free tier includes all 8 signals, unlimited repos.
 
 ### Self-host
 
 ```bash
 git clone https://github.com/McMutteer/keepvigil.git
 cd keepvigil
-cp .env.example .env
-# Fill in GITHUB_APP_ID, GITHUB_PRIVATE_KEY, WEBHOOK_SECRET, DATABASE_URL, REDIS_URL
+cp .env.example .env  # Fill in your GitHub App credentials
 docker compose up
 ```
 
----
+See [self-hosting docs](https://keepvigil.dev/en/docs/configuration) for details.
+
+## 8 Verification Signals
+
+Every PR runs through 8 independent signals that feed a weighted confidence score:
+
+| Signal | What it does | Weight |
+|--------|-------------|--------|
+| **Claims Verifier** | Verifies each claim in the PR description against the diff | 30 |
+| **Undocumented Changes** | Finds significant changes not mentioned in the PR | 25 |
+| **Credential Scan** | Detects secrets, API keys, and passwords | 20 |
+| **Coverage Mapper** | Checks if changed files have corresponding tests | 10 |
+| **Contract Checker** | Verifies API and type contracts across consumers | 10 |
+| **Diff Analyzer** | Deep diff quality and gap analysis | 5 |
+| **Risk Score** | File count, sensitive areas, complexity assessment | info |
+| **Description Generator** | Suggests a description when the PR body is empty | info |
+
+Score: **0-100** weighted average. Critical failures (leaked secrets, false claims) cap the score at 70.
+
+## Who It's For
+
+- **Founders/CTOs using AI coding agents** — can't manually audit every PR from Cursor, Claude Code, or Devin
+- **Tech leads of 5-15 dev teams** — not enough time to review every PR thoroughly
+- **Open source maintainers** — receive PRs from strangers, need to verify claims
+
+## Pricing
+
+| | Free | Pro | Team |
+|--|------|-----|------|
+| **Price** | $0 | $12/dev/mo | $24/dev/mo |
+| All 8 signals | ✅ | ✅ | ✅ |
+| Unlimited repos | ✅ | ✅ | ✅ |
+| Inline review comments | | ✅ | ✅ |
+| Auto-approve on high scores | | ✅ | ✅ |
+| Team dashboard | | | ✅ |
+| @vigil commands | | | ✅ |
+| Priority support | | | ✅ |
+
+[See full pricing →](https://keepvigil.dev/en/pricing)
 
 ## Configuration
 
-Vigil works zero-config. Optionally customize via `.vigil.yml` in the repository root:
+Vigil works zero-config. Optionally customize via `.vigil.yml`:
 
 ```yaml
-notifications:
-  on: failure
-  urls:
-    - https://hooks.slack.com/services/T.../B.../xxx
-
 autoApprove:
   threshold: 90
 
 coverage:
   exclude:
     - packages/landing/
+
+notifications:
+  on: failure
+  urls:
+    - https://hooks.slack.com/services/...
 ```
-
----
-
-## Documentation
-
-Full docs at **[keepvigil.dev/docs](https://keepvigil.dev/docs/getting-started)**.
-
----
 
 ## Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Runtime | Node.js 22 + TypeScript 5.8 |
-| GitHub Integration | Probot 14 + Octokit |
-| LLM | OpenAI GPT-5.4-mini (primary) + Groq (fallback) |
-| Task Queue | BullMQ + Redis 7 |
+| Runtime | Node.js 22, TypeScript 5.8 |
+| GitHub | Probot 14, Octokit |
+| LLM | OpenAI GPT-5.4-mini + Groq fallback |
+| Queue | BullMQ + Redis 7 |
 | Database | PostgreSQL 16 + Drizzle ORM |
-| Build | tsup (ESM) + pnpm workspaces |
-| Containerization | Docker + Docker Compose |
-
----
+| Build | tsup (ESM), pnpm workspaces |
+| Deploy | Docker Compose |
 
 ## Development
 
-pnpm monorepo with five packages:
-
-```text
-packages/
-  core/         — types, score engine, credential scanner, coverage mapper, LLM client
-  github/       — Probot app, webhooks, pipeline, signals, reporter
-  landing/      — Next.js 15 landing page (keepvigil.dev)
-  dashboard/    — React SPA for users (/dashboard)
-  admin/        — React SPA for operations (/admin)
-```
-
-844 tests across 42 files.
-
 ```bash
+pnpm install
 pnpm build && pnpm test && pnpm lint && pnpm typecheck
 ```
 
----
+865 tests across 43 files. Monorepo with 5 packages:
+
+```
+packages/
+  core/         — types, scoring, credential scanner, coverage mapper, LLM
+  github/       — Probot app, webhooks, pipeline, 8 signals, reporter
+  landing/      — Next.js 15 (keepvigil.dev)
+  dashboard/    — React 19 SPA (/dashboard)
+  admin/        — React 19 SPA (/admin)
+```
+
+## Vigil vs. Others
+
+| | Vigil | CodeRabbit | GitHub Actions | Codecov |
+|--|-------|-----------|----------------|---------|
+| **Verifies PR claims** | ✅ | ❌ | ❌ | ❌ |
+| **Surfaces undocumented changes** | ✅ | ❌ | ❌ | ❌ |
+| **Code quality review** | ❌ | ✅ | ❌ | ❌ |
+| **Runs tests/builds** | ❌ | ❌ | ✅ | ❌ |
+| **Coverage metrics** | Basic | ❌ | ❌ | ✅ |
+| **Credential scanning** | ✅ | ❌ | ❌ | ❌ |
+
+Vigil complements code review tools — they review quality, we verify truthfulness.
+
+## Documentation
+
+Full docs at **[keepvigil.dev/docs](https://keepvigil.dev/en/docs/getting-started)**.
 
 ## License
 
