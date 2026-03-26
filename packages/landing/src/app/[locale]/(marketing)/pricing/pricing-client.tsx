@@ -310,6 +310,61 @@ function PricingFaq({ dict }: { dict: Dictionary }) {
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
+function TeamCalculator({ annual, dict }: { annual: boolean; dict: Dictionary }) {
+  const [teamSize, setTeamSize] = useState(5);
+  const locale = dict.nav.about === "About" ? "en" : "es";
+
+  const proCost = annual ? teamSize * 120 : teamSize * 12;
+  const teamCost = annual ? teamSize * 240 : teamSize * 24;
+  const period = annual
+    ? locale === "en" ? "/year" : "/año"
+    : locale === "en" ? "/month" : "/mes";
+  const label = locale === "en"
+    ? `${teamSize} developer${teamSize !== 1 ? "s" : ""}`
+    : `${teamSize} desarrollador${teamSize !== 1 ? "es" : ""}`;
+  const heading = locale === "en" ? "How much for your team?" : "¿Cuánto para tu equipo?";
+
+  return (
+    <div className="bg-bg-surface border border-white/[0.06] rounded-[12px] p-6 sm:p-8">
+      <h3 className="text-lg font-semibold text-text-primary text-center mb-6">{heading}</h3>
+
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-text-secondary">{label}</span>
+          <span className="text-sm font-mono text-text-primary">{teamSize}</span>
+        </div>
+        <input
+          type="range"
+          min={1}
+          max={50}
+          value={teamSize}
+          onChange={(e) => setTeamSize(Number(e.target.value))}
+          className="w-full h-1.5 bg-bg-elevated rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer"
+          aria-label={heading}
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="bg-bg-deep rounded-lg p-3">
+          <div className="text-xs text-text-muted mb-1">Free</div>
+          <div className="text-lg font-semibold font-mono text-text-primary">$0</div>
+          <div className="text-[10px] text-text-muted">{locale === "en" ? "forever" : "siempre"}</div>
+        </div>
+        <div className="bg-bg-deep rounded-lg p-3 border border-accent/20">
+          <div className="text-xs text-accent mb-1">Pro</div>
+          <div className="text-lg font-semibold font-mono text-text-primary">${proCost}</div>
+          <div className="text-[10px] text-text-muted">{period}</div>
+        </div>
+        <div className="bg-bg-deep rounded-lg p-3">
+          <div className="text-xs text-text-muted mb-1">Team</div>
+          <div className="text-lg font-semibold font-mono text-text-primary">${teamCost}</div>
+          <div className="text-[10px] text-text-muted">{period}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PricingPageClient({
   dict,
 }: {
@@ -389,6 +444,13 @@ export function PricingPageClient({
           <p className="text-center text-xs text-text-muted mt-8 mb-0">
             {t.allPlansNote}
           </p>
+        </ScrollReveal>
+      </div>
+
+      {/* Team size calculator */}
+      <div className="mx-auto max-w-[600px] px-6 mt-16 sm:mt-20">
+        <ScrollReveal delay={200}>
+          <TeamCalculator annual={annual} dict={dict} />
         </ScrollReveal>
       </div>
 
