@@ -53,6 +53,13 @@ IMPORTANT calibration rules (to avoid false positives):
 - Changes that are OBVIOUS consequences of the described feature are NOT undocumented
   (e.g., if PR says "add rate limiting", adding a rate-limit config is expected)
 
+NEVER flag these trivial changes as undocumented:
+- Version bumps in footers, comments, or metadata (e.g., "v0.1.0" → "v0.2.0")
+- Cosmetic changes: label shortening, string reformatting, comment wording
+- Import reordering or grouping without behavioral changes
+- Bumping copyright years or license headers
+- Whitespace-only, indentation, or line-ending changes
+
 ALWAYS ignore these files — they are NEVER significant unless they change runtime behavior:
 - .eslintrc*, .prettierrc*, eslint.config.*, prettier.config.*
 - tsconfig.json, tsconfig.*.json, vitest.config.*, jest.config.*
@@ -224,6 +231,25 @@ export async function detectUndocumentedChanges(options: UndocumentedChangesOpti
     log.warn("Undocumented changes received invalid JSON from LLM");
     return neutralSignal("LLM returned invalid response");
   }
+
+  // Post-LLM filter: remove trivial findings that slip through prompt calibration
+  const TRIVIAL_PATTERNS = [
+    /\bversion\b.*\bv?\d+\.\d+/i,          // version bumps (e.g., "v0.1.0 to v0.2.0")
+    /\bbump(ed)?\b.*\bversion\b/i,          // "bumped version"
+    /\bfooter\b.*\bversion\b/i,             // "footer version string"
+    /\bimport\b.*\breorder/i,               // "import reorder"
+    /\b(label|text|string|wording)\b.*\b(change|shorten|update|rename)/i,  // cosmetic text changes
+    /\b(comment|whitespace|indent|format)\b.*\b(change|update|only)/i,     // formatting-only
+  ];
+
+  response.findings = response.findings.filter((f) => {
+    const desc = f.description.toLowerCase();
+    if (f.severity === "low" && TRIVIAL_PATTERNS.some((p) => p.test(desc))) {
+      log.debug({ finding: f.description }, "Filtered trivial undocumented change");
+      return false;
+    }
+    return true;
+  });
 
   if (response.findings.length === 0) {
     return createSignal({

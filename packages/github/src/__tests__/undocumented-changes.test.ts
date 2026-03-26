@@ -290,4 +290,48 @@ describe("detectUndocumentedChanges", () => {
       expect(signal.requiresLLM).toBe(true);
     });
   });
+
+  describe("trivial finding filter", () => {
+    it("filters out low-severity version bump findings", async () => {
+      const llm = makeLLM(JSON.stringify({
+        findings: [
+          { category: "other", file: "comment-builder.ts", description: "Bumped footer version string from v0.1.0 to v0.2.0", severity: "low" },
+        ],
+      }));
+      const signal = await detectUndocumentedChanges({ prTitle: "feat: stuff", prBody: "", diff: SAMPLE_DIFF, llm });
+      expect(signal.score).toBe(100);
+      expect(signal.details[0].message).toContain("documented");
+    });
+
+    it("filters out low-severity label/text change findings", async () => {
+      const llm = makeLLM(JSON.stringify({
+        findings: [
+          { category: "config", file: "navbar.tsx", description: "Label text changed from 'Authentication' to 'auth'", severity: "low" },
+        ],
+      }));
+      const signal = await detectUndocumentedChanges({ prTitle: "feat: stuff", prBody: "", diff: SAMPLE_DIFF, llm });
+      expect(signal.score).toBe(100);
+    });
+
+    it("does NOT filter medium-severity version changes", async () => {
+      const llm = makeLLM(JSON.stringify({
+        findings: [
+          { category: "other", file: "package.json", description: "Bumped version from 1.0 to 2.0", severity: "medium" },
+        ],
+      }));
+      const signal = await detectUndocumentedChanges({ prTitle: "feat: stuff", prBody: "", diff: SAMPLE_DIFF, llm });
+      expect(signal.score).toBe(92); // medium = -8 penalty
+    });
+
+    it("does NOT filter high-severity findings regardless of pattern", async () => {
+      const llm = makeLLM(JSON.stringify({
+        findings: [
+          { category: "auth", file: "auth.ts", description: "Label changed on auth endpoint", severity: "high" },
+        ],
+      }));
+      const signal = await detectUndocumentedChanges({ prTitle: "feat: stuff", prBody: "", diff: SAMPLE_DIFF, llm });
+      expect(signal.score).toBe(85); // high = -15 penalty
+      expect(signal.passed).toBe(false);
+    });
+  });
 });

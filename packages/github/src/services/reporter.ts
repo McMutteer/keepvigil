@@ -3,6 +3,7 @@ import type { ClassifiedItem, ExecutionResult, VigilConfig, Signal, ConfidenceSc
 import { createLogger, computeScore } from "@vigil/core";
 import type { Database } from "@vigil/core/db";
 import { schema } from "@vigil/core/db";
+import { eq, and, count } from "drizzle-orm";
 import { updateCheckRun, determineConclusion, conclusionFromScore } from "./check-run-updater.js";
 import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
 import { notifyWebhooks } from "./webhook-notifier.js";
@@ -236,9 +237,24 @@ export async function reportResults(context: ReportContext): Promise<void> {
 
   // Secondary — catch errors so a comment failure doesn't re-trigger the whole job
   try {
-    // Detect first-run: no existing Vigil comment means this is the first time for this repo/PR
+    // Detect first-run: check if Vigil has ever processed a PR in this repo (not just this PR)
     const existingCommentId = await findExistingComment(context.octokit, context.owner, context.repo, context.pullNumber);
-    const isFirstRun = !existingCommentId;
+    let isFirstRun = false;
+    if (!existingCommentId && context.db) {
+      try {
+        const [result] = await context.db
+          .select({ total: count() })
+          .from(schema.executions)
+          .where(and(
+            eq(schema.executions.owner, context.owner),
+            eq(schema.executions.repo, context.repo),
+          ))
+          .limit(1);
+        isFirstRun = (result?.total ?? 0) === 0;
+      } catch {
+        isFirstRun = false; // On DB error, skip tips rather than show incorrectly
+      }
+    }
 
     const commentBody = buildCommentBody(
       items,
