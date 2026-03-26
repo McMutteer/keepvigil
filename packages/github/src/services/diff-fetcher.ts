@@ -55,7 +55,12 @@ export async function fetchPRDiff(options: FetchDiffOptions): Promise<string | n
 
     return diff;
   } catch (err) {
-    log.warn({ err, owner, repo, pullNumber }, "Could not fetch PR diff");
+    const status = (err as { status?: number })?.status;
+    const reason = status === 404 ? "PR not found or closed"
+      : status === 403 ? "API rate limit or permissions error"
+      : status === 422 ? "Diff too large for GitHub API"
+      : `API error${status ? ` (${status})` : ""}`;
+    log.warn({ err, owner, repo, pullNumber, status, reason }, "Could not fetch PR diff");
     return null;
   }
 }

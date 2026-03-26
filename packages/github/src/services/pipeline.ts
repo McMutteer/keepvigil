@@ -11,6 +11,9 @@ import type { Probot } from "probot";
 import type { Signal, VerifyTestPlanJob, LLMUsageEvent } from "@vigil/core";
 import { createLLMClient, createLLMClientWithFallback, scanCredentials, extractChangedFilesWithStatus, mapCoverage, assessRisk, createLogger, runWithCorrelationId, getWeights } from "@vigil/core";
 import type { ReasoningEffort } from "@vigil/core";
+
+/** Simple test file detection — avoids import conflicts with module mocking */
+const TEST_PATTERNS = [/\.test\.[jt]sx?$/, /\.spec\.[jt]sx?$/, /\/__tests__\//, /\/tests?\//, /_test\.go$/];
 import type { Database } from "@vigil/core/db";
 import { schema } from "@vigil/core/db";
 import { reportResults } from "./reporter.js";
@@ -287,9 +290,17 @@ async function _runPipeline(
       const changedFiles = extractChangedFilesWithStatus(diff);
       const repoFiles = await fetchRepoFileList({ octokit, owner, repo, headSha });
       const coverageSignal = mapCoverage(changedFiles, repoFiles, undefined, vigiConfig?.coverage?.exclude);
-      // If coverage mapper found no test files at all, reduce weight to avoid tanking the score
-      const coverageWeight = coverageSignal.score === 0 && coverageSignal.details.every((d) => d.status === "fail")
-        ? 2 : weights["coverage-mapper"];
+      // Adaptive weight: if repo has no test infrastructure at all, make coverage informational
+      const repoHasTests = repoFiles.some((f) => TEST_PATTERNS.some((p) => p.test(f)));
+      let coverageWeight: number;
+      if (!repoHasTests) {
+        coverageWeight = 0; // No test files in entire repo — informational only
+        log.info({ owner, repo }, "No test files in repo — coverage weight set to 0");
+      } else if (coverageSignal.score === 0 && coverageSignal.details.every((d) => d.status === "fail")) {
+        coverageWeight = 2; // Has tests but none for changed files — reduced penalty
+      } else {
+        coverageWeight = weights["coverage-mapper"];
+      }
       pushSignal(signals, coverageSignal, coverageWeight);
       log.info({ signalId: coverageSignal.id, score: coverageSignal.score, passed: coverageSignal.passed, weight: coverageWeight }, "Coverage mapper complete");
 

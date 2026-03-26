@@ -58,6 +58,13 @@ CRITICAL — avoid being too literal:
 - Claims about scope ("all endpoints", "every component") → verify against the ACTUAL scope, not hypothetical scope
 - If the only code path for a feature goes through the changed file, "everywhere" = "the one place it matters"
 
+IMPORTANT — PR descriptions often cover accumulated work:
+- A PR description may describe work done across MULTIPLE commits/pushes to the same branch
+- The diff you see may only contain the LATEST changes, not the full branch diff
+- If a claim describes a feature that is NOT in the current diff but IS plausible given the PR context, use verdict "verified" with evidence "Not in current diff — likely in earlier commits on this branch"
+- Do NOT mark claims as "unverified" just because the diff doesn't show them — only use "unverified" when the diff CONTRADICTS the claim's area or the claim is completely implausible
+- Example: PR says "redesign tickets and fix chat" but diff only shows chat fixes → "redesign tickets" should be "verified" (likely in earlier commit), not "unverified"
+
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "claims": [
