@@ -325,9 +325,9 @@ describe("mapCoverage", () => {
     });
 
     it("filename match (not full path) → plan-covered", () => {
-      const changed = ["packages/web/app/dashboard/page.tsx"];
-      const repo = ["packages/web/app/dashboard/page.tsx"];
-      const items = [makeItem("tp-0", "`page.tsx` shows dashboard")];
+      const changed = ["packages/web/src/utils/dashboard.tsx"];
+      const repo = ["packages/web/src/utils/dashboard.tsx"];
+      const items = [makeItem("tp-0", "`dashboard.tsx` shows dashboard")];
       const signal = mapCoverage(changed, repo, items);
       expect(signal.score).toBe(100);
       expect(signal.details[0].message).toContain("Plan-covered");
@@ -387,6 +387,84 @@ describe("mapCoverage", () => {
       const repo = ["src/foo.ts"];
       const signal = mapCoverage(changed, repo, undefined, undefined);
       expect(signal.score).toBe(0);
+    });
+  });
+
+  describe("presentation files", () => {
+    it("skips Next.js page components", () => {
+      const changed = ["packages/landing/src/app/[locale]/pricing/page.tsx"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100);
+      expect(signal.passed).toBe(true);
+      expect(signal.details[0].status).toBe("skip");
+      expect(signal.details[0].message).toContain("Presentation file");
+    });
+
+    it("skips Next.js layout components", () => {
+      const changed = ["src/app/layout.tsx"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100);
+      expect(signal.details[0].status).toBe("skip");
+    });
+
+    it("skips i18n dictionary files", () => {
+      const changed = ["src/i18n/dictionaries/en.ts"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100);
+      expect(signal.details[0].status).toBe("skip");
+    });
+
+    it("does NOT skip regular .tsx components", () => {
+      const changed = ["src/components/navbar.tsx"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(0); // no test file → fails
+      expect(signal.details[0].status).toBe("fail");
+    });
+
+    it("mixes presentation and source files correctly", () => {
+      const changed = [
+        "src/app/[locale]/page.tsx",       // presentation → skip
+        "src/utils/score.ts",               // source → needs test
+      ];
+      const repo = [...changed, "src/utils/__tests__/score.test.ts"];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100); // 1/1 source file covered
+      expect(signal.details.filter(d => d.status === "skip")).toHaveLength(1);
+      expect(signal.details.filter(d => d.status === "pass")).toHaveLength(1);
+    });
+  });
+
+  describe("static asset files", () => {
+    it("skips CSS files", () => {
+      const changed = ["src/styles/globals.css"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100);
+    });
+
+    it("skips SVG files", () => {
+      const changed = ["public/brand/icon.svg"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100);
+    });
+
+    it("skips image files", () => {
+      const changed = ["public/og-image.png", "assets/logo.jpg"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100);
+    });
+
+    it("skips font files", () => {
+      const changed = ["public/fonts/GeistMono.woff2"];
+      const repo = [...changed];
+      const signal = mapCoverage(changed, repo);
+      expect(signal.score).toBe(100);
     });
   });
 });
