@@ -5,7 +5,7 @@ import type { Database } from "@vigil/core/db";
 import { schema } from "@vigil/core/db";
 import { eq, and, count } from "drizzle-orm";
 import { updateCheckRun, determineConclusion, conclusionFromScore } from "./check-run-updater.js";
-import { buildCommentBody, COMMENT_MARKER } from "./comment-builder.js";
+import { buildCommentBody, buildErrorBody, COMMENT_MARKER } from "./comment-builder.js";
 import { notifyWebhooks } from "./webhook-notifier.js";
 import { postReviewComments } from "./review-commenter.js";
 import { maybeAutoApprove } from "./auto-approve.js";
@@ -74,6 +74,8 @@ export interface ReportContext {
   jobId?: string;
   /** Subscription tier — included in persisted results */
   tier?: string;
+  /** GitHub comment ID from placeholder — used for direct edit instead of search */
+  commentId?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -237,10 +239,13 @@ export async function reportResults(context: ReportContext): Promise<void> {
 
   // Secondary — catch errors so a comment failure doesn't re-trigger the whole job
   try {
-    // Detect first-run: check if Vigil has ever processed a PR in this repo (not just this PR)
-    const existingCommentId = await findExistingComment(context.octokit, context.owner, context.repo, context.pullNumber);
+    // Resolve comment ID: prefer direct ID from placeholder, fall back to marker search
+    const targetCommentId = context.commentId
+      ?? await findExistingComment(context.octokit, context.owner, context.repo, context.pullNumber);
+
+    // Detect first-run: check if Vigil has ever processed a PR in this repo
     let isFirstRun = false;
-    if (!existingCommentId && context.db) {
+    if (!targetCommentId && context.db) {
       try {
         const [result] = await context.db
           .select({ total: count() })
@@ -252,29 +257,33 @@ export async function reportResults(context: ReportContext): Promise<void> {
           .limit(1);
         isFirstRun = (result?.total ?? 0) === 0;
       } catch {
-        isFirstRun = false; // On DB error, skip tips rather than show incorrectly
+        isFirstRun = false;
       }
     }
 
-    const commentBody = buildCommentBody(
-      items,
-      summary,
-      context.pipelineError ?? undefined,
-      context.correlationId,
-      context.vigiConfig,
-      context.configWarnings,
-      context.retryItemIds,
-      confidenceScore,
-      isFirstRun,
-      context.pipelineMode,
-      context.diff ?? undefined,
-    );
+    // If pipeline errored and no signals, post error state instead of results
+    const isPipelineFailure = context.pipelineError && (!context.signals || context.signals.length === 0);
+    const commentBody = isPipelineFailure
+      ? buildErrorBody(context.correlationId)
+      : buildCommentBody(
+          items,
+          summary,
+          context.pipelineError ?? undefined,
+          context.correlationId,
+          context.vigiConfig,
+          context.configWarnings,
+          context.retryItemIds,
+          confidenceScore,
+          isFirstRun,
+          context.pipelineMode,
+          context.diff ?? undefined,
+        );
 
-    if (existingCommentId) {
+    if (targetCommentId) {
       await context.octokit.rest.issues.updateComment({
         owner: context.owner,
         repo: context.repo,
-        comment_id: existingCommentId,
+        comment_id: targetCommentId,
         body: commentBody,
       });
     } else {

@@ -536,7 +536,6 @@ describe("buildCommentBody (score-based)", () => {
       undefined,
       makeConfidenceScore({ recommendation: "safe" }),
     );
-    expect(body).toContain("Recommendation:");
     expect(body).toContain("Safe to merge");
   });
 
@@ -607,39 +606,7 @@ describe("buildCommentBody (score-based)", () => {
     expect(body).toContain("build");
   });
 
-  it("shows assertion file summary", () => {
-    const items = [
-      makeReportItem("schema.ts has validation", "passed", {
-        id: "tp-1",
-        executorType: "assertion",
-        evidence: { file: "src/schema.ts", verified: true },
-      }),
-      makeReportItem("config.ts exports default", "passed", {
-        id: "tp-2",
-        executorType: "assertion",
-        evidence: { file: "src/config.ts", verified: true },
-      }),
-    ];
-    // Add code blocks to hints so file names appear
-    items[0].classified.item.hints.codeBlocks = ["src/schema.ts"];
-    items[1].classified.item.hints.codeBlocks = ["src/config.ts"];
-
-    const body = buildCommentBody(
-      items,
-      makeSummary({ passed: 2, failed: 0 }),
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      makeConfidenceScore(),
-    );
-    expect(body).toContain("2 files verified");
-    expect(body).toContain("`schema.ts`");
-    expect(body).toContain("`config.ts`");
-  });
-
-  it("wraps test plan results in a collapsible details block", () => {
+  it("uses collapsible details for signal breakdown", () => {
     const body = buildCommentBody(
       [makeReportItem("test", "passed")],
       makeSummary({ passed: 1, failed: 0 }),
@@ -651,7 +618,7 @@ describe("buildCommentBody (score-based)", () => {
       makeConfidenceScore(),
     );
     expect(body).toContain("<details>");
-    expect(body).toContain("<summary>Test plan results</summary>");
+    expect(body).toContain("Signal Breakdown");
     expect(body).toContain("</details>");
   });
 
@@ -682,7 +649,9 @@ describe("buildCommentBody (score-based)", () => {
       makeConfidenceScore(),
       false,
     );
-    expect(body).not.toContain("first run detected");
+    expect(body).toContain("<details>");
+    expect(body).toContain("Signal Breakdown");
+    expect(body).toContain("</details>");
   });
 
   it("includes review recommendation with failed signal names", () => {
@@ -863,7 +832,7 @@ describe("action items deduplication", () => {
     // Should show "×3" instead of 3 separate lines
     expect(body).toContain("×3");
     // In the Action Items section, message should appear once (with ×3)
-    const actionSection = body.split("### Action Items")[1]?.split("###")[0] ?? "";
+    const actionSection = body.split("Action Items")[1]?.split("</details>")[0] ?? "";
     const matches = actionSection.match(/Contract mismatch/g) ?? [];
     expect(matches.length).toBe(1);
   });

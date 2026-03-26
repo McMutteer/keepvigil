@@ -159,7 +159,7 @@ async function _runPipeline(
   llmConfig: PipelineLLMConfig,
   correlationId: string,
 ): Promise<void> {
-  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig, configWarnings } = job;
+  const { owner, repo, pullNumber, headSha, checkRunId, prBody, installationId, vigiConfig, configWarnings, commentId } = job;
   const prTitle = job.prTitle ?? "";
   const jobId = `${installationId}-${owner}-${repo}-${pullNumber}`;
   const mode = "v2-only" as const;
@@ -184,6 +184,7 @@ async function _runPipeline(
       pipelineError: rateCheck.message ?? "Rate limit exceeded",
       vigiConfig, configWarnings,
       db: pipelineDb ?? undefined, installationId, jobId, tier,
+      commentId,
     });
     return;
   }
@@ -379,6 +380,7 @@ async function _runPipeline(
         installationId,
         jobId,
         tier,
+        commentId,
       });
     } catch (reportErr) {
       log.error({ err: reportErr }, "Failed to report results");

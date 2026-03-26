@@ -12,6 +12,51 @@ const MAX_COMMENT_BYTES = 60_000;
 const MAX_EVIDENCE_BLOCK_BYTES = 2000;
 const TRUNCATION_SUFFIX = "\n\n...(truncated)";
 
+/** Build the placeholder comment shown immediately while signals run. */
+export function buildPlaceholderBody(opts: {
+  changedFiles?: number;
+  additions?: number;
+  deletions?: number;
+  correlationId?: string;
+}): string {
+  const parts: string[] = [COMMENT_MARKER];
+  parts.push("⏳ **Vigil is analyzing this PR...**");
+  parts.push("");
+
+  const stats: string[] = [];
+  if (opts.changedFiles != null) stats.push(`📁 ${opts.changedFiles} file${opts.changedFiles !== 1 ? "s" : ""} changed`);
+  if (opts.additions != null && opts.deletions != null) stats.push(`+${opts.additions} / -${opts.deletions}`);
+
+  // Estimate analysis time based on file count
+  const files = opts.changedFiles ?? 0;
+  const estimate = files <= 5 ? "~15s" : files <= 20 ? "~30s" : "~60s";
+  stats.push(`⚡ ${estimate}`);
+
+  if (stats.length > 0) parts.push(stats.join(" • "));
+  parts.push("");
+  parts.push("---");
+
+  const runPart = opts.correlationId ? ` • run: ${opts.correlationId.slice(0, 8)}` : "";
+  parts.push(`<sub>Vigil v0.2.0 • [keepvigil.dev](https://keepvigil.dev)${runPart}</sub>`);
+
+  return parts.join("\n");
+}
+
+/** Build the error state comment when pipeline fails. */
+export function buildErrorBody(correlationId?: string): string {
+  const parts: string[] = [COMMENT_MARKER];
+  parts.push("❌ **Vigil encountered an error analyzing this PR.**");
+  parts.push("");
+  parts.push("Something went wrong during verification. This doesn't affect your PR — you can merge normally.");
+  parts.push("");
+  parts.push("---");
+
+  const runPart = correlationId ? ` • run: ${correlationId.slice(0, 8)}` : "";
+  parts.push(`<sub>Vigil v0.2.0 • [keepvigil.dev](https://keepvigil.dev)${runPart} • [Report issue](https://github.com/McMutteer/keepvigil/issues)</sub>`);
+
+  return parts.join("\n");
+}
+
 /** Build the full PR comment markdown body. Pure function — no I/O. */
 export function buildCommentBody(items: ReportItem[], summary: ReportSummary, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], confidenceScore?: ConfidenceScore, isFirstRun?: boolean, pipelineMode?: PipelineMode, diff?: string): string {
   if (confidenceScore) {
@@ -90,22 +135,22 @@ function buildContextualRecommendation(score: ConfidenceScore, summary: ReportSu
   return score.recommendation === "caution" ? "Merge with caution" : "Review recommended";
 }
 
-/** Score-based comment format — shows confidence score, signal table, and test plan results in a details block. */
+/** Score-based comment format — compact with collapsible sections. */
 function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, confidenceScore: ConfidenceScore, pipelineError?: string, correlationId?: string, vigiConfig?: VigilConfig, configWarnings?: string[], retryItemIds?: string[], isFirstRun?: boolean, _pipelineMode?: PipelineMode, diff?: string): string {
   const isRetry = Array.isArray(retryItemIds) && retryItemIds.length > 0;
-  const recommendationEmoji: Record<string, string> = { safe: "\u2705", review: "\u26A0\uFE0F", caution: "\uD83D\uDD34" };
-  const emoji = recommendationEmoji[confidenceScore.recommendation] ?? "";
   const recLabel = buildContextualRecommendation(confidenceScore, summary);
+  const recEmoji: Record<string, string> = { safe: "✅", review: "⚠️", caution: "🚨" };
+  const emoji = recEmoji[confidenceScore.recommendation] ?? "";
 
   const parts: string[] = [
     COMMENT_MARKER,
-    isRetry ? `## Vigil Confidence Score: ${confidenceScore.score}/100 _(retry)_` : `## Vigil Confidence Score: ${confidenceScore.score}/100`,
+    `## Vigil Confidence Score: ${confidenceScore.score}/100${isRetry ? " _(retry)_" : ""}`,
     "",
-    `**Recommendation:** ${recLabel} ${emoji}`,
+    `${emoji} **${recLabel}**`,
     "",
   ];
 
-  // Compact one-line glance (files, categories, coverage, review time)
+  // Glance line in a blockquote for visual distinction
   const glanceLine = buildReviewSummary(confidenceScore.signals, diff);
   if (glanceLine) {
     parts.push(glanceLine, "");
@@ -119,92 +164,135 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
     parts.push(`> **Note:** ${pipelineError}`, "");
   }
 
-  // Description suggestion (when PR body was empty/generic)
+  // Description suggestion (collapsible)
   const descSection = buildDescriptionSection(confidenceScore.signals);
   if (descSection) {
     parts.push(descSection, "");
   }
 
-  // v2 sections: Claims + Undocumented Changes (when those signals are present)
-  const claimsSection = buildClaimsSection(confidenceScore.signals);
-  if (claimsSection) {
-    parts.push(claimsSection, "");
+  // Claims section (collapsible)
+  const claimsSignal = confidenceScore.signals.find(s => s.id === "claims-verifier");
+  if (claimsSignal && claimsSignal.details.length > 0) {
+    const passed = claimsSignal.details.filter(d => d.status === "pass").length;
+    const total = claimsSignal.details.filter(d => d.status !== "skip").length;
+    const allPassed = passed === total;
+    const summaryIcon = allPassed ? "✅" : "⚠️";
+    const summaryText = `${passed}/${total} verified ${summaryIcon}`;
+
+    parts.push("<details>");
+    parts.push(`<summary>📋 <strong>Claims</strong> — ${summaryText}</summary>`);
+    parts.push("");
+    const claimsContent = buildClaimsSection(confidenceScore.signals);
+    if (claimsContent) {
+      // Strip the "### Claims" header since we have the summary line
+      const lines = claimsContent.split("\n").filter(l => !l.startsWith("### Claims"));
+      parts.push(lines.join("\n").trim());
+    }
+    parts.push("");
+    parts.push("</details>");
+    parts.push("");
   }
 
-  const undocSection = buildUndocumentedSection(confidenceScore.signals);
-  if (undocSection) {
-    parts.push(undocSection, "");
+  // Undocumented changes section (collapsible)
+  const undocSignal = confidenceScore.signals.find(s => s.id === "undocumented-changes");
+  if (undocSignal) {
+    const warnings = undocSignal.details.filter(d => d.status === "fail" || d.status === "warn");
+    if (warnings.length > 0) {
+      parts.push("<details>");
+      parts.push(`<summary>🔍 <strong>Undocumented Changes</strong> — ${warnings.length} warning${warnings.length !== 1 ? "s" : ""} ⚠️</summary>`);
+      parts.push("");
+      const undocContent = buildUndocumentedSection(confidenceScore.signals);
+      if (undocContent) {
+        const lines = undocContent.split("\n").filter(l => !l.startsWith("### Undocumented"));
+        parts.push(lines.join("\n").trim());
+      }
+      parts.push("");
+      parts.push("</details>");
+    } else {
+      parts.push("🔍 **Undocumented Changes** — None found ✅");
+    }
+    parts.push("");
   }
 
-  const riskSection = buildRiskSection(confidenceScore.signals);
-  if (riskSection) {
-    parts.push(riskSection, "");
+  // Risk section (inline for LOW, collapsible for MEDIUM/HIGH)
+  const riskSignal = confidenceScore.signals.find(s => s.id === "risk-score");
+  if (riskSignal) {
+    const riskDetail = riskSignal.details[0];
+    const riskLevel = riskDetail?.label?.match(/\b(LOW|MEDIUM|HIGH)\b/)?.[1] ?? "LOW";
+    const riskIcon = riskLevel === "HIGH" ? "🔴" : riskLevel === "MEDIUM" ? "🟡" : "🟢";
+
+    if (riskLevel === "LOW") {
+      parts.push(`${riskIcon} **Risk:** ${riskLevel}`);
+    } else {
+      parts.push("<details>");
+      parts.push(`<summary>${riskIcon} <strong>Risk: ${riskLevel}</strong></summary>`);
+      parts.push("");
+      const riskContent = buildRiskSection(confidenceScore.signals);
+      if (riskContent) {
+        const lines = riskContent.split("\n").filter(l => !l.startsWith("### Risk"));
+        parts.push(lines.join("\n").trim());
+      }
+      parts.push("");
+      parts.push("</details>");
+    }
+    parts.push("");
   }
 
-  // Signal table — only signals that contribute to the score (weight > 0)
-  // Hide signals that are entirely skipped (e.g., diff-analyzer in v2-only mode)
+  // Signal breakdown table (collapsible)
   const scoringSignals = confidenceScore.signals.filter((s) =>
     s.weight > 0 && !(s.details.length > 0 && s.details.every((d) => d.status === "skip")),
   );
   if (scoringSignals.length > 0) {
-    parts.push(
-      "| Signal | Score | Status |",
-      "|--------|-------|--------|",
-    );
+    const passedCount = scoringSignals.filter(s => s.score >= 80).length;
+    const warnCount = scoringSignals.length - passedCount;
+    const tableSummary = warnCount > 0
+      ? `${passedCount} passed, ${warnCount} needs attention`
+      : `${passedCount} passed`;
+
+    parts.push("<details>");
+    parts.push(`<summary>📊 <strong>Signal Breakdown</strong> — ${tableSummary}</summary>`);
+    parts.push("");
+    parts.push("| Signal | Score | Status |");
+    parts.push("|--------|-------|--------|");
     for (const signal of scoringSignals) {
       const statusSummary = buildSignalStatusSummary(signal);
       parts.push(`| ${escapeTableCell(signal.name)} | ${signal.score}/100 | ${statusSummary} |`);
     }
     parts.push("");
+    parts.push("</details>");
+    parts.push("");
   }
 
-  // Action items — highlight failures and warnings
+  // Action items (only if there are actual issues)
   const actionItems = buildActionItems(confidenceScore, items);
   if (actionItems) {
-    parts.push(actionItems, "");
+    parts.push("<details>");
+    parts.push("<summary>⚡ <strong>Action Items</strong></summary>");
+    parts.push("");
+    // Strip the "### Action Items" header
+    const lines = actionItems.split("\n").filter(l => !l.startsWith("### Action"));
+    parts.push(lines.join("\n").trim());
+    parts.push("");
+    parts.push("</details>");
+    parts.push("");
   }
 
-  // Assertion evidence summary — show how many files were verified
-  const assertionItems = items.filter((i) => i.classified.executorType === "assertion");
-  if (assertionItems.length > 0) {
-    const verified = assertionItems.filter((i) => i.verdict === "passed").length;
-    const fileNames = assertionItems
-      .filter((i) => i.verdict === "passed")
-      .map((i) => i.classified.item.hints.codeBlocks[0] || "")
-      .filter(Boolean)
-      .map((f) => `\`${f.split("/").pop()}\``)
-      .slice(0, 8);
-    if (verified > 0) {
-      parts.push(`\uD83D\uDCC1 **${verified} file${verified > 1 ? "s" : ""} verified:** ${fileNames.join(", ")}${verified > 8 ? "..." : ""}`, "");
-    }
-  }
-
-  // Test plan results in a collapsible details block (only when items exist)
-  if (items.length > 0) {
-    const v1Content = buildV1DetailsContent(items, summary);
-    parts.push(
-      "<details>",
-      "<summary>Test plan results</summary>",
-      "",
-      v1Content,
-      "",
-      "</details>",
-    );
-  }
-
+  // Config block (if present)
   const configBlock = buildConfigBlock(vigiConfig, configWarnings);
   if (configBlock) {
-    parts.push("", configBlock);
+    parts.push(configBlock, "");
   }
 
+  // First-run onboarding tips (collapsible)
   if (isFirstRun) {
-    parts.push("", _pipelineMode === "v2-only" ? buildV2OnboardingTips() : buildOnboardingTips());
+    parts.push(_pipelineMode === "v2-only" ? buildV2OnboardingTips() : buildOnboardingTips());
+    parts.push("");
   }
 
-  const footer = correlationId
-    ? `<sub>Vigil v0.2.0 | keepvigil.dev | run: ${correlationId}</sub>`
-    : `<sub>Vigil v0.2.0 | keepvigil.dev</sub>`;
-  parts.push("", "---", footer);
+  // Footer
+  const runPart = correlationId ? ` • run: ${correlationId.slice(0, 8)}` : "";
+  parts.push("---");
+  parts.push(`<sub>Vigil v0.2.0 • [keepvigil.dev](https://keepvigil.dev)${runPart}</sub>`);
 
   let body = parts.join("\n");
   body = truncateToBytes(body, MAX_COMMENT_BYTES, TRUNCATION_SUFFIX);
