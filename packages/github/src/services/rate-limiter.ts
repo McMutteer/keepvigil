@@ -15,6 +15,14 @@ const LIMITS: Record<Plan, RateConfig> = {
   team: { perHour: 50, perDay: null },
 };
 
+/** Installation IDs that bypass all rate limits (comma-separated env var) */
+const UNLIMITED_INSTALLATIONS = new Set(
+  (process.env.UNLIMITED_INSTALLATION_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
+
 // In-memory fixed-window counters (reset on restart — acceptable for v1)
 // Expired entries are evicted on access — no unbounded growth
 const counters = new Map<string, { count: number; resetAt: number }>();
@@ -56,6 +64,10 @@ export function checkRateLimit(
   plan: Plan,
   prAuthor?: string,
 ): { allowed: boolean; message?: string } {
+  if (UNLIMITED_INSTALLATIONS.has(String(installationId))) {
+    return { allowed: true };
+  }
+
   const limits = LIMITS[plan];
   const identity = prAuthor ?? String(installationId);
 
