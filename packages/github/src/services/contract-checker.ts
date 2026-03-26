@@ -111,6 +111,13 @@ Specifically look for:
 4. **Status/enum mismatches**: Backend uses "COMPLETED", frontend checks for "DONE"
 5. **Type mismatches**: Backend returns string, frontend treats as number
 
+IMPORTANT — avoid false positives:
+- If the frontend uses destructuring, spread operators, or wrapper functions that could resolve the shape, mark as COMPATIBLE
+- If the backend wraps data in { results: [...] } and the frontend accesses response.results or data.results, that IS compatible
+- Only flag mismatches you are CERTAIN about — when the field names or types are clearly wrong
+- When in doubt, mark as compatible with a note — a false "incompatible" wastes reviewer time
+- Nested access patterns (data.results.map, response.data.items) are valid — don't flag wrapper objects
+
 For each contract you find between producer (backend) and consumer (frontend):
 - "compatible": true if the shapes match, false if there's a mismatch
 - "producer": file path and relevant code

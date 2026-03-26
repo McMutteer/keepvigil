@@ -105,7 +105,7 @@ describe("runPipeline (v2-only)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchDiff.mockResolvedValue("diff --git a/file.ts\n+++ b/file.ts\n@@ -1 +1 @@\n+hello");
-    mockFetchRepoFiles.mockResolvedValue(["file.ts"]);
+    mockFetchRepoFiles.mockResolvedValue(["file.ts", "file.test.ts"]);
     setPipelineDb(null as any);
   });
 
