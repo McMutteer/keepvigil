@@ -22,6 +22,8 @@ function makeFailingLLM(): LLMClient {
   };
 }
 
+const SAMPLE_TITLE = "feat: add rate limiting to API endpoints";
+
 const SAMPLE_DIFF = `diff --git a/src/rate-limiter.ts b/src/rate-limiter.ts
 new file mode 100644
 --- /dev/null
@@ -137,7 +139,7 @@ describe("verifyClaims", () => {
       }));
 
       const signal = await verifyClaims({
-        prTitle: "feat: A",
+        prTitle: SAMPLE_TITLE,
         prBody: "Also B, C, D, and E.",
         diff: SAMPLE_DIFF,
         llm,
@@ -155,7 +157,7 @@ describe("verifyClaims", () => {
       }));
 
       const signal = await verifyClaims({
-        prTitle: "A",
+        prTitle: SAMPLE_TITLE,
         prBody: "B",
         diff: SAMPLE_DIFF,
         llm,
@@ -176,7 +178,7 @@ describe("verifyClaims", () => {
       }));
 
       const signal = await verifyClaims({
-        prTitle: "A",
+        prTitle: SAMPLE_TITLE,
         prBody: "B C D E",
         diff: SAMPLE_DIFF,
         llm,
@@ -221,7 +223,7 @@ describe("verifyClaims", () => {
       const llm = makeLLM(JSON.stringify({ claims: [] }));
 
       const signal = await verifyClaims({
-        prTitle: "WIP",
+        prTitle: "WIP: work in progress update",
         prBody: "",
         diff: SAMPLE_DIFF,
         llm,
@@ -282,19 +284,19 @@ describe("verifyClaims", () => {
   describe("signal metadata", () => {
     it("has correct signal ID", async () => {
       const llm = makeLLM(JSON.stringify({ claims: [] }));
-      const signal = await verifyClaims({ prTitle: "x", prBody: "", diff: SAMPLE_DIFF, llm });
+      const signal = await verifyClaims({ prTitle: SAMPLE_TITLE, prBody: "", diff: SAMPLE_DIFF, llm });
       expect(signal.id).toBe("claims-verifier");
     });
 
     it("has weight 15", async () => {
       const llm = makeLLM(JSON.stringify({ claims: [] }));
-      const signal = await verifyClaims({ prTitle: "x", prBody: "", diff: SAMPLE_DIFF, llm });
+      const signal = await verifyClaims({ prTitle: SAMPLE_TITLE, prBody: "", diff: SAMPLE_DIFF, llm });
       expect(signal.weight).toBe(15);
     });
 
     it("requires LLM", async () => {
       const llm = makeLLM(JSON.stringify({ claims: [] }));
-      const signal = await verifyClaims({ prTitle: "x", prBody: "", diff: SAMPLE_DIFF, llm });
+      const signal = await verifyClaims({ prTitle: SAMPLE_TITLE, prBody: "", diff: SAMPLE_DIFF, llm });
       expect(signal.requiresLLM).toBe(true);
     });
   });
@@ -308,7 +310,7 @@ describe("verifyClaims", () => {
         ],
       }));
 
-      const signal = await verifyClaims({ prTitle: "x", prBody: "", diff: SAMPLE_DIFF, llm });
+      const signal = await verifyClaims({ prTitle: SAMPLE_TITLE, prBody: "", diff: SAMPLE_DIFF, llm });
       // The detail label is truncated to ~120 chars with "..." suffix
       expect(signal.details[0].label.length).toBeLessThanOrEqual(124);
       expect(signal.details[0].label).toContain("...");
@@ -322,9 +324,29 @@ describe("verifyClaims", () => {
         ],
       }));
 
-      const signal = await verifyClaims({ prTitle: "x", prBody: "", diff: SAMPLE_DIFF, llm });
+      const signal = await verifyClaims({ prTitle: SAMPLE_TITLE, prBody: "", diff: SAMPLE_DIFF, llm });
       // Only the valid claim is included
       expect(signal.details).toHaveLength(1);
+    });
+  });
+
+  describe("short description detection", () => {
+    it("flags PRs with very short descriptions (< 15 chars)", async () => {
+      const llm = makeLLM("unused");
+      const signal = await verifyClaims({ prTitle: "fix bug", prBody: "", diff: SAMPLE_DIFF, llm });
+      expect(signal.score).toBe(70);
+      expect(signal.passed).toBe(false);
+      expect(signal.details[0].message).toContain("too short");
+      // LLM should NOT have been called
+      expect(llm.chat).not.toHaveBeenCalled();
+    });
+
+    it("does not flag PRs with adequate descriptions", async () => {
+      const response = JSON.stringify({ claims: [{ text: "Add rate limiting", source: "title", verdict: "verified", evidence: "Found rate limiter" }] });
+      const llm = makeLLM(response);
+      const signal = await verifyClaims({ prTitle: "feat: add rate limiting to endpoints", prBody: "", diff: SAMPLE_DIFF, llm });
+      expect(signal.score).toBe(100);
+      expect(llm.chat).toHaveBeenCalled();
     });
   });
 });

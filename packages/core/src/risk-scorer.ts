@@ -316,13 +316,31 @@ export function assessRisk(
     });
   }
 
-  // Blast radius (>20 files)
+  // Blast radius — scaled by source file count
   const sourceFiles = files.filter((f) => !isTestFile(f.path) && !isNonSource(f.path));
-  if (sourceFiles.length > 20) {
+  if (sourceFiles.length > 50) {
+    factors.push({
+      level: "high",
+      label: "Very high blast radius",
+      message: `${sourceFiles.length} source files changed — very large scope`,
+    });
+  } else if (sourceFiles.length > 20) {
     factors.push({
       level: "medium",
       label: "High blast radius",
       message: `${sourceFiles.length} source files changed — large scope increases merge risk`,
+    });
+  }
+
+  // Large diff by line count
+  const addCount = (diff.match(/^\+[^+]/gm) ?? []).length;
+  const removeCount = (diff.match(/^-[^-]/gm) ?? []).length;
+  const totalChanged = addCount + removeCount;
+  if (totalChanged > 2000) {
+    factors.push({
+      level: "medium",
+      label: "Large diff",
+      message: `~${totalChanged} lines changed (+${addCount}/-${removeCount}) — consider splitting into smaller PRs`,
     });
   }
 

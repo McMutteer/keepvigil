@@ -9,11 +9,10 @@ interface RateConfig {
   perDay: number | null;
 }
 
-// Rate limits disabled during testing phase — all tiers effectively unlimited
 const LIMITS: Record<Plan, RateConfig> = {
-  free: { perHour: 9999, perDay: null },
-  pro: { perHour: 9999, perDay: null },
-  team: { perHour: 9999, perDay: null },
+  free: { perHour: 3, perDay: 10 },
+  pro: { perHour: 10, perDay: null },
+  team: { perHour: 50, perDay: null },
 };
 
 // In-memory fixed-window counters (reset on restart — acceptable for v1)
