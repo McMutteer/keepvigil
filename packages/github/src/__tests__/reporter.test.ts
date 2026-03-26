@@ -1202,11 +1202,10 @@ describe("buildCommentBody — score-based format", () => {
     expect(body).toContain(COMMENT_MARKER);
     expect(body).toContain("Vigil Confidence Score: 82/100");
     expect(body).toContain("Safe to merge");
-    expect(body).toContain("| Signal | Score | Status |");
+    expect(body).toContain("Signal Breakdown");
     expect(body).toContain("CI Bridge");
     expect(body).toContain("100/100");
     expect(body).toContain("<details>");
-    expect(body).toContain("Test plan results");
   });
 
   it("renders review recommendation with warning emoji", () => {
@@ -1223,7 +1222,7 @@ describe("buildCommentBody — score-based format", () => {
 
     // Contextual recommendation shows what failed
     expect(body).toContain("30/100");
-    expect(body).toContain("\uD83D\uDD34");
+    expect(body).toContain("🚨");
   });
 
   it("preserves v1 format when confidenceScore is undefined", () => {

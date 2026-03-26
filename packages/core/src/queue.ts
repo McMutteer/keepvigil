@@ -30,4 +30,12 @@ export interface VerifyTestPlanJob {
   prAuthor?: string;
   /** Stable GitHub user ID of the PR author — used for per-seat rate limiting */
   prAuthorId?: number;
+  /** GitHub comment ID for the placeholder comment — used to edit in place with results */
+  commentId?: number;
+  /** Number of files changed in the PR — used for placeholder display */
+  prChangedFiles?: number;
+  /** Lines added in the PR — used for placeholder display */
+  prAdditions?: number;
+  /** Lines deleted in the PR — used for placeholder display */
+  prDeletions?: number;
 }

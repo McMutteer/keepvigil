@@ -3,6 +3,7 @@ import { createLogger } from "@vigil/core";
 import { createPendingCheckRun } from "../services/check-run.js";
 import { enqueueVerification } from "../services/queue.js";
 import { parseVigilConfig } from "../services/vigil-config.js";
+import { buildPlaceholderBody, COMMENT_MARKER } from "../services/comment-builder.js";
 import type { VigilConfig } from "@vigil/core/types";
 
 const log = createLogger("pull-request");
@@ -74,6 +75,7 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
   }
 
   let checkRunId: number | undefined;
+  let commentId: number | undefined;
 
   try {
     checkRunId = await createPendingCheckRun(context.octokit, {
@@ -82,6 +84,40 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
       headSha: pr.head.sha,
       pullNumber: pr.number,
     });
+
+    // Post or update placeholder comment immediately (before enqueue)
+    const correlationId = crypto.randomUUID();
+    const placeholderBody = buildPlaceholderBody({
+      changedFiles: pr.changed_files,
+      additions: pr.additions,
+      deletions: pr.deletions,
+      correlationId,
+    });
+
+    try {
+      // Check for existing Vigil comment (re-push case)
+      const comments = await context.octokit.paginate(context.octokit.rest.issues.listComments, {
+        owner, repo, issue_number: pr.number, per_page: 100,
+      });
+      const existing = comments.find(
+        c => c.body?.includes(COMMENT_MARKER) && c.user?.type === "Bot",
+      );
+
+      if (existing) {
+        await context.octokit.rest.issues.updateComment({
+          owner, repo, comment_id: existing.id, body: placeholderBody,
+        });
+        commentId = existing.id;
+      } else {
+        const { data } = await context.octokit.rest.issues.createComment({
+          owner, repo, issue_number: pr.number, body: placeholderBody,
+        });
+        commentId = data.id;
+      }
+    } catch (placeholderErr) {
+      // Non-fatal — if placeholder fails, the pipeline still runs and posts results
+      log.warn({ err: placeholderErr }, "Failed to post placeholder comment");
+    }
 
     const jobId = await enqueueVerification({
       installationId: String(installation.id),
@@ -96,10 +132,14 @@ export async function handlePullRequest(context: PullRequestContext): Promise<vo
       configWarnings,
       prAuthor: pr.user?.login,
       prAuthorId: pr.user?.id,
+      commentId,
+      prChangedFiles: pr.changed_files,
+      prAdditions: pr.additions,
+      prDeletions: pr.deletions,
     });
 
     context.log.info(
-      { pr: pr.number, checkRunId, jobId },
+      { pr: pr.number, checkRunId, commentId, jobId },
       "Verification job enqueued",
     );
   } catch (error) {
