@@ -310,7 +310,17 @@ async function _runPipeline(
 
       // Diff Analyzer — skipped in v2-only mode (no test plan items to compare against).
       // The signal requires classifiedItems from test plan parsing, which was removed in PR #91.
-      // Keeping the import for future use when diff-analyzer is repurposed for v2 claims.
+
+      // Check if all LLM signals failed — warn about incomplete analysis
+      const llmSignalIds = ["claims-verifier", "undocumented-changes", "contract-checker"];
+      const llmSignalsPresent = signals.filter((s) => llmSignalIds.includes(s.id));
+      const allLlmSkipped = llmSignalsPresent.length > 0 &&
+        llmSignalsPresent.every((s) => s.details.every((d) => d.status === "skip"));
+      if (llmSignalsPresent.length === 0 || allLlmSkipped) {
+        const msg = "LLM analysis unavailable — score based on deterministic signals only";
+        pipelineError = pipelineError ? `${pipelineError}. ${msg}` : msg;
+        log.warn({ owner, repo, pullNumber }, msg);
+      }
     } else {
       pipelineError = "Could not fetch PR diff";
     }

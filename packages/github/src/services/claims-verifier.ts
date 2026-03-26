@@ -191,6 +191,23 @@ export async function verifyClaims(options: ClaimsVerifierOptions): Promise<Sign
   if (!diff.trim()) return neutralSignal("Empty diff — nothing to verify");
   if (!prTitle.trim() && !prBody.trim()) return neutralSignal("No PR title or description to extract claims from");
 
+  // Flag very short descriptions — not enough content to extract meaningful claims
+  const combinedLength = (prTitle.trim() + " " + prBody.trim()).length;
+  if (combinedLength < 15) {
+    return createSignal({
+      id: "claims-verifier",
+      name: "Claims Verifier",
+      score: 70,
+      passed: false,
+      details: [{
+        label: "Insufficient description",
+        status: "warn",
+        message: `PR description is too short (${combinedLength} chars) to extract verifiable claims. Add a meaningful title and description.`,
+      }],
+      requiresLLM: false,
+    });
+  }
+
   let responseText: string;
   try {
     responseText = await llm.chat({
