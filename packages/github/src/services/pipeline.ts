@@ -15,7 +15,8 @@ import type { Database } from "@vigil/core/db";
 import { schema } from "@vigil/core/db";
 import { reportResults } from "./reporter.js";
 import { fetchPRDiff, fetchRepoFileList } from "./diff-fetcher.js";
-import { analyzeDiff } from "./diff-analyzer.js";
+// diff-analyzer is skipped in v2-only mode — kept for future repurposing
+// import { analyzeDiff } from "./diff-analyzer.js";
 import { checkContracts } from "./contract-checker.js";
 import { checkPlan, isPro } from "./subscription.js";
 import { checkRateLimit } from "./rate-limiter.js";
@@ -103,6 +104,46 @@ async function safeRunSignal<T>(
     log.error({ signal: signalName, error: msg }, "Signal failed");
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Diff quality heuristics
+// ---------------------------------------------------------------------------
+
+/** Lockfile and generated file patterns — not "real" source changes */
+const LOCKFILE_PATTERNS = [
+  /\.lock$/i,
+  /\.lockb$/i,
+  /package-lock\.json$/i,
+  /yarn\.lock$/i,
+  /pnpm-lock\.yaml$/i,
+  /Cargo\.lock$/i,
+  /go\.sum$/i,
+  /composer\.lock$/i,
+  /Gemfile\.lock$/i,
+  /poetry\.lock$/i,
+];
+
+/**
+ * Detect when a diff likely only contains lockfile/generated changes
+ * but the PR description suggests actual code changes were made.
+ */
+function isDiffLikelyTruncated(diff: string, prBody: string, prTitle: string): boolean {
+  const changedFiles: string[] = [];
+  for (const line of diff.split("\n")) {
+    if (line.startsWith("+++ b/")) changedFiles.push(line.slice(6));
+  }
+  if (changedFiles.length === 0) return false;
+
+  const allLockfiles = changedFiles.every((f) =>
+    LOCKFILE_PATTERNS.some((p) => p.test(f)),
+  );
+  if (!allLockfiles) return false;
+
+  // If the title/body suggests code changes beyond lockfiles, diff is likely truncated
+  const description = `${prTitle} ${prBody}`.toLowerCase();
+  const codeKeywords = /\b(feat|fix|refactor|add|implement|create|update|remove|delete|change|modify|endpoint|component|api|function|class|module|service|handler|route)\b/;
+  return codeKeywords.test(description);
 }
 
 // ---------------------------------------------------------------------------
@@ -196,6 +237,13 @@ async function _runPipeline(
     // Stage 2: Fetch PR diff
     diff = await fetchPRDiff({ octokit, owner, repo, pullNumber });
 
+    // Detect potentially truncated diffs — warn if only lockfiles/generated files are visible
+    // but the PR description suggests code changes
+    if (diff && isDiffLikelyTruncated(diff, prBody, prTitle)) {
+      pipelineError = "Diff may be incomplete — only lockfile/generated changes visible. Verification is limited.";
+      log.warn({ owner, repo, pullNumber }, "Detected likely truncated diff");
+    }
+
     if (diff) {
       // Claims Verifier (free tier)
       currentSignalId = "claims-verifier";
@@ -260,15 +308,9 @@ async function _runPipeline(
         log.info({ signalId: contractResult.signal.id, score: contractResult.signal.score, passed: contractResult.signal.passed }, "Contract checker complete");
       }
 
-      // Diff Analyzer (all tiers during testing)
-      currentSignalId = "diff-analyzer";
-      const diffSignal = await safeRunSignal("diff-analyzer", () =>
-        analyzeDiff({ diff: diff!, classifiedItems: [], llm }),
-      );
-      if (diffSignal) {
-        pushSignal(signals, diffSignal, weights["diff-analyzer"]);
-        log.info({ signalId: diffSignal.id, score: diffSignal.score, passed: diffSignal.passed }, "Diff analyzer complete");
-      }
+      // Diff Analyzer — skipped in v2-only mode (no test plan items to compare against).
+      // The signal requires classifiedItems from test plan parsing, which was removed in PR #91.
+      // Keeping the import for future use when diff-analyzer is repurposed for v2 claims.
     } else {
       pipelineError = "Could not fetch PR diff";
     }

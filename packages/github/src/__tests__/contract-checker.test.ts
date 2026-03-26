@@ -152,6 +152,47 @@ describe("checkContracts", () => {
     });
   });
 
+  describe("shared type activation", () => {
+    it("triggers when shared types + consumer files change", async () => {
+      const sharedDiff = `diff --git a/src/types.ts b/src/types.ts
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -1,3 +1,5 @@
++export interface User { id: string; name: string; email: string; }
+diff --git a/src/components/UserCard.tsx b/src/components/UserCard.tsx
+--- a/src/components/UserCard.tsx
++++ b/src/components/UserCard.tsx
+@@ -1,3 +1,5 @@
++const user: User = await fetchUser();`;
+
+      const response = JSON.stringify({
+        contracts: [{ producer: "types.ts", consumer: "UserCard.tsx", endpoint: "/users", compatible: true, issue: "" }],
+      });
+      const { signal } = await checkContracts({ diff: sharedDiff, llm: makeLLM(response) });
+      // Should NOT skip — shared + consumer = contract risk
+      expect(signal.details[0].status).not.toBe("skip");
+    });
+
+    it("triggers when shared types + producer files change", async () => {
+      const sharedDiff = `diff --git a/src/schemas.ts b/src/schemas.ts
+--- a/src/schemas.ts
++++ b/src/schemas.ts
+@@ -1,3 +1,5 @@
++export const UserSchema = z.object({ id: z.string() });
+diff --git a/src/routes/users.ts b/src/routes/users.ts
+--- a/src/routes/users.ts
++++ b/src/routes/users.ts
+@@ -1,3 +1,5 @@
++router.get("/", (req, res) => res.json(users));`;
+
+      const response = JSON.stringify({
+        contracts: [{ producer: "users.ts", consumer: "schemas.ts", endpoint: "/users", compatible: true, issue: "" }],
+      });
+      const { signal } = await checkContracts({ diff: sharedDiff, llm: makeLLM(response) });
+      expect(signal.details[0].status).not.toBe("skip");
+    });
+  });
+
   describe("signal metadata", () => {
     it("has correct signal id and requiresLLM", async () => {
       const { signal } = await checkContracts({ diff: "", llm: makeLLM("unused") });

@@ -50,6 +50,14 @@ Guidelines:
 - If the PR title is a conventional commit (e.g., "feat: add X"), the claim is "add X"
 - Extract 1-8 claims maximum — focus on substantive claims, not filler
 
+CRITICAL — avoid being too literal:
+- "Add X to every page" → if X is added to the layout that wraps all pages, this IS verified
+- "Complete redesign" → if significant structural changes are made, this IS verified (don't require 100% change)
+- "Fix bug in Y" → if Y is modified with a behavioral change, this IS verified (even without explicit bug evidence)
+- Abstract claims like "improve performance" → verified if the diff shows optimization patterns
+- Claims about scope ("all endpoints", "every component") → verify against the ACTUAL scope, not hypothetical scope
+- If the only code path for a feature goes through the changed file, "everywhere" = "the one place it matters"
+
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "claims": [

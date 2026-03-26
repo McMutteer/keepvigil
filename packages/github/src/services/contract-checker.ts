@@ -93,7 +93,9 @@ function hasContractRisk(diff: string): boolean {
   const roles = files.map((f) => classifyFile(f));
   const hasProducer = roles.some((r) => r === "producer");
   const hasConsumer = roles.some((r) => r === "consumer");
-  return hasProducer && hasConsumer;
+  const hasShared = roles.some((r) => r === "shared");
+  // Shared type files with either a producer OR consumer indicate cross-boundary changes
+  return (hasProducer && hasConsumer) || (hasShared && (hasProducer || hasConsumer));
 }
 
 // ---------------------------------------------------------------------------
