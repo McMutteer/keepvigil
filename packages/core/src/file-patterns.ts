@@ -34,6 +34,25 @@ export const NON_SOURCE_PATTERNS = [
   /\.config\.cjs$/i,
   /nginx\.conf$/i,
   /^entrypoint\.sh$/i,
+  // Static assets — no tests expected
+  /\.css$/i,
+  /\.scss$/i,
+  /\.svg$/i,
+  /\.png$/i,
+  /\.jpg$/i,
+  /\.jpeg$/i,
+  /\.gif$/i,
+  /\.ico$/i,
+  /\.woff2?$/i,
+  /\.ttf$/i,
+  /\.eot$/i,
+  /\.webp$/i,
+  /\.avif$/i,
+  // HTML templates and manifests
+  /\.html$/i,
+  /manifest\.json$/i,
+  /sitemap\.xml$/i,
+  /robots\.txt$/i,
 ];
 
 /** Test file patterns (these ARE tests, not source needing coverage) */
@@ -46,9 +65,32 @@ export const TEST_FILE_PATTERNS = [
   /_test\.go$/,
 ];
 
+/**
+ * Patterns for presentation-only files that rarely need unit tests.
+ * These are typically React page components, layouts, and UI files
+ * where testing adds minimal value (no business logic).
+ */
+export const PRESENTATION_PATTERNS = [
+  // Next.js route files (pages, layouts, loading states, error boundaries)
+  /\/app\/(.+\/)?page\.[jt]sx?$/,
+  /\/app\/(.+\/)?layout\.[jt]sx?$/,
+  /\/app\/(.+\/)?loading\.[jt]sx?$/,
+  /\/app\/(.+\/)?error\.[jt]sx?$/,
+  /\/app\/(.+\/)?not-found\.[jt]sx?$/,
+  // i18n dictionaries (pure data, no logic)
+  /\/i18n\/.*\.[jt]sx?$/,
+  /\/dictionaries\/.*\.[jt]sx?$/,
+  /\/locales\/.*\.[jt]sx?$/,
+];
+
 /** Check if a file is a non-source file that should be excluded */
 export function isNonSource(filePath: string): boolean {
   return NON_SOURCE_PATTERNS.some((p) => p.test(filePath));
+}
+
+/** Check if a file is a presentation-only file (tests optional, not penalized) */
+export function isPresentationFile(filePath: string): boolean {
+  return PRESENTATION_PATTERNS.some((p) => p.test(filePath));
 }
 
 /** Check if a file is itself a test file */

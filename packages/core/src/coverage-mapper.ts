@@ -8,7 +8,7 @@
 import path from "node:path";
 import type { ClassifiedItem, Signal, SignalDetail } from "./types.js";
 import { createSignal } from "./score-engine.js";
-import { isNonSource, isTestFile } from "./file-patterns.js";
+import { isNonSource, isTestFile, isPresentationFile } from "./file-patterns.js";
 
 // ---------------------------------------------------------------------------
 // Test file resolution
@@ -216,6 +216,16 @@ export function mapCoverage(
       continue;
     }
 
+    // Presentation-only files (pages, layouts, i18n) — skip without penalty
+    if (isPresentationFile(file)) {
+      details.push({
+        label: file,
+        status: "skip",
+        message: "Presentation file — test coverage optional",
+      });
+      continue;
+    }
+
     sourceCount++;
     const candidates = generateTestCandidates(file);
     const matchedTest = candidates.find((c) => repoFileSet.has(c));
@@ -261,7 +271,9 @@ export function mapCoverage(
       name: "Coverage Mapper",
       score: 100,
       passed: true,
-      details: [{ label: "No source files", status: "pass", message: "Only non-source or test files changed" }],
+      details: details.length > 0
+        ? details
+        : [{ label: "No source files", status: "pass", message: "Only non-source or test files changed" }],
     });
   }
 

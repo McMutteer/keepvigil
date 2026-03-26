@@ -832,3 +832,153 @@ ${Array.from({ length: 200 }, (_, i) => `+const line${i} = ${i};`).join("\n")}`;
     expect(riskMin).toBeGreaterThan(baseMin);
   });
 });
+
+describe("action items deduplication", () => {
+  it("deduplicates repeated failure messages in action items", () => {
+    const score: ConfidenceScore = {
+      score: 50,
+      recommendation: "review",
+      signals: [
+        makeSignal({
+          id: "contract-checker",
+          name: "Contract Checker",
+          score: 50,
+          weight: 10,
+          passed: false,
+          details: [
+            { label: "src/a.ts", status: "fail" as const, message: "Contract mismatch" },
+            { label: "src/b.ts", status: "fail" as const, message: "Contract mismatch" },
+            { label: "src/c.ts", status: "fail" as const, message: "Contract mismatch" },
+          ],
+        }),
+      ],
+      skippedSignals: [],
+    };
+    const body = buildCommentBody(
+      [],
+      makeSummary({ passed: 0, failed: 0 }),
+      undefined, undefined, undefined, undefined, undefined,
+      score,
+    );
+    // Should show "×3" instead of 3 separate lines
+    expect(body).toContain("×3");
+    // In the Action Items section, message should appear once (with ×3)
+    const actionSection = body.split("### Action Items")[1]?.split("###")[0] ?? "";
+    const matches = actionSection.match(/Contract mismatch/g) ?? [];
+    expect(matches.length).toBe(1);
+  });
+
+  it("does not deduplicate unique messages", () => {
+    const score = makeConfidenceScore({
+      recommendation: "review",
+      signals: [
+        makeSignal({
+          id: "undocumented-changes",
+          name: "Undocumented Changes",
+          score: 50,
+          passed: false,
+          details: [
+            { label: "src/a.ts", status: "fail" as const, message: "Missing docs for endpoint" },
+            { label: "src/b.ts", status: "fail" as const, message: "New env var not mentioned" },
+          ],
+        }),
+      ],
+    });
+    const body = buildCommentBody(
+      [],
+      makeSummary({ passed: 0, failed: 0 }),
+      undefined, undefined, undefined, undefined, undefined,
+      score,
+    );
+    expect(body).toContain("Missing docs for endpoint");
+    expect(body).toContain("New env var not mentioned");
+    expect(body).not.toContain("×");
+  });
+});
+
+describe("coverage-mapper excluded from action items", () => {
+  it("does not show coverage failures in action items", () => {
+    const score = makeConfidenceScore({
+      recommendation: "review",
+      signals: [
+        makeSignal({
+          id: "coverage-mapper",
+          name: "Coverage Mapper",
+          score: 0,
+          weight: 10,
+          passed: false,
+          details: [
+            { label: "src/a.ts", status: "fail" as const, message: "No corresponding test file found" },
+            { label: "src/b.ts", status: "fail" as const, message: "No corresponding test file found" },
+          ],
+        }),
+      ],
+    });
+    const body = buildCommentBody(
+      [],
+      makeSummary({ passed: 0, failed: 0 }),
+      undefined, undefined, undefined, undefined, undefined,
+      score,
+    );
+    expect(body).not.toContain("No corresponding test file found");
+    expect(body).not.toContain("Action Items");
+  });
+});
+
+describe("all-skipped signals hidden from table", () => {
+  it("hides signals with all details skipped", () => {
+    const score = makeConfidenceScore({
+      signals: [
+        makeSignal({
+          id: "claims-verifier",
+          name: "Claims Verifier",
+          score: 100,
+          weight: 30,
+          passed: true,
+          details: [{ label: "claim", status: "pass" as const, message: "Verified" }],
+        }),
+        makeSignal({
+          id: "diff-analyzer",
+          name: "Diff vs Claims",
+          score: 100,
+          weight: 5,
+          passed: true,
+          details: [{ label: "Skipped", status: "skip" as const, message: "No test plan items" }],
+        }),
+      ],
+    });
+    const body = buildCommentBody(
+      [],
+      makeSummary({ passed: 0, failed: 0 }),
+      undefined, undefined, undefined, undefined, undefined,
+      score,
+    );
+    expect(body).toContain("Claims Verifier");
+    expect(body).not.toContain("Diff vs Claims");
+  });
+
+  it("shows signals with mixed details (not all skipped)", () => {
+    const score = makeConfidenceScore({
+      signals: [
+        makeSignal({
+          id: "coverage-mapper",
+          name: "Coverage Mapper",
+          score: 50,
+          weight: 10,
+          passed: true,
+          details: [
+            { label: "a.ts", status: "pass" as const, message: "Test found" },
+            { label: "b.ts", status: "skip" as const, message: "Excluded" },
+          ],
+        }),
+      ],
+    });
+    const body = buildCommentBody(
+      [],
+      makeSummary({ passed: 0, failed: 0 }),
+      undefined, undefined, undefined, undefined, undefined,
+      score,
+    );
+    expect(body).toContain("Coverage Mapper");
+  });
+});

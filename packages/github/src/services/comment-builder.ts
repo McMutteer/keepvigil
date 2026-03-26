@@ -142,7 +142,10 @@ function buildScoreCommentBody(items: ReportItem[], summary: ReportSummary, conf
   }
 
   // Signal table — only signals that contribute to the score (weight > 0)
-  const scoringSignals = confidenceScore.signals.filter((s) => s.weight > 0);
+  // Hide signals that are entirely skipped (e.g., diff-analyzer in v2-only mode)
+  const scoringSignals = confidenceScore.signals.filter((s) =>
+    s.weight > 0 && !(s.details.length > 0 && s.details.every((d) => d.status === "skip")),
+  );
   if (scoringSignals.length > 0) {
     parts.push(
       "| Signal | Score | Status |",
@@ -224,8 +227,12 @@ function buildActionItems(confidenceScore: ConfidenceScore, items: ReportItem[])
     }
   }
 
-  // Collect signal warnings/failures
+  // Collect signal warnings/failures (skip low-value coverage noise)
   for (const signal of confidenceScore.signals) {
+    // Skip coverage-mapper "No corresponding test file found" from action items —
+    // this info is already reflected in the signal score and table
+    if (signal.id === "coverage-mapper") continue;
+
     for (const detail of signal.details) {
       if (detail.status === "fail") {
         const raw = detail.message || detail.label || "Unknown issue";
@@ -238,7 +245,26 @@ function buildActionItems(confidenceScore: ConfidenceScore, items: ReportItem[])
   if (actionLines.length === 0) return "";
 
   const mustFix = actionLines.filter((a) => a.icon === "\u274C").slice(0, 3);
-  const consider = actionLines.filter((a) => a.icon !== "\u274C").slice(0, MAX_ITEMS - mustFix.length);
+  const considerRaw = actionLines.filter((a) => a.icon !== "\u274C");
+
+  // Deduplicate repeated messages (e.g., "No corresponding test file found" x5)
+  const considerDeduped: Array<{ icon: string; text: string }> = [];
+  const messageCounts = new Map<string, number>();
+  for (const item of considerRaw) {
+    messageCounts.set(item.text, (messageCounts.get(item.text) ?? 0) + 1);
+  }
+  const seen = new Set<string>();
+  for (const item of considerRaw) {
+    if (seen.has(item.text)) continue;
+    seen.add(item.text);
+    const count = messageCounts.get(item.text) ?? 1;
+    if (count > 1) {
+      considerDeduped.push({ icon: item.icon, text: `${item.text} (×${count})` });
+    } else {
+      considerDeduped.push(item);
+    }
+  }
+  const consider = considerDeduped.slice(0, MAX_ITEMS - mustFix.length);
 
   const sections: string[] = [];
 
