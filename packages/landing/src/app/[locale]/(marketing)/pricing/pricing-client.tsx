@@ -68,37 +68,33 @@ function BillingToggle({
 }) {
   const t = dict.pricing;
   return (
-    <div className="flex items-center justify-center gap-3 mb-12 sm:mb-16">
-      <span
-        className={`text-sm font-medium transition-colors ${
-          !annual ? "text-text-primary" : "text-text-muted"
-        }`}
-      >
-        {t.monthly}
-      </span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={annual}
-        aria-label="Toggle annual billing"
-        onClick={onToggle}
-        className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border border-white/[0.06] bg-bg-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-      >
-        <span
-          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-accent shadow-sm transition-transform duration-200 ${
-            annual ? "translate-x-5" : "translate-x-0"
+    <div className="flex flex-col items-center gap-3 mb-12 sm:mb-16">
+      <div className="inline-flex items-center bg-bg-surface border border-white/[0.06] rounded-full p-1">
+        <button
+          type="button"
+          onClick={() => annual && onToggle()}
+          className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+            !annual
+              ? "bg-accent text-[#080d1a] shadow-sm"
+              : "text-text-muted hover:text-text-secondary"
           }`}
-        />
-      </button>
-      <span
-        className={`text-sm font-medium transition-colors ${
-          annual ? "text-text-primary" : "text-text-muted"
-        }`}
-      >
-        {t.annual}
-      </span>
+        >
+          {t.monthly}
+        </button>
+        <button
+          type="button"
+          onClick={() => !annual && onToggle()}
+          className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+            annual
+              ? "bg-accent text-[#080d1a] shadow-sm"
+              : "text-text-muted hover:text-text-secondary"
+          }`}
+        >
+          {t.annual}
+        </button>
+      </div>
       {annual && (
-        <span className="text-[11px] font-medium text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full">
+        <span className="text-[11px] font-medium text-accent bg-accent/10 border border-accent/20 px-3 py-1 rounded-full animate-fade-in">
           {t.saveUpTo}
         </span>
       )}
@@ -127,59 +123,69 @@ function PricingCard({
 
   return (
     <div
-      className={`bg-bg-surface rounded-[12px] p-8 flex flex-col ${
+      className={`rounded-[16px] p-[1px] flex flex-col ${
         plan.highlighted
-          ? "border border-accent/30 relative"
-          : "border border-white/[0.06]"
+          ? "bg-gradient-to-b from-accent/40 via-accent/10 to-transparent"
+          : "bg-white/[0.06]"
       }`}
     >
-      {plan.badge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-medium uppercase tracking-[0.05em] text-accent bg-accent/10 border border-accent/20 px-3 py-1 rounded-full">
-          {plan.badge}
-        </span>
-      )}
-
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary mb-1">
-          {plan.name}
-        </h3>
-        <p className="text-sm text-text-secondary">{plan.description}</p>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-semibold text-text-primary font-mono">
-            {displayPrice}
+      <div className={`bg-bg-surface rounded-[15px] p-8 flex flex-col flex-1 relative ${
+        plan.highlighted ? "bg-bg-surface" : ""
+      }`}>
+        {plan.badge && (
+          <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#080d1a] bg-accent px-4 py-1 rounded-full shadow-sm shadow-accent/20">
+            {plan.badge}
           </span>
-          <span className="text-sm text-text-muted">{period}</span>
-        </div>
-        {savings && (
-          <p className="text-xs text-accent mt-1">{savings}</p>
         )}
+
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-text-primary mb-1.5">
+            {plan.name}
+          </h3>
+          <p className="text-sm text-text-secondary">{plan.description}</p>
+        </div>
+
+        <div className="mb-8">
+          <div className="flex items-baseline gap-1.5">
+            <span className={`text-5xl font-bold tracking-tight font-mono ${
+              plan.highlighted ? "text-accent" : "text-text-primary"
+            }`}>
+              {displayPrice}
+            </span>
+            <span className="text-sm text-text-muted">{period}</span>
+          </div>
+          {savings && (
+            <p className="text-xs text-accent mt-2 font-medium">{savings}</p>
+          )}
+        </div>
+
+        <ul className="space-y-3.5 mb-8 flex-1">
+          {plan.features.map((feature, i) => (
+            <li
+              key={i}
+              className="flex items-start gap-2.5 text-sm text-text-secondary"
+            >
+              <span className={`mt-0.5 shrink-0 ${plan.highlighted ? "text-accent" : "text-text-muted"}`}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+
+        <a
+          href={plan.ctaHref(annual)}
+          className={`block w-full text-center py-3.5 rounded-[8px] text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${
+            plan.highlighted
+              ? "bg-accent text-[#080d1a] hover:bg-accent-hover shadow-sm shadow-accent/20"
+              : "border border-white/[0.08] text-text-primary hover:bg-bg-elevated hover:border-white/[0.12]"
+          }`}
+        >
+          {plan.cta}
+        </a>
       </div>
-
-      <ul className="space-y-3 mb-8 flex-1">
-        {plan.features.map((feature, i) => (
-          <li
-            key={i}
-            className="flex items-start gap-2.5 text-sm text-text-secondary"
-          >
-            <span className="text-text-muted mt-0.5 shrink-0">&#10003;</span>
-            <span>{feature}</span>
-          </li>
-        ))}
-      </ul>
-
-      <a
-        href={plan.ctaHref(annual)}
-        className={`block w-full text-center py-3 rounded-[6px] text-sm font-medium transition-colors duration-150 active:scale-[0.98] ${
-          plan.highlighted
-            ? "bg-accent text-[#080d1a] hover:bg-accent-hover"
-            : "border border-white/[0.06] text-text-primary hover:bg-bg-elevated"
-        }`}
-      >
-        {plan.cta}
-      </a>
     </div>
   );
 }
@@ -325,13 +331,13 @@ function TeamCalculator({ annual, dict }: { annual: boolean; dict: Dictionary })
   const heading = locale === "en" ? "How much for your team?" : "¿Cuánto para tu equipo?";
 
   return (
-    <div className="bg-bg-surface border border-white/[0.06] rounded-[12px] p-6 sm:p-8">
-      <h3 className="text-lg font-semibold text-text-primary text-center mb-6">{heading}</h3>
+    <div className="bg-bg-surface border border-white/[0.06] rounded-[16px] p-6 sm:p-8">
+      <h3 className="text-lg font-semibold text-text-primary text-center mb-8">{heading}</h3>
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-text-secondary">{label}</span>
-          <span className="text-sm font-mono text-text-primary">{teamSize}</span>
+          <span className="text-2xl font-bold font-mono text-accent">{teamSize}</span>
         </div>
         <input
           type="range"
@@ -339,26 +345,31 @@ function TeamCalculator({ annual, dict }: { annual: boolean; dict: Dictionary })
           max={50}
           value={teamSize}
           onChange={(e) => setTeamSize(Number(e.target.value))}
-          className="w-full h-1.5 bg-bg-elevated rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer"
+          className="w-full h-2 bg-bg-elevated rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-accent/30"
           aria-label={heading}
         />
+        <div className="flex justify-between text-[10px] text-text-muted mt-1.5">
+          <span>1</span>
+          <span>25</span>
+          <span>50</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 text-center">
-        <div className="bg-bg-deep rounded-lg p-3">
-          <div className="text-xs text-text-muted mb-1">Free</div>
-          <div className="text-lg font-semibold font-mono text-text-primary">$0</div>
-          <div className="text-[10px] text-text-muted">{locale === "en" ? "forever" : "siempre"}</div>
+        <div className="bg-bg-deep rounded-[12px] p-4">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-text-muted mb-2">Free</div>
+          <div className="text-xl font-bold font-mono text-text-primary">$0</div>
+          <div className="text-[10px] text-text-muted mt-1">{locale === "en" ? "forever" : "siempre"}</div>
         </div>
-        <div className="bg-bg-deep rounded-lg p-3 border border-accent/20">
-          <div className="text-xs text-accent mb-1">Pro</div>
-          <div className="text-lg font-semibold font-mono text-text-primary">${proCost}</div>
-          <div className="text-[10px] text-text-muted">{period}</div>
+        <div className="bg-bg-deep rounded-[12px] p-4 border border-accent/20 relative">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-accent mb-2">Pro</div>
+          <div className="text-xl font-bold font-mono text-accent">${proCost}</div>
+          <div className="text-[10px] text-text-muted mt-1">{period}</div>
         </div>
-        <div className="bg-bg-deep rounded-lg p-3">
-          <div className="text-xs text-text-muted mb-1">Team</div>
-          <div className="text-lg font-semibold font-mono text-text-primary">${teamCost}</div>
-          <div className="text-[10px] text-text-muted">{period}</div>
+        <div className="bg-bg-deep rounded-[12px] p-4">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-text-muted mb-2">Team</div>
+          <div className="text-xl font-bold font-mono text-text-primary">${teamCost}</div>
+          <div className="text-[10px] text-text-muted mt-1">{period}</div>
         </div>
       </div>
     </div>
