@@ -5,6 +5,45 @@ import type { Locale } from "@/i18n/config";
 
 const POSTS = [
   {
+    slug: "what-pr-says-vs-does",
+    date: "2026-03-26",
+    title: {
+      en: "The Gap Between What a PR Says and What It Does",
+      es: "La brecha entre lo que dice un PR y lo que hace",
+    },
+    excerpt: {
+      en: "Every week, PRs ship with undocumented changes. New dependencies nobody mentioned. Schema changes buried in a large diff. Here's how to close the gap.",
+      es: "Cada semana, PRs llegan a producción con cambios no documentados. Dependencias nuevas que nadie mencionó. Cambios de schema enterrados en diffs grandes.",
+    },
+    readTime: { en: "4 min read", es: "4 min de lectura" },
+  },
+  {
+    slug: "vigil-vs-coderabbit",
+    date: "2026-03-25",
+    title: {
+      en: "Vigil vs CodeRabbit: Different Jobs, Same PR",
+      es: "Vigil vs CodeRabbit: Trabajos diferentes, mismo PR",
+    },
+    excerpt: {
+      en: "CodeRabbit reviews code quality. Vigil verifies truthfulness. They're complementary tools that together give you a complete picture of every pull request.",
+      es: "CodeRabbit revisa calidad de código. Vigil verifica veracidad. Son herramientas complementarias que juntas dan una imagen completa de cada pull request.",
+    },
+    readTime: { en: "3 min read", es: "3 min de lectura" },
+  },
+  {
+    slug: "ai-verification",
+    date: "2026-03-24",
+    title: {
+      en: "AI Agents Write Code — Who Verifies It?",
+      es: "Los agentes de IA escriben código — ¿quién lo verifica?",
+    },
+    excerpt: {
+      en: "AI coding agents ship PRs in minutes. But confidence in the description doesn't mean accuracy in the diff. Here's why verification is the missing layer.",
+      es: "Los agentes de IA crean PRs en minutos. Pero confianza en la descripción no significa precisión en el diff. Por qué la verificación es la capa que falta.",
+    },
+    readTime: { en: "4 min read", es: "4 min de lectura" },
+  },
+  {
     slug: "dogfooding",
     date: "2026-03-21",
     title: {
@@ -13,7 +52,7 @@ const POSTS = [
     },
     excerpt: {
       en: "What happens when you point a PR verification tool at its own codebase? We found hardcoded URIs, undocumented behavior, and a score trajectory from 59 to 93.",
-      es: "Qu\u00e9 pasa cuando apuntas una herramienta de verificaci\u00f3n de PRs a su propio c\u00f3digo? Encontramos URIs hardcodeados, comportamiento no documentado, y una trayectoria de score de 59 a 93.",
+      es: "Qué pasa cuando apuntas una herramienta de verificación de PRs a su propio código? Encontramos URIs hardcodeados, comportamiento no documentado, y una trayectoria de score de 59 a 93.",
     },
     readTime: { en: "5 min read", es: "5 min de lectura" },
   },
